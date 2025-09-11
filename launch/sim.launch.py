@@ -224,6 +224,22 @@ def launch_setup(context, *args, **kwargs):
         output='log',  # Redirect output to log file
     )
 
+    # Image monitor node for camera feeds
+    adaptive_image_stitcher_node = Node(
+        package='uav_gz_sim',
+        executable='adaptive_image_stitcher',
+        name='adaptive_image_stitcher',
+        parameters=[
+            {'use_sim_time': True},
+            {'namespace_filter': f'/{ns}/'},  # Auto-detect cameras in the target namespace
+            {'output_topic': f'/{ns}/camera/stitched_image'},
+            {'verbose': False},  # Disable debug messages
+            {'discovery_timeout': 10.0},  # Give more time for camera discovery
+            {'stitch_rate': 10.0}
+        ],
+        output='log',  # Redirect output to log file instead of terminal
+    )
+
     trajectory_publisher_node = Node(
         package='uav_gz_sim',
         executable='trajectory_publisher',
@@ -280,7 +296,8 @@ def launch_setup(context, *args, **kwargs):
         # Bridge for sensor data from Gazebo
         ros_gz_bridge,
         
-        # Trajectory visualization
+        # Camera and trajectory visualization
+        adaptive_image_stitcher_node,
         trajectory_publisher_node,
         
         # RViz should be started last, after all transforms are established

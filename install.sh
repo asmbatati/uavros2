@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Set up environment variables
+export DEV_DIR=${DEV_DIR:-/home/user/shared_volume}
+
+# Source ROS2 environment if available
+if [ -f "/opt/ros/jazzy/setup.bash" ]; then
+    source /opt/ros/jazzy/setup.bash
+fi
+
+# Fix git ownership issues for container environments
+git config --global --add safe.directory '*' 2>/dev/null || true
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -246,17 +257,17 @@ IN_CONTAINER=$(detect_container)
 if [ "$IN_CONTAINER" = "true" ]; then
     print_status "Running inside px4_ros2_jazzy container - skipping dependency checks"
     print_info "Container environment detected with pre-installed dependencies"
+    print_info "Git ownership issues resolved for container environment"
 else
     print_warning "Running on host system - checking and installing dependencies"
     check_host_dependencies
 fi
 
 print_info "Checking environment variables..."
-if [ -z "${DEV_DIR}" ]; then
-  print_error "DEV_DIR environment variable is not set. Set it using export DEV_DIR=<DEV_DIR_directory_that_should_contain_PX4-Autopilot_and_ros2_ws>"
-  exit 1
-fi
 print_status "DEV_DIR=$DEV_DIR"
+if [ "$DEV_DIR" = "/home/user/shared_volume" ]; then
+    print_info "Using default DEV_DIR. You can override with: export DEV_DIR=<your_directory>"
+fi
 
 print_info "Git credentials:"
 echo -e "  ${CYAN}GIT_USER=${NC}$GIT_USER"
@@ -305,13 +316,17 @@ print_section "Cloning UAV Gazebo Simulation Package"
 # Clone the uav_gz_sim if it doesn't exist
 if [ ! -d "$ROS2_SRC/uav_gz_sim" ]; then
     print_info "Cloning uav_gz_sim repository..."
-    cd $ROS2_SRC
-    git clone $SIM_PKG_URL
-    cd uav_gz_sim
-    git lfs install
-    git lfs pull
-    git submodule update --init --remote --recursive
-    print_status "uav_gz_sim cloned successfully"
+    cd $ROS2_SRC || { print_error "Failed to change to $ROS2_SRC"; exit 1; }
+    if git clone $SIM_PKG_URL; then
+        cd uav_gz_sim || { print_error "Failed to change to uav_gz_sim directory"; exit 1; }
+        git lfs install || print_warning "Git LFS install failed - continuing without LFS"
+        git lfs pull || print_warning "Git LFS pull failed - continuing without LFS"
+        git submodule update --init --remote --recursive || print_warning "Submodule update failed - continuing"
+        print_status "uav_gz_sim cloned successfully"
+    else
+        print_error "Failed to clone uav_gz_sim repository"
+        exit 1
+    fi
 else
     print_info "Updating existing uav_gz_sim repository..."
     cd $ROS2_SRC/uav_gz_sim
@@ -386,7 +401,12 @@ sudo apt-get remove modemmanager -y || true
 
 # Add user to dialout group for serial port access
 print_info "Adding user to dialout group for serial port access..."
-sudo usermod -a -G dialout $USER
+if [ -n "$USER" ]; then
+    sudo usermod -a -G dialout $USER
+else
+    print_warning "USER environment variable not set - skipping dialout group addition"
+    print_info "You may need to manually add your user to the dialout group: sudo usermod -a -G dialout \$USER"
+fi
 
 print_status "QGroundControl dependencies installed"
 
@@ -425,14 +445,12 @@ print_section "Setting up PX4-Autopilot"
 if [ ! -d "$PX4_DIR" ]; then
     print_info "Cloning PX4-Autopilot..."
     cd $DEV_DIR
-    git clone https://github.com/riotu-lab/PX4-Autopilot.git --recursive
+    git clone https://github.com/PX4/PX4-Autopilot.git --recursive
     cd $PX4_DIR
     print_info "Cleaning PX4 build environment..."
     make submodulesclean
     make distclean
     make clean
-    print_info "Checking out navsat_callback branch..."
-    git checkout navsat_callback
     print_status "PX4-Autopilot cloned and configured"
 else
     print_info "PX4_DIR=$PX4_DIR already exists"
@@ -441,14 +459,24 @@ else
     make submodulesclean
     make distclean
     make clean
-    print_info "Checking out navsat_callback branch..."
-    git checkout navsat_callback
-    print_status "PX4-Autopilot cleaned and configured"
 fi
 
 print_info "Building PX4 SITL..."
-cd $PX4_DIR && make px4_sitl
-print_status "PX4 SITL built successfully"
+cd $PX4_DIR || { print_error "Failed to change to PX4 directory"; exit 1; }
+
+# Ensure all submodules are properly initialized (especially mavlink)
+print_info "Ensuring all submodules are properly initialized..."
+git submodule sync --recursive
+git submodule update --init --recursive
+
+if make px4_sitl; then
+    print_status "PX4 SITL built successfully"
+else
+    print_error "Failed to build PX4 SITL"
+    print_info "Trying to clean and rebuild..."
+    make clean && make px4_sitl || { print_error "PX4 SITL build failed even after clean"; exit 1; }
+    print_status "PX4 SITL built successfully after clean"
+fi
 
 print_section "Configuring PX4 Gazebo Models"
 
@@ -479,21 +507,54 @@ print_section "Copying Configuration Files"
 
 # Copy files to $PX4_DIR
 print_info "Copying models to ${PX4_DIR}/Tools/simulation/gz/models/"
-cp -r ${ROS2_SRC}/uav_gz_sim/models/* ${PX4_DIR}/Tools/simulation/gz/models/
-print_status "Models copied"
+if [ -d "${ROS2_SRC}/uav_gz_sim/models" ]; then
+    cp -r ${ROS2_SRC}/uav_gz_sim/models/* ${PX4_DIR}/Tools/simulation/gz/models/ || {
+        print_error "Failed to copy models"
+        exit 1
+    }
+    print_status "Models copied"
+else
+    print_error "Models directory not found at ${ROS2_SRC}/uav_gz_sim/models"
+    exit 1
+fi
 
 print_info "Copying worlds to ${PX4_DIR}/Tools/simulation/gz/worlds/"
-cp -r ${ROS2_SRC}/uav_gz_sim/worlds/* ${PX4_DIR}/Tools/simulation/gz/worlds/
-print_status "Worlds copied"
+if [ -d "${ROS2_SRC}/uav_gz_sim/worlds" ]; then
+    cp -r ${ROS2_SRC}/uav_gz_sim/worlds/* ${PX4_DIR}/Tools/simulation/gz/worlds/ || {
+        print_error "Failed to copy worlds"
+        exit 1
+    }
+    print_status "Worlds copied"
+else
+    print_error "Worlds directory not found at ${ROS2_SRC}/uav_gz_sim/worlds"
+    exit 1
+fi
 
 print_info "Copying airframe configs to ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/"
-cp -r ${ROS2_SRC}/uav_gz_sim//config/px4/* ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/
-print_status "Airframe configurations copied"
+if [ -d "${ROS2_SRC}/uav_gz_sim/config/px4" ]; then
+    cp -r ${ROS2_SRC}/uav_gz_sim/config/px4/* ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/ || {
+        print_error "Failed to copy airframe configurations"
+        exit 1
+    }
+    print_status "Airframe configurations copied"
+else
+    print_error "PX4 config directory not found at ${ROS2_SRC}/uav_gz_sim/config/px4"
+    exit 1
+fi
 
 # Build px4_sitl
 print_info "Rebuilding PX4 SITL with new configurations..."
-cd $PX4_DIR && make px4_sitl
-print_status "PX4 SITL rebuilt successfully"
+cd $PX4_DIR || { print_error "Failed to change to PX4 directory"; exit 1; }
+
+# Ensure submodules are still properly initialized after file copying
+git submodule update --init --recursive
+
+if make px4_sitl; then
+    print_status "PX4 SITL rebuilt successfully"
+else
+    print_error "Failed to rebuild PX4 SITL with new configurations"
+    exit 1
+fi
 
 cd $DEV_DIR
 
@@ -567,8 +628,17 @@ print_status "RMW Zenoh installed"
 
 # Install missing Python dependencies for ROS2 message generation
 print_info "Installing Python dependencies..."
-pip3 install --break-system-packages lark empy catkin_pkg
-print_status "Python dependencies installed"
+if pip3 install --break-system-packages lark empy catkin_pkg; then
+    print_status "Python dependencies installed"
+else
+    print_warning "Failed to install Python dependencies with --break-system-packages, trying without..."
+    if pip3 install --user lark empy catkin_pkg; then
+        print_status "Python dependencies installed (user mode)"
+    else
+        print_error "Failed to install Python dependencies"
+        exit 1
+    fi
+fi
 
 # Install GeographicLib datasets for MAVROS
 print_info "Installing GeographicLib datasets..."
@@ -614,20 +684,23 @@ build_with_retry() {
     fi
 }
 
+# Ensure ROS2 environment is sourced before building
+source /opt/ros/jazzy/setup.bash
+
 # Build mavros (Step 1/3)
-if ! build_with_retry "MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros --executor sequential" "Building mavros (Step 1/3)"; then
+if ! build_with_retry "source /opt/ros/jazzy/setup.bash && MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros --executor sequential" "Building mavros (Step 1/3)"; then
     print_error "Failed to build mavros. Exiting."
     exit 1
 fi
 
 # Build mavros_extras (Step 2/3)
-if ! build_with_retry "MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros_extras --executor sequential" "Building mavros_extras (Step 2/3)"; then
+if ! build_with_retry "source /opt/ros/jazzy/setup.bash && MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros_extras --executor sequential" "Building mavros_extras (Step 2/3)"; then
     print_error "Failed to build mavros_extras. Exiting."
     exit 1
 fi
 
 # Build all remaining packages (Step 3/3)
-if ! build_with_retry "colcon build" "Building all remaining packages (Step 3/3)"; then
+if ! build_with_retry "source /opt/ros/jazzy/setup.bash && colcon build" "Building all remaining packages (Step 3/3)"; then
     print_error "Failed to build all packages. Exiting."
     exit 1
 fi

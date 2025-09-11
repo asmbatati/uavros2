@@ -34,6 +34,7 @@ setup(
             'execute_random_trajectories = uav_gz_sim.execute_random_trajectories_node:main',
             'tf_relay = uav_gz_sim.tf_relay:main',
             'trajectory_publisher = uav_gz_sim.gt_trajectory_publisher:main',
+            'adaptive_image_stitcher = uav_gz_sim.adaptive_image_stitcher:main',
         ],
     },
 )

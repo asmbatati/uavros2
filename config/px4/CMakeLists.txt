@@ -39,8 +39,6 @@ px4_add_romfs_files(
 	1012_gazebo-classic_iris_rplidar
 	1013_gazebo-classic_iris_vision
 	1013_gazebo-classic_iris_vision.post
-	1014_gazebo-classic_iris_obs_avoid
-	1014_gazebo-classic_iris_obs_avoid.post
 	1015_gazebo-classic_iris_depth_camera
 	1016_gazebo-classic_iris_downward_depth_camera
 	1017_gazebo-classic_iris_opt_flow_mockup
@@ -63,8 +61,6 @@ px4_add_romfs_files(
 	1043_gazebo-classic_standard_vtol_drop
 	1044_gazebo-classic_plane_lidar
 	1045_gazebo-classic_quadtailsitter
-	1060_gazebo-classic_rover
-	1061_gazebo-classic_r1_rover
 	1062_flightgear_tf-r1
 	1070_gazebo-classic_boat
 
