@@ -27,38 +27,29 @@ def _setup(context, *_args, **_kwargs):
     pkg_share = get_package_share_directory("uav_gz_sim")
     rviz_file = os.path.join(pkg_share, "rviz", "rviz_config.rviz")
 
-    # TF tree: static transforms that are sim-agnostic.
-    static_tfs = [
-        Node(
-            package="tf2_ros", name="map2global_tf_node",
-            executable="static_transform_publisher",
-            arguments=["0", "0", "0", "0", "0", "0", "global", "map"],
-            parameters=[{"use_sim_time": True}], output="log",
-        ),
-        Node(
-            package="tf2_ros", name="map2map_frd_tf_node",
-            executable="static_transform_publisher",
-            arguments=["0", "0", "0", "1.5708", "0", "1.5708", "map", "map_frd"],
-            parameters=[{"use_sim_time": True}], output="log",
-        ),
-        Node(
-            package="tf2_ros", name=f"map2px4_{ns}_tf_node",
-            executable="static_transform_publisher",
-            arguments=["0", "0", "0", "0", "0", "0", "map", odom],
-            parameters=[{"use_sim_time": True}], output="log",
-        ),
-        Node(
-            package="tf2_ros", name="front_lidar_tf_node",
+    # TF tree: static transforms that are sim-agnostic. The new-style
+    # named args (--x, --frame-id, ...) silence the "Old-style arguments
+    # are deprecated" warning from tf2_ros static_transform_publisher.
+    def _stp(name, x, y, z, yaw, pitch, roll, parent, child):
+        return Node(
+            package="tf2_ros", name=name,
             executable="static_transform_publisher",
             arguments=[
-                "0.0", "0.0", "-0.12",
-                str(math.radians(0)),
-                str(math.radians(90)),
-                str(math.radians(0)),
-                base, "front_lidar_link",
+                "--x", str(x), "--y", str(y), "--z", str(z),
+                "--yaw", str(yaw), "--pitch", str(pitch), "--roll", str(roll),
+                "--frame-id", parent, "--child-frame-id", child,
             ],
             parameters=[{"use_sim_time": True}], output="log",
-        ),
+        )
+
+    static_tfs = [
+        _stp("map2global_tf_node", 0, 0, 0, 0, 0, 0, "global", "map"),
+        _stp("map2map_frd_tf_node", 0, 0, 0, 1.5708, 0, 1.5708, "map", "map_frd"),
+        _stp(f"map2px4_{ns}_tf_node", 0, 0, 0, 0, 0, 0, "map", odom),
+        _stp("front_lidar_tf_node",
+             0.0, 0.0, -0.12,
+             math.radians(0), math.radians(90), math.radians(0),
+             base, "front_lidar_link"),
     ]
 
     # Dynamic odom -> base_link via tf_relay (MAVROS pose -> TF).

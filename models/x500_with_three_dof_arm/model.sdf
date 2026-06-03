@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Composed model: PX4 x500 quadcopter + custom 3-DOF arm.
+  Dimensions mirror arms/three_dof/urdf/three_dof.urdf.xacro.
+  Joint commands are routed through gz_ros2_control so ros2_control
+  controllers (joint_state_broadcaster, joint_trajectory_controller)
+  and MoveIt all see the standard hardware interface.
+-->
+<sdf version='1.9'>
+  <model name='x500_with_three_dof_arm'>
+
+    <!-- Bring in the bare quadrotor (base_link + 4 rotors + IMU) -->
+    <include merge='true'>
+      <uri>model://x500</uri>
+    </include>
+
+    <!-- ===== Arm: shoulder ===== -->
+    <link name='shoulder_link'>
+      <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
+      <inertial>
+        <mass>0.08</mass>
+        <pose>0 0 0.06 0 0 0</pose>
+        <inertia>
+          <ixx>1.04e-4</ixx><iyy>1.04e-4</iyy><izz>5.76e-6</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='shoulder_visual'>
+        <pose>0 0 0.06 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.8 0.3 0.3 1</ambient><diffuse>0.8 0.3 0.3 1</diffuse></material>
+      </visual>
+      <collision name='shoulder_collision'>
+        <pose>0 0 0.06 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='j_shoulder' type='revolute'>
+      <parent>base_link</parent>
+      <child>shoulder_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ===== Arm: upper ===== -->
+    <link name='upper_link'>
+      <pose relative_to='shoulder_link'>0 0 0.12 0 0 0</pose>
+      <inertial>
+        <mass>0.07</mass>
+        <pose>0 0 0.06 0 0 0</pose>
+        <inertia>
+          <ixx>9.1e-5</ixx><iyy>9.1e-5</iyy><izz>5.04e-6</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='upper_visual'>
+        <pose>0 0 0.06 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+        <material><ambient>0.3 0.8 0.3 1</ambient><diffuse>0.3 0.8 0.3 1</diffuse></material>
+      </visual>
+      <collision name='upper_collision'>
+        <pose>0 0 0.06 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='j_elbow' type='revolute'>
+      <parent>shoulder_link</parent>
+      <child>upper_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>1.5</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ===== Arm: forearm ===== -->
+    <link name='forearm_link'>
+      <pose relative_to='upper_link'>0 0 0.12 0 0 0</pose>
+      <inertial>
+        <mass>0.06</mass>
+        <pose>0 0 0.036 0 0 0</pose>
+        <inertia>
+          <ixx>2.81e-5</ixx><iyy>2.81e-5</iyy><izz>4.32e-6</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='forearm_visual'>
+        <pose>0 0 0.036 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.072</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.8 1</ambient><diffuse>0.3 0.3 0.8 1</diffuse></material>
+      </visual>
+      <collision name='forearm_collision'>
+        <pose>0 0 0.036 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.072</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='j_wrist' type='revolute'>
+      <parent>upper_link</parent>
+      <child>forearm_link</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>1.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+
+    <!-- ===== End effector (fixed) ===== -->
+    <link name='ee_link'>
+      <pose relative_to='forearm_link'>0 0 0.083 0 0 0</pose>
+      <inertial>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='ee_visual'>
+        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+        <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
+      </visual>
+      <collision name='ee_collision'>
+        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+      </collision>
+    </link>
+    <joint name='j_ee' type='fixed'>
+      <parent>forearm_link</parent>
+      <child>ee_link</child>
+    </joint>
+
+    <!-- ===== gz_ros2_control plugin =====
+         The plugin needs a URDF (not SDF) description of the joints
+         it controls. We point it at the runtime-generated URDF that
+         arm_control.launch.py loads via robot_state_publisher, and at
+         arms/three_dof/config/controllers.yaml for controller params.
+    -->
+    <plugin filename='libgz_ros2_control-system.so'
+            name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
+      <parameters>$(find uav_gz_sim)/arms/three_dof/config/controllers.yaml</parameters>
+      <robot_param>robot_description</robot_param>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+      <controller_manager_node_name>controller_manager</controller_manager_node_name>
+    </plugin>
+
+  </model>
+</sdf>

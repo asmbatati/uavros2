@@ -186,8 +186,12 @@ def _setup(context, *_args, **_kwargs):
             package="tf2_ros",
             name="front_lidar2gazebo_tf_node",
             executable="static_transform_publisher",
-            arguments=["0", "0", "0", "0", "0", "0",
-                       "front_lidar_link", gazebo_lidar_link],
+            arguments=[
+                "--x", "0", "--y", "0", "--z", "0",
+                "--yaw", "0", "--pitch", "0", "--roll", "0",
+                "--frame-id", "front_lidar_link",
+                "--child-frame-id", gazebo_lidar_link,
+            ],
             parameters=[{"use_sim_time": True}],
             output="log",
         ))

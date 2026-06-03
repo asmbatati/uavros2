@@ -1,0 +1,18 @@
+# MoveIt -> ros2_control bridge: tells move_group which action server to
+# hit for trajectory execution. Action name matches the one that
+# joint_trajectory_controller (configured in arms/three_dof/config/
+# controllers.yaml) exposes.
+
+moveit_simple_controller_manager:
+  controller_names:
+    - joint_trajectory_controller
+  joint_trajectory_controller:
+    type: FollowJointTrajectory
+    action_ns: follow_joint_trajectory
+    default: true
+    joints:
+      - j_shoulder
+      - j_elbow
+      - j_wrist
+
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager

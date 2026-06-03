@@ -12,7 +12,9 @@ joints:
   - j_elbow
   - j_wrist
 default_controller: joint_trajectory_controller
-moveit: false
+moveit: true
+moveit_group: arm
+moveit_ee_link: ee_link
 sims:
   gazebo: true
   webots: false

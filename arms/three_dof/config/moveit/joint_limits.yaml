@@ -1,0 +1,19 @@
+# Match arms/three_dof/urdf/three_dof.urdf.xacro joint limits.
+# MoveIt augments these with acceleration limits (not in URDF).
+
+joint_limits:
+  j_shoulder:
+    has_velocity_limits: true
+    max_velocity: 3.0
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  j_elbow:
+    has_velocity_limits: true
+    max_velocity: 3.0
+    has_acceleration_limits: true
+    max_acceleration: 5.0
+  j_wrist:
+    has_velocity_limits: true
+    max_velocity: 3.0
+    has_acceleration_limits: true
+    max_acceleration: 5.0

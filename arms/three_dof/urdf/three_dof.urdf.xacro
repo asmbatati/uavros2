@@ -104,4 +104,39 @@
     <collision><geometry><sphere radius="0.015"/></geometry></collision>
   </link>
 
+  <!--
+    ros2_control hardware interface. Same xacro is consumed by:
+    - Gazebo (via gz_ros2_control plugin in the composed model.sdf):
+      uses gz_ros2_control/GazeboSimSystem
+    - Other simulators / mock hardware: uses mock_components/GenericSystem
+    The xacro:arg `sim_mode` toggles between the two; defaults to gz.
+  -->
+  <xacro:arg name="sim_mode" default="gz"/>
+
+  <ros2_control name="three_dof_hw" type="system">
+    <hardware>
+      <xacro:if value="${'$(arg sim_mode)' == 'gz'}">
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </xacro:if>
+      <xacro:unless value="${'$(arg sim_mode)' == 'gz'}">
+        <plugin>mock_components/GenericSystem</plugin>
+      </xacro:unless>
+    </hardware>
+    <joint name="j_shoulder">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="j_elbow">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="j_wrist">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
 </robot>
