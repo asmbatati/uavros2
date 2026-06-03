@@ -2,13 +2,13 @@
 
 `uav_gz_sim` dispatches to one of six simulator backends via `simulator:=<name>` on the top-level launch. Status, scope, and install steps per backend:
 
-| Simulator | Status | UAVs supported | Arms supported | PX4 path |
+| Simulator | Status | UAVs supported | Arms supported | Control path |
 |---|---|---|---|---|
 | **gazebo** | **Working end-to-end** (PX4 + MAVROS + gz_ros2_control + MoveIt) | all x500 variants + 4 composed arm models | three_dof, openmanip_x, panda, ur5 (all with MoveIt) | PX4 SITL + MAVROS / uXRCE-DDS |
-| **webots** | Scaffolded (launch stub, x500 base only) | x500 (planned) | (none) | PX4 `make px4_sitl webots` (planned) |
-| **mujoco** | Scaffolded (launch stub, `sim_control_bridge` placeholder) | x500 (planned) | panda (planned, sweet spot) | none — `sim_control_bridge` |
+| **webots** | **Demo running** (upstream Crazyflie as x500 placeholder) | (Crazyflie demo) | — | sim_control_bridge (PX4 SITL Webots target was removed upstream) |
+| **mujoco** | **Demo running** (x500 MJCF + viewer + sim_control_bridge) | x500 | — | sim_control_bridge (rotor mixer + attitude PID; placeholder PID for now) |
 | **isaac** | Scaffolded (install pointer only) | — | — | PegasusSimulator (community) |
-| **pybullet** | Scaffolded (URDF loader + placeholder PID) | x500 (kinematic) | — | none — placeholder PID |
+| **pybullet** | Scaffolded (URDF loader + placeholder PID) | x500 (kinematic) | — | sim_control_bridge placeholder |
 | **genesis** | Stub | — | — | none |
 
 ## gazebo
@@ -39,27 +39,39 @@ The launch chain refactors today's `sim.launch.py` + `gz_sim.launch.py` + `mavro
 
 ## webots
 
-Working for x500 base only. Arm integration is left for a follow-up because `ros2_control` plugins for Webots are fiddly.
+Demo running today by wrapping the upstream `webots_ros2_crazyflie` launch: Webots opens with a Crazyflie quadrotor in the apartment world. The Crazyflie serves as a placeholder for the x500 until a real x500 PROTO is authored. **No PX4** — PX4 dropped its Webots simulator target upstream, so `sim_control_bridge` is the control path (same pattern as the MuJoCo backend).
 
 Requires:
-- Webots R2024a or newer
-- `ros-jazzy-webots-ros2`
-- PX4 SITL built with the `webots` simulator target: `cd $DEV_DIR/PX4-Autopilot && make px4_sitl webots`
+- Webots 2024a or newer (`/usr/local/bin/webots` on this machine)
+- `ros-jazzy-webots-ros2` (umbrella package including driver, importer, control, crazyflie demo)
 
 Launch:
 ```bash
-ros2 launch uav_gz_sim sim.launch.py simulator:=webots uav:=x500 world:=tugbot_depot
+ros2 launch uav_gz_sim sim.launch.py simulator:=webots
 ```
 
-Asset format: PROTO (generated from URDF via `webots_ros2_importer`). Note the Webots/Jazzy integration is sensitive to Webots version drift; pin to R2024a.
+The launch starts Webots + `webots_ros2_supervisor` + `webots_ros2_driver` for the Crazyflie + our `sim_control_bridge` (currently inert, since the Crazyflie driver publishes its own topics under the global namespace).
+
+Roadmap:
+- Author an x500 PROTO via `webots_ros2_importer urdf2proto` from the existing URDF/Xacro in `arms/three_dof/urdf/`.
+- Wire `webots_ros2_driver` to bridge that PROTO's sensors onto the canonical contract via `sensor_relay`.
+- Add `webots_ros2_control` integration for arm control once the x500 PROTO is in place.
 
 ## mujoco
 
-**Scaffolded.** Launch file calls `sim_control_bridge` with the
-MuJoCo adapter, but the rotor mixer + PID is a placeholder; no full
-demo yet. The intent: **No PX4** — `sim_control_bridge.py` will own
-rotor mixing + attitude PID and publish MAVROS-shaped state topics
-so downstream code is identical to the Gazebo path.
+Demo running today: launches `python3 -m mujoco.viewer` for the GUI plus `sim_control_bridge` (with the mujoco adapter) for ROS topic integration. **No PX4** — `sim_control_bridge.py` owns rotor mixing + attitude PID and publishes MAVROS-shaped state topics so downstream code is identical to the Gazebo path.
+
+Requires:
+- `pip install mujoco` (≥3.0)
+
+Launch:
+```bash
+ros2 launch uav_gz_sim sim.launch.py simulator:=mujoco uav:=x500
+```
+
+Assets: `models/x500/mjcf/x500.xml` is hand-authored — floating-base body, 4 thrust actuators (PX4 Quad-X rotor layout), IMU sensor, ground plane. Composed `x500_with_<arm>` MJCFs are follow-up work (could be regenerated from the URDFs via `scripts/convert/urdf_to_mjcf.py` once dm_control is installed).
+
+Known limitation: the viewer process and the `sim_control_bridge` adapter currently run independent physics instances (the viewer steps its own; the bridge steps its own). The viewer is for visual sanity-checking; the bridge owns the ROS-visible state. Synchronizing them — running the viewer in-process via `mujoco.viewer.launch_passive` — is a follow-up.
 
 Requires:
 - `pip install mujoco`

@@ -1,0 +1,110 @@
+<!--
+  Minimal MuJoCo XML for the x500 quadcopter, hand-authored to match
+  the PX4 stock x500 rough dimensions (arm length ~0.22 m, body mass
+  ~1.5 kg, rotor positions from PX4 airframe params CA_ROTOR0..3).
+
+  Floating-base 6-DoF joint at base_link; four thrust actuators (one
+  per rotor) that apply force along the body z-axis at each rotor
+  site. An IMU sensor at base_link reports orientation, gyro, and
+  linear acceleration. The world has a ground plane so the body can
+  rest / land on it without the arm-scaffold (arm is composed
+  separately in the x500_with_<arm> MJCFs - this is the bare base).
+
+  Rotor positions (PX4 Quad-X convention):
+    rotor0: ( +0.13, +0.22)   front-left,  CCW
+    rotor1: ( -0.13, -0.20)   rear-right,  CCW
+    rotor2: ( +0.13, -0.22)   front-right, CW
+    rotor3: ( -0.13, +0.20)   rear-left,   CW
+-->
+<mujoco model="x500">
+
+  <option timestep="0.002" gravity="0 0 -9.81" integrator="RK4"/>
+
+  <default>
+    <joint armature="0.001" damping="0.01"/>
+    <geom contype="1" conaffinity="1" friction="1.0 0.05 0.01"/>
+  </default>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7"
+             rgb2="0.7 0.9 1.0" width="256" height="256"/>
+    <texture name="ground_tex" type="2d" builtin="checker"
+             rgb1="0.2 0.2 0.2" rgb2="0.4 0.4 0.4"
+             width="200" height="200"/>
+    <material name="ground_mat" texture="ground_tex" texrepeat="40 40"
+              reflectance="0.2"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 5" dir="0 0 -1" castshadow="false"/>
+    <geom name="ground" type="plane" size="20 20 0.1"
+          material="ground_mat" rgba="0.5 0.5 0.5 1"/>
+
+    <body name="base_link" pos="0 0 0.3">
+      <freejoint/>
+      <inertial pos="0 0 0" mass="1.5"
+                diaginertia="0.029125 0.029125 0.055225"/>
+
+      <!-- visual + collision: rough x500 body box -->
+      <geom name="body_box" type="box" size="0.10 0.10 0.025"
+            rgba="0.2 0.2 0.2 1"/>
+      <geom name="arm_fl" type="capsule" fromto="0 0 0  0.13 0.22 0"
+            size="0.008" rgba="0.5 0.5 0.5 1"/>
+      <geom name="arm_fr" type="capsule" fromto="0 0 0  0.13 -0.22 0"
+            size="0.008" rgba="0.5 0.5 0.5 1"/>
+      <geom name="arm_rl" type="capsule" fromto="0 0 0 -0.13 0.20 0"
+            size="0.008" rgba="0.5 0.5 0.5 1"/>
+      <geom name="arm_rr" type="capsule" fromto="0 0 0 -0.13 -0.20 0"
+            size="0.008" rgba="0.5 0.5 0.5 1"/>
+
+      <!-- landing gear feet at z = -0.18 below base_link -->
+      <geom name="foot_fl" type="sphere" pos=" 0.13  0.13 -0.18"
+            size="0.012" rgba="0.1 0.1 0.1 1"/>
+      <geom name="foot_fr" type="sphere" pos=" 0.13 -0.13 -0.18"
+            size="0.012" rgba="0.1 0.1 0.1 1"/>
+      <geom name="foot_rl" type="sphere" pos="-0.13  0.13 -0.18"
+            size="0.012" rgba="0.1 0.1 0.1 1"/>
+      <geom name="foot_rr" type="sphere" pos="-0.13 -0.13 -0.18"
+            size="0.012" rgba="0.1 0.1 0.1 1"/>
+
+      <!-- rotor sites: where thrust actuators apply force -->
+      <site name="rotor0" pos=" 0.13  0.22 0.02" size="0.005"
+            rgba="1 0 0 0.5"/>
+      <site name="rotor1" pos="-0.13 -0.20 0.02" size="0.005"
+            rgba="0 1 0 0.5"/>
+      <site name="rotor2" pos=" 0.13 -0.22 0.02" size="0.005"
+            rgba="0 0 1 0.5"/>
+      <site name="rotor3" pos="-0.13  0.20 0.02" size="0.005"
+            rgba="1 1 0 0.5"/>
+
+      <!-- IMU site at body center -->
+      <site name="imu_site" pos="0 0 0" size="0.005"/>
+    </body>
+  </worldbody>
+
+  <!--
+    Four thrust actuators - one per rotor. ctrlrange [0,1] is the
+    normalized rotor command; gear maps it to a force (Newtons). With
+    gear=8, max thrust per rotor = 8 N, total = 32 N. Weight = 1.5 * 9.81
+    = 14.7 N, so 4 rotors at ~46% give hover.
+  -->
+  <actuator>
+    <general name="m0" site="rotor0" gear="0 0 8 0 0 0"
+             ctrlrange="0 1" dyntype="none"/>
+    <general name="m1" site="rotor1" gear="0 0 8 0 0 0"
+             ctrlrange="0 1" dyntype="none"/>
+    <general name="m2" site="rotor2" gear="0 0 8 0 0 0"
+             ctrlrange="0 1" dyntype="none"/>
+    <general name="m3" site="rotor3" gear="0 0 8 0 0 0"
+             ctrlrange="0 1" dyntype="none"/>
+  </actuator>
+
+  <sensor>
+    <framequat   name="imu_quat"  objtype="site" objname="imu_site"/>
+    <gyro        name="imu_gyro"  site="imu_site"/>
+    <accelerometer name="imu_acc" site="imu_site"/>
+    <framepos    name="base_pos"  objtype="site" objname="imu_site"/>
+    <framelinvel name="base_lvel" objtype="site" objname="imu_site"/>
+  </sensor>
+
+</mujoco>
