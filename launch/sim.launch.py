@@ -25,6 +25,7 @@ def _dispatch(context, *_args, **_kwargs):
     uav = LaunchConfiguration("uav").perform(context)
     world = LaunchConfiguration("world").perform(context)
     namespace = LaunchConfiguration("namespace").perform(context)
+    use_moveit = LaunchConfiguration("use_moveit").perform(context)
 
     if sim not in SUPPORTED_SIMS:
         raise RuntimeError(
@@ -78,6 +79,7 @@ def _dispatch(context, *_args, **_kwargs):
                 "arm": arm,
                 "namespace": namespace,
                 "simulator": sim,
+                "use_moveit": use_moveit,
             }.items(),
         )
         actions.append(arm_launch)
@@ -106,6 +108,11 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "namespace", default_value="drone",
             description="ROS namespace for canonical topics",
+        ),
+        DeclareLaunchArgument(
+            "use_moveit", default_value="false",
+            description="Launch MoveIt's move_group alongside the arm "
+                        "(requires arms/<arm>/config/moveit/ to exist).",
         ),
         OpaqueFunction(function=_dispatch),
     ])

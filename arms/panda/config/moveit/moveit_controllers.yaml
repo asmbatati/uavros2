@@ -1,0 +1,21 @@
+# MoveIt -> ros2_control bridge: tells move_group which action server to
+# hit for trajectory execution. Action name matches what
+# joint_trajectory_controller exposes.
+
+moveit_simple_controller_manager:
+  controller_names:
+    - joint_trajectory_controller
+  joint_trajectory_controller:
+    type: FollowJointTrajectory
+    action_ns: follow_joint_trajectory
+    default: true
+    joints:
+      - panda_joint1
+      - panda_joint2
+      - panda_joint3
+      - panda_joint4
+      - panda_joint5
+      - panda_joint6
+      - panda_joint7
+
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager

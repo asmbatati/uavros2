@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Semantic robot description for the panda scaffold arm.
+
+  Planning group "arm" covers all 7 joints. The base for IK is
+  base_link (the mount frame to the x500 in the composed model);
+  end-effector link is panda_hand.
+-->
+<robot name="panda">
+
+  <group name="arm">
+    <joint name="panda_joint1"/>
+    <joint name="panda_joint2"/>
+    <joint name="panda_joint3"/>
+    <joint name="panda_joint4"/>
+    <joint name="panda_joint5"/>
+    <joint name="panda_joint6"/>
+    <joint name="panda_joint7"/>
+  </group>
+
+  <end_effector name="ee" parent_link="panda_link7"
+                group="arm" parent_group="arm"/>
+
+  <group_state name="home" group="arm">
+    <joint name="panda_joint1" value="0"/>
+    <joint name="panda_joint2" value="0"/>
+    <joint name="panda_joint3" value="0"/>
+    <joint name="panda_joint4" value="0"/>
+    <joint name="panda_joint5" value="0"/>
+    <joint name="panda_joint6" value="0"/>
+    <joint name="panda_joint7" value="0"/>
+  </group_state>
+  <group_state name="reach" group="arm">
+    <joint name="panda_joint1" value="0.4"/>
+    <joint name="panda_joint2" value="-0.5"/>
+    <joint name="panda_joint3" value="0.3"/>
+    <joint name="panda_joint4" value="-1.2"/>
+    <joint name="panda_joint5" value="0.2"/>
+    <joint name="panda_joint6" value="1.0"/>
+    <joint name="panda_joint7" value="0.3"/>
+  </group_state>
+
+  <!-- Adjacent-link collision disables -->
+  <disable_collisions link1="base_link" link2="panda_link1" reason="Adjacent"/>
+  <disable_collisions link1="panda_link1" link2="panda_link2" reason="Adjacent"/>
+  <disable_collisions link1="panda_link2" link2="panda_link3" reason="Adjacent"/>
+  <disable_collisions link1="panda_link3" link2="panda_link4" reason="Adjacent"/>
+  <disable_collisions link1="panda_link4" link2="panda_link5" reason="Adjacent"/>
+  <disable_collisions link1="panda_link5" link2="panda_link6" reason="Adjacent"/>
+  <disable_collisions link1="panda_link6" link2="panda_link7" reason="Adjacent"/>
+  <disable_collisions link1="panda_link7" link2="panda_hand" reason="Adjacent"/>
+
+</robot>

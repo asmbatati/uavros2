@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Semantic robot description for the ur5 scaffold arm.
+
+  Planning group "arm" covers all 6 joints. The base for IK is
+  base_link (the mount frame to the x500 in the composed model);
+  end-effector link is tool0.
+-->
+<robot name="ur5">
+
+  <group name="arm">
+    <joint name="shoulder_pan_joint"/>
+    <joint name="shoulder_lift_joint"/>
+    <joint name="elbow_joint"/>
+    <joint name="wrist_1_joint"/>
+    <joint name="wrist_2_joint"/>
+    <joint name="wrist_3_joint"/>
+  </group>
+
+  <end_effector name="ee" parent_link="ur5_link6"
+                group="arm" parent_group="arm"/>
+
+  <group_state name="home" group="arm">
+    <joint name="shoulder_pan_joint" value="0"/>
+    <joint name="shoulder_lift_joint" value="0"/>
+    <joint name="elbow_joint" value="0"/>
+    <joint name="wrist_1_joint" value="0"/>
+    <joint name="wrist_2_joint" value="0"/>
+    <joint name="wrist_3_joint" value="0"/>
+  </group_state>
+  <group_state name="reach" group="arm">
+    <joint name="shoulder_pan_joint" value="0.5"/>
+    <joint name="shoulder_lift_joint" value="-1.0"/>
+    <joint name="elbow_joint" value="0.8"/>
+    <joint name="wrist_1_joint" value="-0.5"/>
+    <joint name="wrist_2_joint" value="0.3"/>
+    <joint name="wrist_3_joint" value="0.2"/>
+  </group_state>
+
+  <!-- Adjacent-link collision disables -->
+  <disable_collisions link1="base_link" link2="ur5_link1" reason="Adjacent"/>
+  <disable_collisions link1="ur5_link1" link2="ur5_link2" reason="Adjacent"/>
+  <disable_collisions link1="ur5_link2" link2="ur5_link3" reason="Adjacent"/>
+  <disable_collisions link1="ur5_link3" link2="ur5_link4" reason="Adjacent"/>
+  <disable_collisions link1="ur5_link4" link2="ur5_link5" reason="Adjacent"/>
+  <disable_collisions link1="ur5_link5" link2="ur5_link6" reason="Adjacent"/>
+  <disable_collisions link1="ur5_link6" link2="tool0" reason="Adjacent"/>
+
+</robot>
