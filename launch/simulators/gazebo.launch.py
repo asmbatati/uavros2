@@ -15,6 +15,8 @@ Owned topics (per the canonical contract):
 
 import os
 import math
+import shutil
+import tempfile
 from launch import LaunchDescription
 from launch.actions import (
     IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction,
@@ -26,6 +28,49 @@ from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from ament_index_python import get_package_share_directory
+
+
+def _materialize_live_models(pkg_share: str) -> str:
+    """Write a "live" copy of every composed arm model with markers substituted.
+
+    The composed arm SDFs reference controllers.yaml via the marker
+    @UAV_GZ_SIM_PKG_SHARE@ because gz_ros2_control's <parameters> tag
+    accepts only literal paths (no $(find ...), no package:// URI).
+    Returns the directory to prepend to GZ_SIM_RESOURCE_PATH so Gazebo
+    finds the substituted copies instead of the in-tree ones.
+    """
+    live_dir = os.path.join(
+        tempfile.gettempdir(), f"uav_gz_sim_live_models_{os.getuid()}"
+    )
+    src_models_dir = os.path.join(pkg_share, "models")
+    if not os.path.isdir(src_models_dir):
+        return live_dir
+
+    substitutions = {"@UAV_GZ_SIM_PKG_SHARE@": pkg_share}
+
+    for model in os.listdir(src_models_dir):
+        src = os.path.join(src_models_dir, model)
+        if not os.path.isdir(src):
+            continue
+        sdf_path = os.path.join(src, "model.sdf")
+        if not os.path.isfile(sdf_path):
+            continue
+        # Only materialize models that actually use a marker — cheap check
+        # so we don't bloat the temp dir with copies of stock UAVs.
+        with open(sdf_path) as f:
+            text = f.read()
+        if not any(marker in text for marker in substitutions):
+            continue
+
+        dst = os.path.join(live_dir, model)
+        shutil.rmtree(dst, ignore_errors=True)
+        shutil.copytree(src, dst)
+        for marker, value in substitutions.items():
+            text = text.replace(marker, value)
+        with open(os.path.join(dst, "model.sdf"), "w") as f:
+            f.write(text)
+
+    return live_dir
 
 
 # Map UAV model name -> default PX4 airframe ID.
@@ -98,6 +143,19 @@ def _setup(context, *_args, **_kwargs):
     uav = LaunchConfiguration("uav").perform(context)
     world = LaunchConfiguration("world").perform(context)
     ns = LaunchConfiguration("namespace").perform(context)
+
+    # Materialize substituted-marker SDFs into a temp dir and prepend it
+    # to GZ_SIM_RESOURCE_PATH so PX4/Gazebo finds these instead of the
+    # raw in-tree ones (whose <parameters> still contains @MARKER@).
+    pkg_share_early = get_package_share_directory("uav_gz_sim")
+    live_models_dir = _materialize_live_models(pkg_share_early)
+    existing_resource = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
+    resource_path_value = (
+        f"{live_models_dir}:{existing_resource}" if existing_resource else live_models_dir
+    )
+    set_resource_path = SetEnvironmentVariable(
+        name="GZ_SIM_RESOURCE_PATH", value=resource_path_value
+    )
 
     airframe = UAV_AIRFRAME.get(uav)
     if airframe is None:
@@ -194,7 +252,8 @@ def _setup(context, *_args, **_kwargs):
 
     # Gazebo-specific TF: connect Gazebo's sensor link to our canonical front_lidar_link.
     # Only emit when the UAV actually has a 3D LiDAR.
-    actions = [kill_stale, after_kill]
+    # set_resource_path must come first so child processes inherit it.
+    actions = [set_resource_path, kill_stale, after_kill]
     if "3d_lidar" in uav or "velodyne" in uav:
         gazebo_lidar_link = f"{uav}_{instance}/lidar3d_link/velodyne_16"
         actions.append(Node(

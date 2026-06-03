@@ -139,9 +139,15 @@
          arm_control.launch.py loads via robot_state_publisher, and at
          arms/three_dof/config/controllers.yaml for controller params.
     -->
+    <!--
+      @UAV_GZ_SIM_PKG_SHARE@ is substituted at launch time by
+      simulators/gazebo.launch.py to point at the installed package
+      share dir (gz_ros2_control does not expand $(find ...) or
+      package:// URIs in <parameters>).
+    -->
     <plugin filename='libgz_ros2_control-system.so'
             name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
-      <parameters>$(find uav_gz_sim)/arms/three_dof/config/controllers.yaml</parameters>
+      <parameters>@UAV_GZ_SIM_PKG_SHARE@/arms/three_dof/config/controllers.yaml</parameters>
       <robot_param>robot_description</robot_param>
       <robot_param_node>robot_state_publisher</robot_param_node>
       <controller_manager_node_name>controller_manager</controller_manager_node_name>
