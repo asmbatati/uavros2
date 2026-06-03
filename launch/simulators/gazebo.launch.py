@@ -18,8 +18,9 @@ import math
 from launch import LaunchDescription
 from launch.actions import (
     IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction,
-    SetEnvironmentVariable, ExecuteProcess,
+    SetEnvironmentVariable, ExecuteProcess, RegisterEventHandler,
 )
+from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
@@ -180,9 +181,20 @@ def _setup(context, *_args, **_kwargs):
     # PX4 detects an existing headless server and won't spawn one), bring
     # back the TimerAction below.
 
+    # Sequence: kill_stale must FINISH before PX4/MAVROS/bridge start.
+    # ROS 2 launch runs LaunchDescription actions in parallel by default,
+    # so just appending in order is not enough — without the event handler,
+    # `pkill -9 -x px4` would race with and SIGKILL the brand-new PX4.
+    after_kill = RegisterEventHandler(
+        OnProcessExit(
+            target_action=kill_stale,
+            on_exit=[gz_launch, mavros_launch, ros_gz_bridge],
+        )
+    )
+
     # Gazebo-specific TF: connect Gazebo's sensor link to our canonical front_lidar_link.
     # Only emit when the UAV actually has a 3D LiDAR.
-    actions = [kill_stale, gz_launch, mavros_launch, ros_gz_bridge]
+    actions = [kill_stale, after_kill]
     if "3d_lidar" in uav or "velodyne" in uav:
         gazebo_lidar_link = f"{uav}_{instance}/lidar3d_link/velodyne_16"
         actions.append(Node(
