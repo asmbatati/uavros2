@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<!--
+  Scaffold URDF/Xacro for the panda arm: cylinder chain with the upstream
+  arm's joint names. Pairs with models/x500_with_panda/model.sdf so
+  ros2_control sees the same kinematics in Gazebo.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
+
+  <xacro:macro name="scaffold_link" params="name color_r color_g color_b">
+    <link name="${name}">
+      <inertial>
+        <mass value="0.3"/>
+        <origin xyz="0 0 0.0500" rpy="0 0 0"/>
+        <inertia ixx="2.692000e-04" iyy="2.692000e-04" izz="3.840000e-05"
+                 ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0.0500" rpy="0 0 0"/>
+        <geometry><cylinder radius="0.016" length="0.1"/></geometry>
+        <material name="${name}_mat"><color rgba="${color_r} ${color_g} ${color_b} 1"/></material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0.0500" rpy="0 0 0"/>
+        <geometry><cylinder radius="0.016" length="0.1"/></geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <link name="base_link"/>
+
+  <xacro:scaffold_link name="panda_link1" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint1" type="revolute">
+    <parent link="base_link"/>
+    <child link="panda_link1"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="panda_link2" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint2" type="revolute">
+    <parent link="panda_link1"/>
+    <child link="panda_link2"/>
+    <origin xyz="0 0 0.1000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="panda_link3" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint3" type="revolute">
+    <parent link="panda_link2"/>
+    <child link="panda_link3"/>
+    <origin xyz="0 0 0.1000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="panda_link4" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint4" type="revolute">
+    <parent link="panda_link3"/>
+    <child link="panda_link4"/>
+    <origin xyz="0 0 0.1000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="panda_link5" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint5" type="revolute">
+    <parent link="panda_link4"/>
+    <child link="panda_link5"/>
+    <origin xyz="0 0 0.1000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="panda_link6" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint6" type="revolute">
+    <parent link="panda_link5"/>
+    <child link="panda_link6"/>
+    <origin xyz="0 0 0.1000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="panda_link7" color_r="0.9" color_g="0.9" color_b="0.9"/>
+  <joint name="panda_joint7" type="revolute">
+    <parent link="panda_link6"/>
+    <child link="panda_link7"/>
+    <origin xyz="0 0 0.1000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+  <link name="panda_hand">
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <geometry><sphere radius="0.018"/></geometry>
+      <material name="ee_mat"><color rgba="1 1 0 1"/></material>
+    </visual>
+    <collision><geometry><sphere radius="0.018"/></geometry></collision>
+  </link>
+  <joint name="j_ee" type="fixed">
+    <parent link="panda_link7"/>
+    <child link="panda_hand"/>
+    <origin xyz="0 0 0.1100" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:arg name="sim_mode" default="gz"/>
+  <ros2_control name="panda_hw" type="system">
+    <hardware>
+      <xacro:if value="${'$(arg sim_mode)' == 'gz'}">
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </xacro:if>
+      <xacro:unless value="${'$(arg sim_mode)' == 'gz'}">
+        <plugin>mock_components/GenericSystem</plugin>
+      </xacro:unless>
+    </hardware>
+    <joint name="panda_joint1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="panda_joint2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="panda_joint3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="panda_joint4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="panda_joint5">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="panda_joint6">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="panda_joint7">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+</robot>

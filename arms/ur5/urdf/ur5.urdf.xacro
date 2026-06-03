@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<!--
+  Scaffold URDF/Xacro for the ur5 arm: cylinder chain with the upstream
+  arm's joint names. Pairs with models/x500_with_ur5/model.sdf so
+  ros2_control sees the same kinematics in Gazebo.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="ur5">
+
+  <xacro:macro name="scaffold_link" params="name color_r color_g color_b">
+    <link name="${name}">
+      <inertial>
+        <mass value="0.4"/>
+        <origin xyz="0 0 0.0600" rpy="0 0 0"/>
+        <inertia ixx="5.124000e-04" iyy="5.124000e-04" izz="6.480000e-05"
+                 ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0.0600" rpy="0 0 0"/>
+        <geometry><cylinder radius="0.018" length="0.12"/></geometry>
+        <material name="${name}_mat"><color rgba="${color_r} ${color_g} ${color_b} 1"/></material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0.0600" rpy="0 0 0"/>
+        <geometry><cylinder radius="0.018" length="0.12"/></geometry>
+      </collision>
+    </link>
+  </xacro:macro>
+
+  <link name="base_link"/>
+
+  <xacro:scaffold_link name="ur5_link1" color_r="0.2" color_g="0.2" color_b="0.2"/>
+  <joint name="shoulder_pan_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="ur5_link1"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="ur5_link2" color_r="0.5" color_g="0.5" color_b="0.5"/>
+  <joint name="shoulder_lift_joint" type="revolute">
+    <parent link="ur5_link1"/>
+    <child link="ur5_link2"/>
+    <origin xyz="0 0 0.1200" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="ur5_link3" color_r="0.2" color_g="0.2" color_b="0.2"/>
+  <joint name="elbow_joint" type="revolute">
+    <parent link="ur5_link2"/>
+    <child link="ur5_link3"/>
+    <origin xyz="0 0 0.1200" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="ur5_link4" color_r="0.5" color_g="0.5" color_b="0.5"/>
+  <joint name="wrist_1_joint" type="revolute">
+    <parent link="ur5_link3"/>
+    <child link="ur5_link4"/>
+    <origin xyz="0 0 0.1200" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="ur5_link5" color_r="0.2" color_g="0.2" color_b="0.2"/>
+  <joint name="wrist_2_joint" type="revolute">
+    <parent link="ur5_link4"/>
+    <child link="ur5_link5"/>
+    <origin xyz="0 0 0.1200" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+  <xacro:scaffold_link name="ur5_link6" color_r="0.5" color_g="0.5" color_b="0.5"/>
+  <joint name="wrist_3_joint" type="revolute">
+    <parent link="ur5_link5"/>
+    <child link="ur5_link6"/>
+    <origin xyz="0 0 0.1200" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+  <link name="tool0">
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <geometry><sphere radius="0.018"/></geometry>
+      <material name="ee_mat"><color rgba="1 1 0 1"/></material>
+    </visual>
+    <collision><geometry><sphere radius="0.018"/></geometry></collision>
+  </link>
+  <joint name="j_ee" type="fixed">
+    <parent link="ur5_link6"/>
+    <child link="tool0"/>
+    <origin xyz="0 0 0.1300" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:arg name="sim_mode" default="gz"/>
+  <ros2_control name="ur5_hw" type="system">
+    <hardware>
+      <xacro:if value="${'$(arg sim_mode)' == 'gz'}">
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+      </xacro:if>
+      <xacro:unless value="${'$(arg sim_mode)' == 'gz'}">
+        <plugin>mock_components/GenericSystem</plugin>
+      </xacro:unless>
+    </hardware>
+    <joint name="shoulder_pan_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="shoulder_lift_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="elbow_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wrist_1_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wrist_2_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="wrist_3_joint">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+</robot>

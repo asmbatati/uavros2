@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Composed model: PX4 x500 quadcopter + scaffold panda arm.
+  This is a cylinder-chain scaffold matching arms/panda/config/
+  controllers.yaml joint names, NOT the real panda kinematics. It
+  lets `arm:=panda` spawn and respond to ros2_control commands today;
+  real meshes / inertias can be back-filled by overwriting this SDF
+  later with one generated from the upstream description package.
+  Joint commands routed through gz_ros2_control (see plugin below).
+-->
+<sdf version='1.9'>
+  <model name='x500_with_panda'>
+
+    <include merge='true'>
+      <uri>model://x500</uri>
+    </include>
+
+    <link name='panda_link1'>
+      <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link1_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link1_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint1' type='revolute'>
+      <parent>base_link</parent>
+      <child>panda_link1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_link2'>
+      <pose relative_to='panda_link1'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link2_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link2_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint2' type='revolute'>
+      <parent>panda_link1</parent>
+      <child>panda_link2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_link3'>
+      <pose relative_to='panda_link2'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link3_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link3_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint3' type='revolute'>
+      <parent>panda_link2</parent>
+      <child>panda_link3</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_link4'>
+      <pose relative_to='panda_link3'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link4_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link4_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint4' type='revolute'>
+      <parent>panda_link3</parent>
+      <child>panda_link4</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_link5'>
+      <pose relative_to='panda_link4'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link5_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link5_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint5' type='revolute'>
+      <parent>panda_link4</parent>
+      <child>panda_link5</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_link6'>
+      <pose relative_to='panda_link5'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link6_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link6_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint6' type='revolute'>
+      <parent>panda_link5</parent>
+      <child>panda_link6</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_link7'>
+      <pose relative_to='panda_link6'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.3</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_link7_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
+      </visual>
+      <collision name='panda_link7_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='panda_joint7' type='revolute'>
+      <parent>panda_link6</parent>
+      <child>panda_link7</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='panda_hand'>
+      <pose relative_to='panda_link7'>0 0 0.1100 0 0 0</pose>
+      <inertial>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='panda_hand_visual'>
+        <geometry><sphere><radius>0.018</radius></sphere></geometry>
+        <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
+      </visual>
+      <collision name='panda_hand_collision'>
+        <geometry><sphere><radius>0.018</radius></sphere></geometry>
+      </collision>
+    </link>
+    <joint name='j_ee' type='fixed'>
+      <parent>panda_link7</parent>
+      <child>panda_hand</child>
+    </joint>
+
+    <plugin filename='libgz_ros2_control-system.so'
+            name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
+      <parameters>@UAV_GZ_SIM_PKG_SHARE@/arms/panda/config/controllers.yaml</parameters>
+      <robot_param>robot_description</robot_param>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+      <controller_manager_node_name>controller_manager</controller_manager_node_name>
+      <ros>
+        <namespace>@UAV_GZ_SIM_NAMESPACE@</namespace>
+      </ros>
+    </plugin>
+
+  </model>
+</sdf>

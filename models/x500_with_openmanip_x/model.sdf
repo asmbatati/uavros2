@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Composed model: PX4 x500 quadcopter + scaffold openmanip_x arm.
+  This is a cylinder-chain scaffold matching arms/openmanip_x/config/
+  controllers.yaml joint names, NOT the real openmanip_x kinematics. It
+  lets `arm:=openmanip_x` spawn and respond to ros2_control commands today;
+  real meshes / inertias can be back-filled by overwriting this SDF
+  later with one generated from the upstream description package.
+  Joint commands routed through gz_ros2_control (see plugin below).
+-->
+<sdf version='1.9'>
+  <model name='x500_with_openmanip_x'>
+
+    <include merge='true'>
+      <uri>model://x500</uri>
+    </include>
+
+    <link name='openmanip_x_link1'>
+      <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='openmanip_x_link1_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.8 0.3 0.3 1</ambient><diffuse>0.8 0.3 0.3 1</diffuse></material>
+      </visual>
+      <collision name='openmanip_x_link1_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='joint1' type='revolute'>
+      <parent>base_link</parent>
+      <child>openmanip_x_link1</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='openmanip_x_link2'>
+      <pose relative_to='openmanip_x_link1'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='openmanip_x_link2_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.3 0.8 0.3 1</ambient><diffuse>0.3 0.8 0.3 1</diffuse></material>
+      </visual>
+      <collision name='openmanip_x_link2_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='joint2' type='revolute'>
+      <parent>openmanip_x_link1</parent>
+      <child>openmanip_x_link2</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='openmanip_x_link3'>
+      <pose relative_to='openmanip_x_link2'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='openmanip_x_link3_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.8 1</ambient><diffuse>0.3 0.3 0.8 1</diffuse></material>
+      </visual>
+      <collision name='openmanip_x_link3_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='joint3' type='revolute'>
+      <parent>openmanip_x_link2</parent>
+      <child>openmanip_x_link3</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='openmanip_x_link4'>
+      <pose relative_to='openmanip_x_link3'>0 0 0.1000 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <inertia>
+          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='openmanip_x_link4_visual'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <material><ambient>0.8 0.8 0.3 1</ambient><diffuse>0.8 0.8 0.3 1</diffuse></material>
+      </visual>
+      <collision name='openmanip_x_link4_collision'>
+        <pose>0 0 0.0500 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+      </collision>
+    </link>
+    <joint name='joint4' type='revolute'>
+      <parent>openmanip_x_link3</parent>
+      <child>openmanip_x_link4</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-3.14159</lower><upper>3.14159</upper>
+               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='end_effector_link'>
+      <pose relative_to='openmanip_x_link4'>0 0 0.1100 0 0 0</pose>
+      <inertial>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='end_effector_link_visual'>
+        <geometry><sphere><radius>0.018</radius></sphere></geometry>
+        <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
+      </visual>
+      <collision name='end_effector_link_collision'>
+        <geometry><sphere><radius>0.018</radius></sphere></geometry>
+      </collision>
+    </link>
+    <joint name='j_ee' type='fixed'>
+      <parent>openmanip_x_link4</parent>
+      <child>end_effector_link</child>
+    </joint>
+
+    <plugin filename='libgz_ros2_control-system.so'
+            name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
+      <parameters>@UAV_GZ_SIM_PKG_SHARE@/arms/openmanip_x/config/controllers.yaml</parameters>
+      <robot_param>robot_description</robot_param>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+      <controller_manager_node_name>controller_manager</controller_manager_node_name>
+      <ros>
+        <namespace>@UAV_GZ_SIM_NAMESPACE@</namespace>
+      </ros>
+    </plugin>
+
+  </model>
+</sdf>
