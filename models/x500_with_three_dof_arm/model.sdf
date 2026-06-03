@@ -2,6 +2,9 @@
 <!--
   Composed model: PX4 x500 quadcopter + custom 3-DOF arm.
   Dimensions mirror arms/three_dof/urdf/three_dof.urdf.xacro.
+  Total arm drop below base_link is 0.05 mount + 3 x 0.04 segment +
+  0.015 ee sphere = 0.185 m, which keeps the EE above the x500
+  landing gear feet at z = -0.2195 m.
   Joint commands are routed through gz_ros2_control so ros2_control
   controllers (joint_state_broadcaster, joint_trajectory_controller)
   and MoveIt all see the standard hardware interface.
@@ -18,21 +21,21 @@
     <link name='shoulder_link'>
       <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
       <inertial>
-        <mass>0.08</mass>
-        <pose>0 0 0.06 0 0 0</pose>
+        <mass>0.04</mass>
+        <pose>0 0 0.02 0 0 0</pose>
         <inertia>
-          <ixx>1.04e-4</ixx><iyy>1.04e-4</iyy><izz>5.76e-6</izz>
+          <ixx>6.00e-6</ixx><iyy>6.00e-6</iyy><izz>1.28e-6</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='shoulder_visual'>
-        <pose>0 0 0.06 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.02 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.04</length></cylinder></geometry>
         <material><ambient>0.8 0.3 0.3 1</ambient><diffuse>0.8 0.3 0.3 1</diffuse></material>
       </visual>
       <collision name='shoulder_collision'>
-        <pose>0 0 0.06 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.02 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.04</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='j_shoulder' type='revolute'>
@@ -48,23 +51,23 @@
 
     <!-- ===== Arm: upper ===== -->
     <link name='upper_link'>
-      <pose relative_to='shoulder_link'>0 0 0.12 0 0 0</pose>
+      <pose relative_to='shoulder_link'>0 0 0.04 0 0 0</pose>
       <inertial>
-        <mass>0.07</mass>
-        <pose>0 0 0.06 0 0 0</pose>
+        <mass>0.035</mass>
+        <pose>0 0 0.02 0 0 0</pose>
         <inertia>
-          <ixx>9.1e-5</ixx><iyy>9.1e-5</iyy><izz>5.04e-6</izz>
+          <ixx>5.25e-6</ixx><iyy>5.25e-6</iyy><izz>1.12e-6</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='upper_visual'>
-        <pose>0 0 0.06 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.02 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.04</length></cylinder></geometry>
         <material><ambient>0.3 0.8 0.3 1</ambient><diffuse>0.3 0.8 0.3 1</diffuse></material>
       </visual>
       <collision name='upper_collision'>
-        <pose>0 0 0.06 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.02 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.04</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='j_elbow' type='revolute'>
@@ -80,23 +83,23 @@
 
     <!-- ===== Arm: forearm ===== -->
     <link name='forearm_link'>
-      <pose relative_to='upper_link'>0 0 0.12 0 0 0</pose>
+      <pose relative_to='upper_link'>0 0 0.04 0 0 0</pose>
       <inertial>
-        <mass>0.06</mass>
-        <pose>0 0 0.036 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.02 0 0 0</pose>
         <inertia>
-          <ixx>2.81e-5</ixx><iyy>2.81e-5</iyy><izz>4.32e-6</izz>
+          <ixx>4.50e-6</ixx><iyy>4.50e-6</iyy><izz>9.60e-7</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='forearm_visual'>
-        <pose>0 0 0.036 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.072</length></cylinder></geometry>
+        <pose>0 0 0.02 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.04</length></cylinder></geometry>
         <material><ambient>0.3 0.3 0.8 1</ambient><diffuse>0.3 0.3 0.8 1</diffuse></material>
       </visual>
       <collision name='forearm_collision'>
-        <pose>0 0 0.036 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.072</length></cylinder></geometry>
+        <pose>0 0 0.02 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.04</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='j_wrist' type='revolute'>
@@ -112,20 +115,20 @@
 
     <!-- ===== End effector (fixed) ===== -->
     <link name='ee_link'>
-      <pose relative_to='forearm_link'>0 0 0.083 0 0 0</pose>
+      <pose relative_to='forearm_link'>0 0 0.05 0 0 0</pose>
       <inertial>
-        <mass>0.02</mass>
+        <mass>0.015</mass>
         <inertia>
-          <ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz>
+          <ixx>5e-6</ixx><iyy>5e-6</iyy><izz>5e-6</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ee_visual'>
-        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+        <geometry><sphere><radius>0.012</radius></sphere></geometry>
         <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
       </visual>
       <collision name='ee_collision'>
-        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+        <geometry><sphere><radius>0.012</radius></sphere></geometry>
       </collision>
     </link>
     <joint name='j_ee' type='fixed'>
@@ -133,12 +136,6 @@
       <child>ee_link</child>
     </joint>
 
-    <!-- ===== gz_ros2_control plugin =====
-         The plugin needs a URDF (not SDF) description of the joints
-         it controls. We point it at the runtime-generated URDF that
-         arm_control.launch.py loads via robot_state_publisher, and at
-         arms/three_dof/config/controllers.yaml for controller params.
-    -->
     <!--
       Two markers are substituted at launch time by
       simulators/gazebo.launch.py (gz_ros2_control does not expand

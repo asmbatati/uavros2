@@ -18,21 +18,21 @@
     <link name='ur5_link1'>
       <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
       <inertial>
-        <mass>0.4</mass>
-        <pose>0 0 0.0600 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.0110 0 0 0</pose>
         <inertia>
-          <ixx>5.124000e-04</ixx><iyy>5.124000e-04</iyy><izz>6.480000e-05</izz>
+          <ixx>1.817500e-06</ixx><iyy>1.817500e-06</iyy><izz>1.215000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ur5_link1_visual'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
         <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
       </visual>
       <collision name='ur5_link1_collision'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='shoulder_pan_joint' type='revolute'>
@@ -46,23 +46,23 @@
       </axis>
     </joint>
     <link name='ur5_link2'>
-      <pose relative_to='ur5_link1'>0 0 0.1200 0 0 0</pose>
+      <pose relative_to='ur5_link1'>0 0 0.0220 0 0 0</pose>
       <inertial>
-        <mass>0.4</mass>
-        <pose>0 0 0.0600 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.0110 0 0 0</pose>
         <inertia>
-          <ixx>5.124000e-04</ixx><iyy>5.124000e-04</iyy><izz>6.480000e-05</izz>
+          <ixx>1.817500e-06</ixx><iyy>1.817500e-06</iyy><izz>1.215000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ur5_link2_visual'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
         <material><ambient>0.5 0.5 0.5 1</ambient><diffuse>0.5 0.5 0.5 1</diffuse></material>
       </visual>
       <collision name='ur5_link2_collision'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='shoulder_lift_joint' type='revolute'>
@@ -76,23 +76,23 @@
       </axis>
     </joint>
     <link name='ur5_link3'>
-      <pose relative_to='ur5_link2'>0 0 0.1200 0 0 0</pose>
+      <pose relative_to='ur5_link2'>0 0 0.0220 0 0 0</pose>
       <inertial>
-        <mass>0.4</mass>
-        <pose>0 0 0.0600 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.0110 0 0 0</pose>
         <inertia>
-          <ixx>5.124000e-04</ixx><iyy>5.124000e-04</iyy><izz>6.480000e-05</izz>
+          <ixx>1.817500e-06</ixx><iyy>1.817500e-06</iyy><izz>1.215000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ur5_link3_visual'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
         <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
       </visual>
       <collision name='ur5_link3_collision'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='elbow_joint' type='revolute'>
@@ -106,23 +106,23 @@
       </axis>
     </joint>
     <link name='ur5_link4'>
-      <pose relative_to='ur5_link3'>0 0 0.1200 0 0 0</pose>
+      <pose relative_to='ur5_link3'>0 0 0.0220 0 0 0</pose>
       <inertial>
-        <mass>0.4</mass>
-        <pose>0 0 0.0600 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.0110 0 0 0</pose>
         <inertia>
-          <ixx>5.124000e-04</ixx><iyy>5.124000e-04</iyy><izz>6.480000e-05</izz>
+          <ixx>1.817500e-06</ixx><iyy>1.817500e-06</iyy><izz>1.215000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ur5_link4_visual'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
         <material><ambient>0.5 0.5 0.5 1</ambient><diffuse>0.5 0.5 0.5 1</diffuse></material>
       </visual>
       <collision name='ur5_link4_collision'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='wrist_1_joint' type='revolute'>
@@ -136,23 +136,23 @@
       </axis>
     </joint>
     <link name='ur5_link5'>
-      <pose relative_to='ur5_link4'>0 0 0.1200 0 0 0</pose>
+      <pose relative_to='ur5_link4'>0 0 0.0220 0 0 0</pose>
       <inertial>
-        <mass>0.4</mass>
-        <pose>0 0 0.0600 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.0110 0 0 0</pose>
         <inertia>
-          <ixx>5.124000e-04</ixx><iyy>5.124000e-04</iyy><izz>6.480000e-05</izz>
+          <ixx>1.817500e-06</ixx><iyy>1.817500e-06</iyy><izz>1.215000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ur5_link5_visual'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
         <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.2 0.2 0.2 1</diffuse></material>
       </visual>
       <collision name='ur5_link5_collision'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='wrist_2_joint' type='revolute'>
@@ -166,23 +166,23 @@
       </axis>
     </joint>
     <link name='ur5_link6'>
-      <pose relative_to='ur5_link5'>0 0 0.1200 0 0 0</pose>
+      <pose relative_to='ur5_link5'>0 0 0.0220 0 0 0</pose>
       <inertial>
-        <mass>0.4</mass>
-        <pose>0 0 0.0600 0 0 0</pose>
+        <mass>0.03</mass>
+        <pose>0 0 0.0110 0 0 0</pose>
         <inertia>
-          <ixx>5.124000e-04</ixx><iyy>5.124000e-04</iyy><izz>6.480000e-05</izz>
+          <ixx>1.817500e-06</ixx><iyy>1.817500e-06</iyy><izz>1.215000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='ur5_link6_visual'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
         <material><ambient>0.5 0.5 0.5 1</ambient><diffuse>0.5 0.5 0.5 1</diffuse></material>
       </visual>
       <collision name='ur5_link6_collision'>
-        <pose>0 0 0.0600 0 0 0</pose>
-        <geometry><cylinder><radius>0.018</radius><length>0.12</length></cylinder></geometry>
+        <pose>0 0 0.0110 0 0 0</pose>
+        <geometry><cylinder><radius>0.009</radius><length>0.022</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='wrist_3_joint' type='revolute'>
@@ -196,7 +196,7 @@
       </axis>
     </joint>
     <link name='tool0'>
-      <pose relative_to='ur5_link6'>0 0 0.1300 0 0 0</pose>
+      <pose relative_to='ur5_link6'>0 0 0.0320 0 0 0</pose>
       <inertial>
         <mass>0.02</mass>
         <inertia>

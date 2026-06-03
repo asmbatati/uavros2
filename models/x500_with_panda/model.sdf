@@ -18,21 +18,21 @@
     <link name='panda_link1'>
       <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link1_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link1_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint1' type='revolute'>
@@ -46,23 +46,23 @@
       </axis>
     </joint>
     <link name='panda_link2'>
-      <pose relative_to='panda_link1'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='panda_link1'>0 0 0.0190 0 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link2_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link2_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint2' type='revolute'>
@@ -76,23 +76,23 @@
       </axis>
     </joint>
     <link name='panda_link3'>
-      <pose relative_to='panda_link2'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='panda_link2'>0 0 0.0190 0 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link3_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link3_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint3' type='revolute'>
@@ -106,23 +106,23 @@
       </axis>
     </joint>
     <link name='panda_link4'>
-      <pose relative_to='panda_link3'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='panda_link3'>0 0 0.0190 0 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link4_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link4_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint4' type='revolute'>
@@ -136,23 +136,23 @@
       </axis>
     </joint>
     <link name='panda_link5'>
-      <pose relative_to='panda_link4'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='panda_link4'>0 0 0.0190 0 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link5_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link5_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint5' type='revolute'>
@@ -166,23 +166,23 @@
       </axis>
     </joint>
     <link name='panda_link6'>
-      <pose relative_to='panda_link5'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='panda_link5'>0 0 0.0190 0 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link6_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link6_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint6' type='revolute'>
@@ -196,23 +196,23 @@
       </axis>
     </joint>
     <link name='panda_link7'>
-      <pose relative_to='panda_link6'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='panda_link6'>0 0 0.0190 0 0 0</pose>
       <inertial>
-        <mass>0.3</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.025</mass>
+        <pose>0 0 0.0095 0 0 0</pose>
         <inertia>
-          <ixx>2.692000e-04</ixx><iyy>2.692000e-04</iyy><izz>3.840000e-05</izz>
+          <ixx>1.152083e-06</ixx><iyy>1.152083e-06</iyy><izz>8.000000e-07</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='panda_link7_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
         <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material>
       </visual>
       <collision name='panda_link7_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.016</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0095 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.019</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='panda_joint7' type='revolute'>
@@ -226,7 +226,7 @@
       </axis>
     </joint>
     <link name='panda_hand'>
-      <pose relative_to='panda_link7'>0 0 0.1100 0 0 0</pose>
+      <pose relative_to='panda_link7'>0 0 0.0290 0 0 0</pose>
       <inertial>
         <mass>0.02</mass>
         <inertia>

@@ -18,21 +18,21 @@
     <link name='openmanip_x_link1'>
       <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
       <inertial>
-        <mass>0.1</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.04</mass>
+        <pose>0 0 0.0165 0 0 0</pose>
         <inertia>
-          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link1_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
         <material><ambient>0.8 0.3 0.3 1</ambient><diffuse>0.8 0.3 0.3 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link1_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='joint1' type='revolute'>
@@ -46,23 +46,23 @@
       </axis>
     </joint>
     <link name='openmanip_x_link2'>
-      <pose relative_to='openmanip_x_link1'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='openmanip_x_link1'>0 0 0.0330 0 0 0</pose>
       <inertial>
-        <mass>0.1</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.04</mass>
+        <pose>0 0 0.0165 0 0 0</pose>
         <inertia>
-          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link2_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
         <material><ambient>0.3 0.8 0.3 1</ambient><diffuse>0.3 0.8 0.3 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link2_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='joint2' type='revolute'>
@@ -76,23 +76,23 @@
       </axis>
     </joint>
     <link name='openmanip_x_link3'>
-      <pose relative_to='openmanip_x_link2'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='openmanip_x_link2'>0 0 0.0330 0 0 0</pose>
       <inertial>
-        <mass>0.1</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.04</mass>
+        <pose>0 0 0.0165 0 0 0</pose>
         <inertia>
-          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link3_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
         <material><ambient>0.3 0.3 0.8 1</ambient><diffuse>0.3 0.3 0.8 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link3_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='joint3' type='revolute'>
@@ -106,23 +106,23 @@
       </axis>
     </joint>
     <link name='openmanip_x_link4'>
-      <pose relative_to='openmanip_x_link3'>0 0 0.1000 0 0 0</pose>
+      <pose relative_to='openmanip_x_link3'>0 0 0.0330 0 0 0</pose>
       <inertial>
-        <mass>0.1</mass>
-        <pose>0 0 0.0500 0 0 0</pose>
+        <mass>0.04</mass>
+        <pose>0 0 0.0165 0 0 0</pose>
         <inertia>
-          <ixx>8.693333e-05</ixx><iyy>8.693333e-05</iyy><izz>7.200000e-06</izz>
+          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link4_visual'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
         <material><ambient>0.8 0.8 0.3 1</ambient><diffuse>0.8 0.8 0.3 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link4_collision'>
-        <pose>0 0 0.0500 0 0 0</pose>
-        <geometry><cylinder><radius>0.012</radius><length>0.1</length></cylinder></geometry>
+        <pose>0 0 0.0165 0 0 0</pose>
+        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
       </collision>
     </link>
     <joint name='joint4' type='revolute'>
@@ -136,7 +136,7 @@
       </axis>
     </joint>
     <link name='end_effector_link'>
-      <pose relative_to='openmanip_x_link4'>0 0 0.1100 0 0 0</pose>
+      <pose relative_to='openmanip_x_link4'>0 0 0.0430 0 0 0</pose>
       <inertial>
         <mass>0.02</mass>
         <inertia>

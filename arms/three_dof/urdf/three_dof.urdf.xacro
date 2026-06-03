@@ -11,9 +11,14 @@
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="three_dof">
 
+  <!--
+    Sizing: total drop below base_link must stay above the x500 landing
+    gear feet at z = -0.2195 m. Budget = 0.20 m total = 0.05 mount + 3
+    segments + 0.015 ee, so segments capped at 0.04 m.
+  -->
   <xacro:property name="density"     value="800.0"/>
-  <xacro:property name="link_len"    value="0.12"/>
-  <xacro:property name="link_radius" value="0.012"/>
+  <xacro:property name="link_len"    value="0.04"/>
+  <xacro:property name="link_radius" value="0.008"/>
   <xacro:property name="pi"          value="3.14159265359"/>
 
   <xacro:macro name="cyl_inertia" params="m r l">
