@@ -30,14 +30,15 @@ from launch_ros.substitutions import FindPackageShare
 from ament_index_python import get_package_share_directory
 
 
-def _materialize_live_models(pkg_share: str) -> str:
+def _materialize_live_models(pkg_share: str, namespace: str) -> str:
     """Write a "live" copy of every composed arm model with markers substituted.
 
-    The composed arm SDFs reference controllers.yaml via the marker
-    @UAV_GZ_SIM_PKG_SHARE@ because gz_ros2_control's <parameters> tag
-    accepts only literal paths (no $(find ...), no package:// URI).
-    Returns the directory to prepend to GZ_SIM_RESOURCE_PATH so Gazebo
-    finds the substituted copies instead of the in-tree ones.
+    The composed arm SDFs reference controllers.yaml + namespace via markers
+    because gz_ros2_control's <parameters> tag accepts only literal paths
+    (no $(find ...), no package:// URI) and its <ros><namespace> doesn't
+    expand env vars or any substitution either. Returns the directory to
+    prepend to GZ_SIM_RESOURCE_PATH so Gazebo finds the substituted copies
+    instead of the in-tree ones.
     """
     live_dir = os.path.join(
         tempfile.gettempdir(), f"uav_gz_sim_live_models_{os.getuid()}"
@@ -46,7 +47,10 @@ def _materialize_live_models(pkg_share: str) -> str:
     if not os.path.isdir(src_models_dir):
         return live_dir
 
-    substitutions = {"@UAV_GZ_SIM_PKG_SHARE@": pkg_share}
+    substitutions = {
+        "@UAV_GZ_SIM_PKG_SHARE@": pkg_share,
+        "@UAV_GZ_SIM_NAMESPACE@": namespace,
+    }
 
     for model in os.listdir(src_models_dir):
         src = os.path.join(src_models_dir, model)
@@ -148,7 +152,7 @@ def _setup(context, *_args, **_kwargs):
     # to GZ_SIM_RESOURCE_PATH so PX4/Gazebo finds these instead of the
     # raw in-tree ones (whose <parameters> still contains @MARKER@).
     pkg_share_early = get_package_share_directory("uav_gz_sim")
-    live_models_dir = _materialize_live_models(pkg_share_early)
+    live_models_dir = _materialize_live_models(pkg_share_early, ns)
     existing_resource = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
     resource_path_value = (
         f"{live_models_dir}:{existing_resource}" if existing_resource else live_models_dir
