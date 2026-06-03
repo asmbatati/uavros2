@@ -1,22 +1,28 @@
-controller_manager:
-  ros__parameters:
-    update_rate: 200
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
-    joint_trajectory_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
+# The /**: prefix matches the gz_ros2_control controller_manager in any
+# namespace. Without it, the spawner reports
+#   "Missing namespace : /drone or wildcard in parameter file for
+#    controller : joint_trajectory_controller"
+# and the type field for each controller is never read.
+/**:
+  controller_manager:
+    ros__parameters:
+      update_rate: 200
+      joint_state_broadcaster:
+        type: joint_state_broadcaster/JointStateBroadcaster
+      joint_trajectory_controller:
+        type: joint_trajectory_controller/JointTrajectoryController
 
-joint_trajectory_controller:
-  ros__parameters:
-    joints:
-      - j_shoulder
-      - j_elbow
-      - j_wrist
-    command_interfaces: [position]
-    state_interfaces: [position, velocity]
-    state_publish_rate: 100.0
-    action_monitor_rate: 20.0
-    allow_partial_joints_goal: false
-    constraints:
-      goal_time: 1.0
-      stopped_velocity_tolerance: 0.05
+  joint_trajectory_controller:
+    ros__parameters:
+      joints:
+        - j_shoulder
+        - j_elbow
+        - j_wrist
+      command_interfaces: [position]
+      state_interfaces: [position, velocity]
+      state_publish_rate: 100.0
+      action_monitor_rate: 20.0
+      allow_partial_joints_goal: false
+      constraints:
+        goal_time: 1.0
+        stopped_velocity_tolerance: 0.05
