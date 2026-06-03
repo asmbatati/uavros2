@@ -4,11 +4,11 @@
 
 | Simulator | Status | UAVs supported | Arms supported | PX4 path |
 |---|---|---|---|---|
-| **gazebo** | Working | all x500 variants | three_dof, openmanip_x, panda, ur5 | PX4 SITL + MAVROS / uXRCE-DDS |
-| **webots** | Working (base only) | x500 | (none in this pass) | PX4 `make px4_sitl webots` |
-| **mujoco** | Working (x500 + Panda) | x500 | panda (sweet spot) | none — `sim_control_bridge` |
-| **isaac** | Scaffolded | — | — | PegasusSimulator (community) |
-| **pybullet** | Scaffolded | x500 (kinematic) | — | none — placeholder PID |
+| **gazebo** | **Working end-to-end** (PX4 + MAVROS + gz_ros2_control + MoveIt) | all x500 variants + 4 composed arm models | three_dof, openmanip_x, panda, ur5 (all with MoveIt) | PX4 SITL + MAVROS / uXRCE-DDS |
+| **webots** | Scaffolded (launch stub, x500 base only) | x500 (planned) | (none) | PX4 `make px4_sitl webots` (planned) |
+| **mujoco** | Scaffolded (launch stub, `sim_control_bridge` placeholder) | x500 (planned) | panda (planned, sweet spot) | none — `sim_control_bridge` |
+| **isaac** | Scaffolded (install pointer only) | — | — | PegasusSimulator (community) |
+| **pybullet** | Scaffolded (URDF loader + placeholder PID) | x500 (kinematic) | — | none — placeholder PID |
 | **genesis** | Stub | — | — | none |
 
 ## gazebo
@@ -22,8 +22,18 @@ Default and most complete. Requires:
 
 Launch:
 ```bash
-ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_d435 arm:=panda world:=tugbot_depot
+# Sensors-only x500 (no arm)
+ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_d435 world:=tugbot_depot
+
+# x500 with arm (UAV name must be the composed model)
+ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo \
+    uav:=x500_with_panda arm:=panda use_moveit:=true
 ```
+
+The `uav` argument must match an existing model dir. For arms, that means
+the **composed** model name (`x500_with_<arm>`), not the bare `x500`. The
+only exception is `three_dof`, whose composed model is named
+`x500_with_three_dof_arm` (with the trailing `_arm`).
 
 The launch chain refactors today's `sim.launch.py` + `gz_sim.launch.py` + `mavros.launch.py` into `launch/simulators/gazebo.launch.py`. Sensor topics flow through `ros_gz_bridge` and are remapped to the canonical names declared in `config/topics/canonical_topics.yaml`.
 
@@ -45,7 +55,11 @@ Asset format: PROTO (generated from URDF via `webots_ros2_importer`). Note the W
 
 ## mujoco
 
-Working for x500 + Panda. **No PX4** — `sim_control_bridge.py` owns rotor mixing + attitude PID and publishes MAVROS-shaped state topics so downstream code is identical.
+**Scaffolded.** Launch file calls `sim_control_bridge` with the
+MuJoCo adapter, but the rotor mixer + PID is a placeholder; no full
+demo yet. The intent: **No PX4** — `sim_control_bridge.py` will own
+rotor mixing + attitude PID and publish MAVROS-shaped state topics
+so downstream code is identical to the Gazebo path.
 
 Requires:
 - `pip install mujoco`

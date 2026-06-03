@@ -44,6 +44,19 @@
     </collision>
   </xacro:macro>
 
+  <!--
+    Dummy world_link with no inertia silences the kdl_parser warning:
+    "The root link base_link has an inertia specified in the URDF, but
+    KDL does not support a root link with an inertia." Fixed joint keeps
+    kinematics unchanged.
+  -->
+  <link name="world_link"/>
+  <joint name="world_to_base" type="fixed">
+    <parent link="world_link"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
   <link name="base_link">
     <xacro:cyl_inertia m="0.05" r="0.02" l="0.02"/>
     <xacro:cyl_visual_collision r="0.02" l="0.02" rgba="0.2 0.2 0.2 1"/>
