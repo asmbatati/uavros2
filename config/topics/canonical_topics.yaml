@@ -1,0 +1,51 @@
+# Canonical topic contract for uav_gz_sim.
+#
+# Every simulator backend (gazebo, webots, mujoco, isaac, pybullet, genesis)
+# is responsible for producing these topics under the configured namespace.
+# Downstream nodes (vision, control, recording, tf_relay, gt_trajectory_publisher,
+# adaptive_image_stitcher) consume only these names. Per-simulator launch files
+# remap their native topic names to this contract using ros_gz_bridge,
+# webots_ros2_driver, sim_control_bridge, or sensor_relay.
+
+namespace: drone
+
+sensors:
+  imu:
+    topic: /{ns}/imu
+    type: sensor_msgs/msg/Imu
+  gps:
+    topic: /{ns}/gps
+    type: sensor_msgs/msg/NavSatFix
+  air_pressure:
+    topic: /{ns}/air_pressure
+    type: sensor_msgs/msg/FluidPressure
+  front_stereo:
+    left:
+      image:       /{ns}/front_stereo/left_cam/image_raw
+      camera_info: /{ns}/front_stereo/left_cam/camera_info
+    right:
+      image:       /{ns}/front_stereo/right_cam/image_raw
+      camera_info: /{ns}/front_stereo/right_cam/camera_info
+  front_lidar:
+    points: /{ns}/front_lidar/points
+    type: sensor_msgs/msg/PointCloud2
+
+state:
+  local_pose: /{ns}/mavros/local_position/pose
+  local_odom: /{ns}/mavros/local_position/odom
+  battery:    /{ns}/mavros/battery
+  joint_states: /{ns}/joint_states
+
+control:
+  setpoint_position: /{ns}/setpoint_position/pose
+  setpoint_velocity: /{ns}/setpoint_velocity/cmd_vel
+  setpoint_attitude: /{ns}/setpoint_raw/attitude
+  actuators:         /{ns}/actuators
+  joint_command:     /{ns}/joint_command
+
+frames:
+  map:       map
+  map_frd:   map_frd
+  global:    global
+  odom:      "{ns}/odom"
+  base_link: "{ns}/base_link"

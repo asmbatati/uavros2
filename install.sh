@@ -1,7 +1,40 @@
 #!/bin/bash
 
+# ---------------------------------------------------------------------------
+# uav_gz_sim install.sh
+#
+# Flags:
+#   --minimal              Skip YOLOv8 + GeographicLib + QGC downloads (CI/headless).
+#   --simulators=LIST      Comma-separated subset of:
+#                          gazebo,webots,mujoco,isaac,pybullet,genesis
+#                          Default: gazebo (only PX4-coupled sim by default).
+#   --help                 Print this header and exit.
+#
+# Env:
+#   DEV_DIR  Parent of PX4-Autopilot and ros2_ws (default: $HOME/drone_arm_ws)
+# ---------------------------------------------------------------------------
+
+MINIMAL=0
+SIMULATORS="gazebo"
+
+for arg in "$@"; do
+    case "$arg" in
+        --minimal)        MINIMAL=1 ;;
+        --simulators=*)   SIMULATORS="${arg#--simulators=}" ;;
+        --help|-h)        sed -n '3,16p' "$0"; exit 0 ;;
+        *)                echo "Unknown argument: $arg (use --help)"; exit 1 ;;
+    esac
+done
+
+sim_enabled() {
+    case ",${SIMULATORS}," in
+        *",$1,"*) return 0 ;;
+        *)        return 1 ;;
+    esac
+}
+
 # Set up environment variables
-export DEV_DIR=${DEV_DIR:-/home/user/shared_volume}
+export DEV_DIR=${DEV_DIR:-$HOME/drone_arm_ws}
 
 # Source ROS2 environment if available
 if [ -f "/opt/ros/jazzy/setup.bash" ]; then
@@ -79,7 +112,7 @@ detect_container() {
     fi
     
     # Check if we're in the expected container working directory
-    if [ "$(pwd)" = "/home/user/shared_volume" ] && [ -f /.dockerenv ]; then
+    if [ "$(pwd)" = "$DEV_DIR" ] && [ -f /.dockerenv ]; then
         in_container=true
     fi
     
@@ -265,9 +298,11 @@ fi
 
 print_info "Checking environment variables..."
 print_status "DEV_DIR=$DEV_DIR"
-if [ "$DEV_DIR" = "/home/user/shared_volume" ]; then
+if [ "$DEV_DIR" = "$HOME/drone_arm_ws" ]; then
     print_info "Using default DEV_DIR. You can override with: export DEV_DIR=<your_directory>"
 fi
+print_info "MINIMAL=$MINIMAL"
+print_info "SIMULATORS=$SIMULATORS"
 
 print_info "Git credentials:"
 echo -e "  ${CYAN}GIT_USER=${NC}$GIT_USER"
@@ -381,6 +416,9 @@ else
 fi
 
 # Check for QGroundControl AppImage and download if not present
+if [ "$MINIMAL" = "1" ]; then
+    print_info "Skipping QGroundControl setup (--minimal)"
+else
 print_info "Setting up QGroundControl..."
 
 # Install QGroundControl dependencies
@@ -438,6 +476,7 @@ if [ -f "$QGC_PATH" ] && [ ! -L "$QGC_SYMLINK" ]; then
 fi
 
 print_warning "Note: You may need to logout and login again for serial port permissions to take effect"
+fi  # end --minimal QGC block
 
 print_section "Setting up PX4-Autopilot"
 
@@ -542,6 +581,38 @@ else
     exit 1
 fi
 
+# PX4 keeps an explicit airframe list in CMakeLists.txt that is used to embed
+# the ROMFS tarball at build time. Copying files alone is not enough — they
+# must also appear in that list. Stamp our airframes between the
+# "# [22000, 22999] Reserve for custom models" marker and the next blank
+# line, replacing any prior block.
+print_info "Registering airframes in PX4 CMakeLists.txt"
+CMAKE_AIRFRAMES="${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt"
+UAV_AIRFRAMES=$(ls "${ROS2_SRC}/uav_gz_sim/config/px4" | grep -E '^[0-9]+_gz_' | sort)
+if [ -f "$CMAKE_AIRFRAMES" ] && [ -n "$UAV_AIRFRAMES" ]; then
+    # Remove any existing 4020-4029 block, then re-inject the current list
+    # immediately after the "# [22000, 22999] Reserve for custom models" line.
+    python3 - "$CMAKE_AIRFRAMES" <<PY
+import sys, re, os
+path = sys.argv[1]
+src = open(path).read()
+# Strip any existing 40xx_gz_* entries (one per line, optionally with COLCON_IGNORE).
+src = re.sub(r'(?m)^(40[0-9]{2}_gz_[A-Za-z0-9_]+|COLCON_IGNORE)\s*\n', '', src)
+new_block = """${UAV_AIRFRAMES}""".strip() + '\n'
+marker = '# [22000, 22999] Reserve for custom models\n'
+if marker in src:
+    src = src.replace(marker, marker + new_block, 1)
+else:
+    # Fallback: append at end-of-list (before final closing paren)
+    src = re.sub(r'\)\s*$', new_block + ')\n', src)
+open(path, 'w').write(src)
+print('updated', path)
+PY
+    print_status "Airframe list registered in PX4 CMakeLists.txt"
+else
+    print_warning "Could not patch $CMAKE_AIRFRAMES — PX4 build may not include new airframes"
+fi
+
 # Build px4_sitl
 print_info "Rebuilding PX4 SITL with new configurations..."
 cd $PX4_DIR || { print_error "Failed to change to PX4 directory"; exit 1; }
@@ -558,6 +629,9 @@ fi
 
 cd $DEV_DIR
 
+if [ "$MINIMAL" = "1" ]; then
+    print_info "Skipping YOLOv8 ROS Package (--minimal)"
+else
 print_section "Setting up YOLOv8 ROS Package"
 
 if [ ! -d "$ROS2_SRC/yolov8_ros" ]; then
@@ -571,6 +645,7 @@ else
     cd $ROS2_SRC/yolov8_ros && git pull origin && git checkout 2.0.1
     print_status "yolov8_ros updated and checked out to version 2.0.1"
 fi
+fi  # end --minimal yolov8 block
 
 print_section "Setting up MAVROS and Dependencies"
 
@@ -641,11 +716,57 @@ else
 fi
 
 # Install GeographicLib datasets for MAVROS
-print_info "Installing GeographicLib datasets..."
-sudo apt-get update
-sudo apt-get install -y geographiclib-tools
-sudo geographiclib-get-geoids egm96-5
-print_status "GeographicLib datasets installed"
+if [ "$MINIMAL" = "1" ]; then
+    print_info "Skipping GeographicLib datasets (--minimal)"
+else
+    print_info "Installing GeographicLib datasets..."
+    sudo apt-get update
+    sudo apt-get install -y geographiclib-tools
+    sudo geographiclib-get-geoids egm96-5
+    print_status "GeographicLib datasets installed"
+fi
+
+# Per-simulator dependency installation
+install_simulator_deps() {
+    local sim="$1"
+    print_section "Installing simulator deps: $sim"
+    case "$sim" in
+        gazebo)
+            # Already covered by check_gazebo_harmonic and ros-jazzy-ros-gz
+            sudo apt-get install -y ros-jazzy-ros-gz ros-jazzy-ros-gz-bridge || \
+                print_warning "ros-gz install failed (may already be present)"
+            ;;
+        webots)
+            sudo apt-get install -y ros-jazzy-webots-ros2 || \
+                print_warning "webots_ros2 install failed (manual install may be required)"
+            ;;
+        mujoco)
+            pip3 install --break-system-packages mujoco || pip3 install --user mujoco || \
+                print_warning "mujoco install failed"
+            sudo apt-get install -y ros-jazzy-ros2-control ros-jazzy-ros2-controllers || true
+            print_info "Note: mujoco_ros2_control may require source build; see docs/SIMULATORS.md"
+            ;;
+        isaac)
+            print_info "Isaac Sim is not pip-installable; install via NVIDIA Omniverse Launcher."
+            print_info "See docs/SIMULATORS.md for the PegasusSimulator setup."
+            ;;
+        pybullet)
+            pip3 install --break-system-packages pybullet || pip3 install --user pybullet || \
+                print_warning "pybullet install failed"
+            ;;
+        genesis)
+            print_info "Genesis is scaffolded only; see docs/SIMULATORS.md."
+            ;;
+        *)
+            print_warning "Unknown simulator: $sim"
+            ;;
+    esac
+}
+
+IFS=',' read -ra SIM_LIST <<< "$SIMULATORS"
+for sim in "${SIM_LIST[@]}"; do
+    install_simulator_deps "$sim"
+done
 
 print_section "Building ROS2 Packages"
 

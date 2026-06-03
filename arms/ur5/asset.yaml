@@ -1,0 +1,30 @@
+name: ur5
+dof: 6
+mass_kg: 18.0   # WARNING: physically unrealistic on x500. Included for controller-stack testing.
+upstream_pkg: ur_description    # https://github.com/UniversalRobots/Universal_Robots_ROS2_Description
+mount_frame: x500/base_link
+mount_xyz: [0.0, 0.0, -0.05]
+mount_rpy: [3.14159, 0.0, 0.0]
+base_link: base_link
+ee_link: tool0
+joints:
+  - shoulder_pan_joint
+  - shoulder_lift_joint
+  - elbow_joint
+  - wrist_1_joint
+  - wrist_2_joint
+  - wrist_3_joint
+default_controller: joint_trajectory_controller
+moveit: true
+sims:
+  gazebo: true
+  webots: false
+  mujoco: false
+  isaac: false
+  pybullet: true
+  genesis: false
+notes: |
+  Heavy arm. The x500 controller (PX4) cannot fly this realistically; the
+  composition exists for controller-stack and MoveIt testing.
+  Requires ur_description installed via apt
+  (ros-jazzy-ur-description) or source.

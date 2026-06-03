@@ -1,0 +1,31 @@
+name: panda
+dof: 7
+mass_kg: 17.0   # WARNING: physically unrealistic on x500. Included for controller-stack testing.
+upstream_pkg: franka_description    # https://github.com/frankaemika/franka_ros2
+mount_frame: x500/base_link
+mount_xyz: [0.0, 0.0, -0.05]
+mount_rpy: [3.14159, 0.0, 0.0]
+base_link: panda_link0
+ee_link: panda_hand
+joints:
+  - panda_joint1
+  - panda_joint2
+  - panda_joint3
+  - panda_joint4
+  - panda_joint5
+  - panda_joint6
+  - panda_joint7
+default_controller: joint_trajectory_controller
+moveit: true
+sims:
+  gazebo: true
+  webots: false
+  mujoco: true        # MuJoCo sweet spot: Panda + contact-rich manipulation
+  isaac: false
+  pybullet: true
+  genesis: false
+notes: |
+  Heavy arm. The x500 controller (PX4) cannot fly this realistically; the
+  composition exists for controller-stack and MoveIt testing in MuJoCo.
+  Requires franka_description installed via apt
+  (ros-jazzy-franka-description) or source.

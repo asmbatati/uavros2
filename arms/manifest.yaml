@@ -1,0 +1,15 @@
+# Arm catalog. Each entry's asset.yaml carries the full per-arm metadata.
+
+arms:
+  three_dof:
+    description: Custom 3-DOF serial arm, lightweight, all-sim baseline.
+    px4_airframe: 4025
+  openmanip_x:
+    description: ROBOTIS OpenManipulator-X (4-DOF), realistic x500 payload.
+    px4_airframe: 4026
+  panda:
+    description: Franka Panda (7-DOF). Heavy; controller-stack testbed only.
+    px4_airframe: 4027
+  ur5:
+    description: Universal Robots UR5 (6-DOF). Heavy; controller-stack testbed only.
+    px4_airframe: 4028

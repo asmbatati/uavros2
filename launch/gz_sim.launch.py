@@ -3,15 +3,52 @@ import sys
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import LaunchConfiguration
+from ament_index_python import get_package_share_directory
+
+
+def _find_workspace_px4_dir():
+    """Locate PX4-Autopilot as a sibling of the workspace containing ros2_ws.
+
+    Always derived from the installed package share path — the ``$PX4_DIR``
+    env var is intentionally ignored. This guarantees the launch picks up
+    the PX4 sibling of the active ``ros2_ws``, not a stray copy elsewhere.
+
+    Walks up from ``share/uav_gz_sim`` looking for a directory that contains
+    both ``ros2_ws`` and ``PX4-Autopilot`` siblings. Returns the PX4 path
+    or None if not found.
+    """
+    pkg_share = get_package_share_directory('uav_gz_sim')
+    # pkg_share is .../<DEV_DIR>/ros2_ws/install/uav_gz_sim/share/uav_gz_sim
+    cur = pkg_share
+    for _ in range(8):
+        cur = os.path.dirname(cur)
+        if not cur or cur == '/':
+            break
+        candidate = os.path.join(cur, 'PX4-Autopilot')
+        if (os.path.isdir(candidate)
+                and os.path.isdir(os.path.join(cur, 'ros2_ws'))):
+            return candidate
+    return None
+
 
 def generate_launch_description():
+    PX4_DIR = _find_workspace_px4_dir()
 
-    PX4_DIR = os.getenv('PX4_DIR')
+    if not PX4_DIR:
+        # Final fallback: DEV_DIR env or default workspace path.
+        dev_dir = os.getenv('DEV_DIR',
+                            os.path.join(os.path.expanduser('~'),
+                                         'drone_arm_ws'))
+        PX4_DIR = os.path.join(dev_dir, 'PX4-Autopilot')
 
-    if PX4_DIR is not None:
-        print(f'The value of PX4_DIR is {PX4_DIR}')
-    else:
-        print('PX4_DIR is not set')
+    print(f'PX4_DIR resolved to: {PX4_DIR}')
+    if not os.path.isdir(PX4_DIR):
+        print(f'ERROR: PX4_DIR={PX4_DIR} does not exist. '
+              f'Expected a PX4-Autopilot directory next to ros2_ws.')
+        sys.exit(1)
+    if not os.path.isfile(os.path.join(PX4_DIR, 'build/px4_sitl_default/bin/px4')):
+        print(f'ERROR: PX4 binary not found at {PX4_DIR}/build/px4_sitl_default/bin/px4. '
+              f'Run `cd {PX4_DIR} && make px4_sitl` first.')
         sys.exit(1)
 
     namespace = LaunchConfiguration('gz_ns')

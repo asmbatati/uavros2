@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Path
 from geometry_msgs.msg import PoseStamped
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
+from rclpy.qos import qos_profile_sensor_data
 
 class TrajectoryPublisher(Node):
     """
@@ -26,23 +26,17 @@ class TrajectoryPublisher(Node):
         self.max_path_length = self.get_parameter('max_path_length').value
         self.verbose = self.get_parameter('verbose').value
         
-        # Create a QoS profile with reliability and history settings
-        qos = QoSProfile(
-            reliability=QoSReliabilityPolicy.RELIABLE,
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=10
-        )
-        
         # Create publisher for the path
         self.path_pub = self.create_publisher(Path, self.path_topic, 10)
-        
-        # Create subscriber to the pose topic
+
+        # MAVROS publishes local_position/pose with BEST_EFFORT sensor QoS.
+        # Subscribing as RELIABLE silently drops the connection.
         self.get_logger().info(f'Subscribing to pose topic: {self.pose_topic}')
         self.pose_sub = self.create_subscription(
-            PoseStamped, 
-            self.pose_topic, 
-            self.pose_callback, 
-            qos
+            PoseStamped,
+            self.pose_topic,
+            self.pose_callback,
+            qos_profile_sensor_data,
         )
         
         # Initialize path message
@@ -91,14 +85,15 @@ class TrajectoryPublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
     node = TrajectoryPublisher()
-    
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main() 

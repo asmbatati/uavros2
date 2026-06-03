@@ -1,0 +1,46 @@
+# Gazebo (ros_gz_bridge) remap table for the x500_stereo_cam_3d_lidar model.
+# This file mirrors the topic strings inlined in launch/simulators/gazebo.launch.py
+# so the per-asset bridge configuration is data, not code. Per-model variants live
+# alongside this file (e.g. gazebo_bridge_x500_d435.yaml).
+
+model: x500_stereo_cam_3d_lidar
+instance: 0
+world: tugbot_depot
+namespace: drone
+
+# Direction symbols match ros_gz_bridge:
+#   [   ROS subscribes, GZ publishes  (data flows GZ -> ROS)
+#   ]   ROS publishes,  GZ subscribes (data flows ROS -> GZ)
+#   @   bidirectional
+
+bridges:
+  - gz: /clock
+    type: rosgraph_msgs/msg/Clock[ignition.msgs.Clock
+    ros: /clock
+
+  - gz: /world/{world}/model/{model}_{instance}/link/lidar3d_link/sensor/velodyne_16/scan/points
+    type: sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked
+    ros: /{namespace}/front_lidar/points
+
+  - gz: /world/{world}/model/{model}_{instance}/link/left_camera_link/sensor/left_camera_sensor/image
+    type: sensor_msgs/msg/Image[ignition.msgs.Image
+    ros: /{namespace}/front_stereo/left_cam/image_raw
+  - gz: /world/{world}/model/{model}_{instance}/link/right_camera_link/sensor/right_camera_sensor/image
+    type: sensor_msgs/msg/Image[ignition.msgs.Image
+    ros: /{namespace}/front_stereo/right_cam/image_raw
+  - gz: /world/{world}/model/{model}_{instance}/link/left_camera_link/sensor/left_camera_sensor/camera_info
+    type: sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo
+    ros: /{namespace}/front_stereo/left_cam/camera_info
+  - gz: /world/{world}/model/{model}_{instance}/link/right_camera_link/sensor/right_camera_sensor/camera_info
+    type: sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo
+    ros: /{namespace}/front_stereo/right_cam/camera_info
+
+  - gz: /world/{world}/model/{model}_{instance}/link/base_link/sensor/imu_sensor/imu
+    type: sensor_msgs/msg/Imu[ignition.msgs.IMU
+    ros: /{namespace}/imu
+  - gz: /world/{world}/model/{model}_{instance}/link/base_link/sensor/air_pressure_sensor/air_pressure
+    type: sensor_msgs/msg/FluidPressure[ignition.msgs.FluidPressure
+    ros: /{namespace}/air_pressure
+  - gz: /world/{world}/model/{model}_{instance}/link/base_link/sensor/navsat_sensor/navsat
+    type: sensor_msgs/msg/NavSatFix[ignition.msgs.NavSat
+    ros: /{namespace}/gps

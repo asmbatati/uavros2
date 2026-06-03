@@ -1,0 +1,31 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+.eggs/
+
+# colcon / ros2 build outputs (if anyone builds in-tree)
+build/
+install/
+log/
+
+# Pytest
+.pytest_cache/
+.coverage
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Generated per-sim asset markers (kept by hand-converted outputs, not these)
+arms/*/mjcf/REGEN_PENDING
+arms/*/usd/REGEN_PENDING
+arms/*/proto/REGEN_PENDING
+
+# Compiled URDF outputs from regen_assets.sh (xacro -> urdf is reproducible)
+arms/*/urdf/*.urdf

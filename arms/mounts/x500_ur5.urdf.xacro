@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="x500_with_ur5">
+  <xacro:include filename="$(find uav_gz_sim)/models/x500/urdf/x500.urdf.xacro"/>
+  <xacro:include filename="$(find ur_description)/urdf/ur.urdf.xacro"/>
+
+  <!-- ur_description's xacro takes ur_type:=ur5 as a parameter; the
+       composition tool that materializes this file should pass that. -->
+  <xacro:ur_robot prefix="" ur_type="ur5"/>
+
+  <joint name="arm_mount" type="fixed">
+    <parent link="x500/base_link"/>
+    <child link="base_link"/>    <!-- UR base is base_link -->
+    <origin xyz="0 0 -0.05" rpy="3.14159 0 0"/>
+  </joint>
+</robot>

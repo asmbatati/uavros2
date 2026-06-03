@@ -1,0 +1,22 @@
+name: three_dof
+dof: 3
+mass_kg: 0.3
+upstream_pkg: null         # custom in-tree
+mount_frame: x500/base_link
+mount_xyz: [0.0, 0.0, -0.05]
+mount_rpy: [3.14159, 0.0, 0.0]   # arm hangs downward from x500
+base_link: base_link
+ee_link: ee_link
+joints:
+  - j_shoulder
+  - j_elbow
+  - j_wrist
+default_controller: joint_trajectory_controller
+moveit: false
+sims:
+  gazebo: true
+  webots: false
+  mujoco: true
+  isaac: false
+  pybullet: true
+  genesis: false

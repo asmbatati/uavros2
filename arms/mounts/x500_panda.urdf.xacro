@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="x500_with_panda">
+  <xacro:include filename="$(find uav_gz_sim)/models/x500/urdf/x500.urdf.xacro"/>
+  <xacro:include filename="$(find franka_description)/robots/panda/panda.urdf.xacro"/>
+
+  <joint name="arm_mount" type="fixed">
+    <parent link="x500/base_link"/>
+    <child link="panda_link0"/>
+    <origin xyz="0 0 -0.05" rpy="3.14159 0 0"/>
+  </joint>
+</robot>

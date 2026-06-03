@@ -1,0 +1,18 @@
+# Declares which worlds exist per simulator. The launch dispatcher reads
+# this to fail fast on unsupported (simulator, world) combinations.
+
+worlds:
+  empty:
+    gazebo: true        # PX4 default empty world
+    webots: true
+    mujoco: true
+    isaac: false
+    pybullet: true
+    genesis: false
+  tugbot_depot:
+    gazebo: tugbot_depot.sdf
+    webots: false
+    mujoco: false
+    isaac: false
+    pybullet: false
+    genesis: false

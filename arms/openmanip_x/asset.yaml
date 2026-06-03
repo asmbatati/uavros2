@@ -1,0 +1,28 @@
+name: openmanip_x
+dof: 4
+mass_kg: 0.5
+upstream_pkg: open_manipulator_x_description   # https://github.com/ROBOTIS-GIT/open_manipulator
+mount_frame: x500/base_link
+mount_xyz: [0.0, 0.0, -0.05]
+mount_rpy: [3.14159, 0.0, 0.0]
+base_link: link1
+ee_link: end_effector_link
+joints:
+  - joint1
+  - joint2
+  - joint3
+  - joint4
+default_controller: joint_trajectory_controller
+moveit: true
+sims:
+  gazebo: true
+  webots: false
+  mujoco: false
+  isaac: false
+  pybullet: false
+  genesis: false
+notes: |
+  Requires ROBOTIS open_manipulator_x_description installed via apt
+  (ros-jazzy-open-manipulator-x-description) or source. The composition
+  xacro under arms/mounts/x500_openmanip_x.urdf.xacro xacro-includes the
+  upstream URDF; meshes are not vendored here.

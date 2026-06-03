@@ -2,37 +2,35 @@
 
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import PoseStamped
+from rclpy.qos import qos_profile_sensor_data
+from geometry_msgs.msg import PoseStamped, TransformStamped
 import tf2_ros
-from tf2_msgs.msg import TFMessage
-from geometry_msgs.msg import TransformStamped
-import math
-from tf_transformations import quaternion_from_euler
+
 
 class TFRelay(Node):
     def __init__(self):
         super().__init__('tf_relay')
-        
+
         # Declare parameters
         self.declare_parameter('source_topic', '/drone/mavros/local_position/pose')
         self.declare_parameter('target_frame_id', 'drone/odom')
         self.declare_parameter('child_frame_id', 'drone/base_link')
         self.declare_parameter('queue_size', 10)
         self.declare_parameter('publish_rate', 30.0)
-        
+
         # Get parameters
         self.source_topic = self.get_parameter('source_topic').value
         self.target_frame_id = self.get_parameter('target_frame_id').value
         self.child_frame_id = self.get_parameter('child_frame_id').value
-        queue_size = self.get_parameter('queue_size').value
         self.publish_rate = self.get_parameter('publish_rate').value
-        
-        # Create subscriber to pose topic with configured queue size
+
+        # MAVROS publishes local_position/pose with BEST_EFFORT (sensor data QoS).
+        # Match it; using RELIABLE here silently drops the subscription.
         self.pose_sub = self.create_subscription(
             PoseStamped,
             self.source_topic,
             self.pose_callback,
-            queue_size)
+            qos_profile_sensor_data)
         
         # Create transform broadcaster
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
@@ -46,7 +44,7 @@ class TFRelay(Node):
             self.timer = self.create_timer(period, self.timer_callback)
         
         self.get_logger().info(f'TF relay initialized from {self.source_topic} to transform {self.target_frame_id} -> {self.child_frame_id}')
-        self.get_logger().info(f'Queue size: {queue_size}, Publish rate: {self.publish_rate} Hz')
+        self.get_logger().info(f'Publish rate: {self.publish_rate} Hz')
     
     def pose_callback(self, msg):
         # Store the latest pose
@@ -88,9 +86,14 @@ class TFRelay(Node):
 def main(args=None):
     rclpy.init(args=args)
     tf_relay = TFRelay()
-    rclpy.spin(tf_relay)
-    tf_relay.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(tf_relay)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        tf_relay.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 if __name__ == '__main__':
     main() 

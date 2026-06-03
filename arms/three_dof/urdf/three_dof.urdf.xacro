@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<!--
+  Custom 3-DOF serial arm for UAV manipulation prototyping.
+
+  Kinematic chain:
+    base_link -> shoulder_link -> upper_link -> forearm_link -> ee_link
+    joints:     j_shoulder      j_elbow      j_wrist        (fixed ee)
+
+  All revolute joints rotate about local Y (pitch chain). Designed to be
+  light (~0.3 kg) so the x500 can fly it without controller pathology.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="three_dof">
+
+  <xacro:property name="density"     value="800.0"/>
+  <xacro:property name="link_len"    value="0.12"/>
+  <xacro:property name="link_radius" value="0.012"/>
+  <xacro:property name="pi"          value="3.14159265359"/>
+
+  <xacro:macro name="cyl_inertia" params="m r l">
+    <inertial>
+      <mass value="${m}"/>
+      <origin xyz="0 0 ${l/2}" rpy="0 0 0"/>
+      <inertia ixx="${m*(3*r*r + l*l)/12.0}"
+               iyy="${m*(3*r*r + l*l)/12.0}"
+               izz="${m*r*r/2.0}"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cyl_visual_collision" params="r l rgba">
+    <visual>
+      <origin xyz="0 0 ${l/2}" rpy="0 0 0"/>
+      <geometry><cylinder radius="${r}" length="${l}"/></geometry>
+      <material name="link_color"><color rgba="${rgba}"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${l/2}" rpy="0 0 0"/>
+      <geometry><cylinder radius="${r}" length="${l}"/></geometry>
+    </collision>
+  </xacro:macro>
+
+  <link name="base_link">
+    <xacro:cyl_inertia m="0.05" r="0.02" l="0.02"/>
+    <xacro:cyl_visual_collision r="0.02" l="0.02" rgba="0.2 0.2 0.2 1"/>
+  </link>
+
+  <joint name="j_shoulder" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <origin xyz="0 0 0.02" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${-pi}" upper="${pi}" effort="2.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+  <link name="shoulder_link">
+    <xacro:cyl_inertia m="0.08" r="${link_radius}" l="${link_len}"/>
+    <xacro:cyl_visual_collision r="${link_radius}" l="${link_len}" rgba="0.8 0.3 0.3 1"/>
+  </link>
+
+  <joint name="j_elbow" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="upper_link"/>
+    <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${-pi}" upper="${pi}" effort="1.5" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+  <link name="upper_link">
+    <xacro:cyl_inertia m="0.07" r="${link_radius}" l="${link_len}"/>
+    <xacro:cyl_visual_collision r="${link_radius}" l="${link_len}" rgba="0.3 0.8 0.3 1"/>
+  </link>
+
+  <joint name="j_wrist" type="revolute">
+    <parent link="upper_link"/>
+    <child link="forearm_link"/>
+    <origin xyz="0 0 ${link_len}" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="${-pi}" upper="${pi}" effort="1.0" velocity="3.0"/>
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+  <link name="forearm_link">
+    <xacro:cyl_inertia m="0.06" r="${link_radius}" l="${link_len * 0.6}"/>
+    <xacro:cyl_visual_collision r="${link_radius}" l="${link_len * 0.6}" rgba="0.3 0.3 0.8 1"/>
+  </link>
+
+  <joint name="j_ee" type="fixed">
+    <parent link="forearm_link"/>
+    <child link="ee_link"/>
+    <origin xyz="0 0 ${link_len * 0.6 + 0.01}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="ee_link">
+    <inertial>
+      <mass value="0.02"/>
+      <inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <visual>
+      <geometry><sphere radius="0.015"/></geometry>
+      <material name="ee_color"><color rgba="1 1 0 1"/></material>
+    </visual>
+    <collision><geometry><sphere radius="0.015"/></geometry></collision>
+  </link>
+
+</robot>

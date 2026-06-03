@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!--
+  Composes the x500 UAV base with the custom 3-DOF arm.
+
+  Mount point: x500/base_link, offset (0, 0, -0.05), pitched 180° so the
+  arm hangs downward. The mount joint is rigid (no DOF).
+
+  Expects $(find uav_gz_sim)/models/x500/urdf/x500.urdf.xacro to exist;
+  back-fill if you're using a Gazebo-only x500 SDF in the meantime.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="x500_with_three_dof_arm">
+
+  <!-- Base UAV -->
+  <xacro:include filename="$(find uav_gz_sim)/models/x500/urdf/x500.urdf.xacro"/>
+
+  <!-- Arm -->
+  <xacro:include filename="$(find uav_gz_sim)/arms/three_dof/urdf/three_dof.urdf.xacro"/>
+
+  <!-- Rigid mount: x500 base_link -> arm base_link -->
+  <joint name="arm_mount" type="fixed">
+    <parent link="x500/base_link"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 -0.05" rpy="3.14159 0 0"/>
+  </joint>
+
+</robot>
