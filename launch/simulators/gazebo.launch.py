@@ -211,17 +211,19 @@ def _setup(context, *_args, **_kwargs):
     )
 
     # Pre-flight: kill any stale Gazebo / PX4 SITL processes left over from
-    # a prior aborted launch. Without this, PX4 happily spawns its drone
-    # into the orphan server and you see duplicate models in one scene.
+    # a prior aborted launch. Without this, PX4 detects the orphan server
+    # via gz_bridge ("gazebo already running") and refuses to spawn.
     #
-    # IMPORTANT: use `pkill -x <name>` (exact process-name match), NOT
-    # `-f <pattern>`. The latter would match our own bash command line
-    # (which contains the pattern text!) and kill the launch process.
+    # IMPORTANT: the Gazebo server runs with comm=ruby (it's wrapped in a
+    # Ruby launcher), so `pkill -x gz` does NOT match it. Match the full
+    # argv with a regex anchored at the start of the command line - that
+    # way the pkill command itself (which starts with "pkill", not "gz"
+    # or "...px4") cannot self-match.
     kill_stale = ExecuteProcess(
         cmd=[
             "bash", "-c",
-            "pkill -9 -x gz 2>/dev/null || true; "
-            "pkill -9 -x px4 2>/dev/null || true; "
+            "pkill -9 -f '^gz sim' 2>/dev/null || true; "
+            "pkill -9 -f '^[^ ]*px4_sitl_default/bin/px4' 2>/dev/null || true; "
             "sleep 0.5",
         ],
         output="log",
