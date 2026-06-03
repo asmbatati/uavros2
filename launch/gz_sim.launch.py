@@ -123,6 +123,16 @@ def generate_launch_description():
             'exit 1; ',
             'else echo "Airframe file found."; fi && ',
             'echo "Running PX4 with simulation parameters..." && ',
+            # Point Gazebo at THIS PX4 tree's models/worlds. PX4 builds the world
+            # path as $PX4_GZ_WORLDS/<world>.sdf and the model spawn uses
+            # GZ_SIM_RESOURCE_PATH; PX4's generated gz_env.sh only appends and may
+            # carry a stale absolute path from a build done elsewhere, so set the
+            # correct in-tree paths explicitly here.
+            'export PX4_GZ_MODELS=', PX4_DIR, '/Tools/simulation/gz/models && ',
+            'export PX4_GZ_WORLDS=', PX4_DIR, '/Tools/simulation/gz/worlds && ',
+            'export GZ_SIM_RESOURCE_PATH="$GZ_SIM_RESOURCE_PATH:',
+            PX4_DIR, '/Tools/simulation/gz/models:',
+            PX4_DIR, '/Tools/simulation/gz/worlds" && ',
             # PX4 SITL resolves its startup script (etc/init.d-posix/rcS) and
             # working files relative to the CWD, so run it from the build dir.
             'cd ./build/px4_sitl_default && ',
