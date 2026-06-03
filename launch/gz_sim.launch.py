@@ -123,6 +123,9 @@ def generate_launch_description():
             'exit 1; ',
             'else echo "Airframe file found."; fi && ',
             'echo "Running PX4 with simulation parameters..." && ',
+            # PX4 SITL resolves its startup script (etc/init.d-posix/rcS) and
+            # working files relative to the CWD, so run it from the build dir.
+            'cd ./build/px4_sitl_default && ',
             # gz_ros2_control plugin lives in /opt/ros/jazzy/lib and is
             # not on Gazebo's default plugin search path. Prepend it so
             # the composed arm models can load `libgz_ros2_control-system.so`.
@@ -133,7 +136,7 @@ def generate_launch_description():
             ' PX4_UXRCE_DDS_NS=', namespace,
             " PX4_GZ_MODEL_POSE='", xpos, ',', ypos, ',', zpos, "'",
             ' PX4_GZ_WORLD=', gz_world,
-            ' ./build/px4_sitl_default/bin/px4 -i ', instance_id,
+            ' ./bin/px4 -i ', instance_id,
             ' -d'  # Add debug flag
         ]],
         shell=True
