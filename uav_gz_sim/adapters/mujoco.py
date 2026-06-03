@@ -70,9 +70,16 @@ class MujocoAdapter(SimAdapter):
             raise RuntimeError("MujocoAdapter.spawn() must be called before step()")
         # Placeholder mixer: pass setpoint accelerations as ctrl signals if
         # the model has actuators; real rotor mixing + attitude PID belongs
-        # in sim_control_bridge.py.
-        if "actuators" in setpoint and len(setpoint["actuators"]) == self._model.nu:
-            self._data.ctrl[:] = setpoint["actuators"]
+        # in sim_control_bridge.py. setpoint["actuators"] is None until a
+        # message arrives, so we have to guard explicitly.
+        acts = setpoint.get("actuators")
+        if acts is not None and len(acts) == self._model.nu:
+            self._data.ctrl[:] = acts
+        else:
+            # Default to hover-ish thrust so the model doesn't just freefall
+            # before the first setpoint arrives - tuned for the x500 MJCF
+            # (1.5 kg, 4 rotors at gear=8 -> 0.46 gives mg = 14.7 N).
+            self._data.ctrl[:] = 0.46
         self._mujoco.mj_step(self._model, self._data)
 
         q = self._data.qpos
