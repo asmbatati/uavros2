@@ -14,7 +14,7 @@
     <joint name="j_wrist"/>
   </group>
 
-  <end_effector name="ee" parent_link="forearm_link" group="arm"/>
+  <end_effector name="ee" parent_link="forearm_link" group="arm" parent_group="arm"/>
 
   <!-- Reasonable named poses for testing -->
   <group_state name="home" group="arm">

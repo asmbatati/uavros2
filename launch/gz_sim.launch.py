@@ -123,6 +123,10 @@ def generate_launch_description():
             'exit 1; ',
             'else echo "Airframe file found."; fi && ',
             'echo "Running PX4 with simulation parameters..." && ',
+            # gz_ros2_control plugin lives in /opt/ros/jazzy/lib and is
+            # not on Gazebo's default plugin search path. Prepend it so
+            # the composed arm models can load `libgz_ros2_control-system.so`.
+            'GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/lib:${GZ_SIM_SYSTEM_PLUGIN_PATH}" ',
             'PX4_SIM_SPEED_FACTOR=1 ',
             'PX4_SYS_AUTOSTART=', px4_autostart_id,
             ' PX4_GZ_MODEL=', gz_model_name,

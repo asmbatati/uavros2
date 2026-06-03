@@ -150,12 +150,15 @@ def _setup(context, *_args, **_kwargs):
     # Pre-flight: kill any stale Gazebo / PX4 SITL processes left over from
     # a prior aborted launch. Without this, PX4 happily spawns its drone
     # into the orphan server and you see duplicate models in one scene.
-    # The shell uses `|| true` so the launch never aborts when nothing matches.
+    #
+    # IMPORTANT: use `pkill -x <name>` (exact process-name match), NOT
+    # `-f <pattern>`. The latter would match our own bash command line
+    # (which contains the pattern text!) and kill the launch process.
     kill_stale = ExecuteProcess(
         cmd=[
             "bash", "-c",
-            "pkill -9 -f 'gz sim' 2>/dev/null || true; "
-            "pkill -9 -f 'px4_sitl_default/bin/px4' 2>/dev/null || true; "
+            "pkill -9 -x gz 2>/dev/null || true; "
+            "pkill -9 -x px4 2>/dev/null || true; "
             "sleep 0.5",
         ],
         output="log",
