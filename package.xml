@@ -7,6 +7,7 @@
   <maintainer email="asmalbatati@hotmail.com">user</maintainer>
   <license>MIT</license>
 
+  <!-- ROS message + Python deps used directly by the package code -->
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
@@ -20,7 +21,22 @@
   <depend>python3-numpy</depend>
   <depend>python3-yaml</depend>
   <depend>python3-opencv</depend>
-  
+
+  <!-- Runtime deps used by the launch files (not directly imported in
+       Python). Declared as exec_depend so they don't bloat the build
+       graph but are still picked up by `rosdep install --from-paths src`. -->
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>ros2_control</exec_depend>
+  <exec_depend>ros2_controllers</exec_depend>
+  <exec_depend>gz_ros2_control</exec_depend>
+  <exec_depend>ros_gz</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>moveit</exec_depend>
+  <exec_depend>moveit_ros_move_group</exec_depend>
+  <exec_depend>rmw_zenoh_cpp</exec_depend>
+
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
   <test_depend>ament_pep257</test_depend>

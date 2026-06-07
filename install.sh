@@ -33,8 +33,19 @@ sim_enabled() {
     esac
 }
 
-# Set up environment variables
-export DEV_DIR=${DEV_DIR:-$HOME/drone_arm_ws}
+# Auto-detect DEV_DIR from this script's path. The expected layout is
+#     $DEV_DIR/ros2_ws/src/uav_gz_sim/install.sh
+# so three `dirname`s up from this script lands at DEV_DIR. Honour an
+# explicit $DEV_DIR if the user set it (overrides the auto-detect).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DETECTED_DEV_DIR="$(cd "$SCRIPT_DIR/../../.." 2>/dev/null && pwd)"
+if [ -z "${DEV_DIR:-}" ]; then
+    if [ -n "$DETECTED_DEV_DIR" ] && [ -d "$DETECTED_DEV_DIR/ros2_ws/src/uav_gz_sim" ]; then
+        export DEV_DIR="$DETECTED_DEV_DIR"
+    else
+        export DEV_DIR="$HOME/drone_arm_ws"
+    fi
+fi
 
 # Source ROS2 environment if available
 if [ -f "/opt/ros/jazzy/setup.bash" ]; then
@@ -298,15 +309,22 @@ fi
 
 print_info "Checking environment variables..."
 print_status "DEV_DIR=$DEV_DIR"
-if [ "$DEV_DIR" = "$HOME/drone_arm_ws" ]; then
+if [ -n "$DETECTED_DEV_DIR" ] && [ "$DEV_DIR" = "$DETECTED_DEV_DIR" ]; then
+    print_info "DEV_DIR auto-detected from script location"
+elif [ "$DEV_DIR" = "$HOME/drone_arm_ws" ]; then
     print_info "Using default DEV_DIR. You can override with: export DEV_DIR=<your_directory>"
+else
+    print_info "Using explicitly-set DEV_DIR=$DEV_DIR"
 fi
 print_info "MINIMAL=$MINIMAL"
 print_info "SIMULATORS=$SIMULATORS"
 
-print_info "Git credentials:"
-echo -e "  ${CYAN}GIT_USER=${NC}$GIT_USER"
-echo -e "  ${CYAN}GIT_TOKEN=${NC}$GIT_TOKEN"
+# Print git credentials WITHOUT echoing the token (security).
+if [ -n "$GIT_USER" ]; then
+    print_info "Git credentials: GIT_USER=$GIT_USER, GIT_TOKEN=$([ -n "$GIT_TOKEN" ] && echo '<set>' || echo '<unset>')"
+else
+    print_info "Git credentials: not set (public clone)"
+fi
 
 ROS2_WS=$DEV_DIR/ros2_ws
 ROS2_SRC=$DEV_DIR/ros2_ws/src
@@ -506,47 +524,55 @@ else
     make clean
 fi
 
-print_info "Building PX4 SITL..."
+print_info "Preparing PX4 build environment..."
 cd $PX4_DIR || { print_error "Failed to change to PX4 directory"; exit 1; }
 
-# Ensure all submodules are properly initialized (especially mavlink)
-print_info "Ensuring all submodules are properly initialized..."
+# Ensure all submodules are properly initialized (especially mavlink + the
+# Tools/simulation/gz submodule we copy assets into). Skip the first
+# `make px4_sitl` build here - we do a single build AFTER copying our
+# models / airframes so the embedded ROMFS picks them up. Saves ~10 min.
+print_info "Initializing PX4 submodules..."
 git submodule sync --recursive
 git submodule update --init --recursive
 
-if make px4_sitl; then
-    print_status "PX4 SITL built successfully"
-else
-    print_error "Failed to build PX4 SITL"
-    print_info "Trying to clean and rebuild..."
-    make clean && make px4_sitl || { print_error "PX4 SITL build failed even after clean"; exit 1; }
-    print_status "PX4 SITL built successfully after clean"
-fi
-
 print_section "Configuring PX4 Gazebo Models"
 
-# Handle git operations for gazebo models BEFORE copying files
-print_info "Setting up PX4 gazebo models repository..."
-cd $PX4_DIR/Tools/simulation/gz
+# Handle git operations for gazebo models BEFORE copying files. Tools/simulation/gz
+# is a PX4 submodule (PX4-gazebo-models); guard the git ops in case the submodule
+# isn't initialized for some reason.
+GZ_SIM_DIR="$PX4_DIR/Tools/simulation/gz"
+if [ ! -d "$GZ_SIM_DIR" ]; then
+    print_error "Expected directory $GZ_SIM_DIR does not exist."
+    print_info "Run \`cd $PX4_DIR && git submodule update --init --recursive\` and re-run install.sh."
+    exit 1
+fi
+print_info "Setting up PX4 gazebo models repository at $GZ_SIM_DIR..."
+cd "$GZ_SIM_DIR"
 
-# Get current branch/commit info
-print_info "Current git state:"
-git status --porcelain
-git branch
+if [ -d ".git" ] || git rev-parse --git-dir > /dev/null 2>&1; then
+    # Get current branch/commit info
+    print_info "Current git state:"
+    git status --porcelain
+    git branch
 
-# Force reset everything to a clean state
-print_info "Forcing repository to clean state..."
-git stash push -u -m "Auto-stash before install.sh" || true
-git reset --hard HEAD || true
-git clean -fdx || true
+    # Force reset everything to a clean state. This also wipes any models
+    # that were previously copied in by a past install run, so the copy
+    # below starts from a known-clean tree.
+    print_info "Forcing repository to clean state..."
+    git stash push -u -m "Auto-stash before install.sh" || true
+    git reset --hard HEAD || true
+    git clean -fdx || true
 
-# Fetch latest from origin to ensure we have all branches
-git fetch origin || true
+    # Fetch latest from origin to ensure we have all branches
+    git fetch origin || true
 
-# Force checkout main branch (this will work even from detached HEAD)
-print_info "Checking out main branch..."
-git checkout -B main origin/main || git checkout main || true
-print_status "Repository is now clean and on main branch"
+    # Force checkout main branch (this will work even from detached HEAD)
+    print_info "Checking out main branch..."
+    git checkout -B main origin/main || git checkout main || true
+    print_status "Repository is now clean and on main branch"
+else
+    print_warning "$GZ_SIM_DIR is not a git repo; skipping reset/clean (continuing with raw copy)"
+fi
 
 print_section "Copying Configuration Files"
 
@@ -589,22 +615,25 @@ fi
 
 # PX4 keeps an explicit airframe list in CMakeLists.txt that is used to embed
 # the ROMFS tarball at build time. Copying files alone is not enough — they
-# must also appear in that list. Stamp our airframes between the
-# "# [22000, 22999] Reserve for custom models" marker and the next blank
-# line, replacing any prior block.
+# must also appear in that list. Strip any prior entries that match our
+# airframe FILENAMES exactly (so stock PX4 IDs like 4010_gz_x500_mono_cam
+# are preserved), then re-inject the current list after the
+# "# [22000, 22999] Reserve for custom models" marker.
 print_info "Registering airframes in PX4 CMakeLists.txt"
 CMAKE_AIRFRAMES="${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt"
 UAV_AIRFRAMES=$(ls "${ROS2_SRC}/uav_gz_sim/config/px4" | grep -E '^[0-9]+_gz_' | sort)
 if [ -f "$CMAKE_AIRFRAMES" ] && [ -n "$UAV_AIRFRAMES" ]; then
-    # Remove any existing 4020-4029 block, then re-inject the current list
-    # immediately after the "# [22000, 22999] Reserve for custom models" line.
     python3 - "$CMAKE_AIRFRAMES" <<PY
-import sys, re, os
+import sys, re
 path = sys.argv[1]
+ours = """${UAV_AIRFRAMES}""".strip().splitlines()
 src = open(path).read()
-# Strip any existing 40xx_gz_* entries (one per line, optionally with COLCON_IGNORE).
-src = re.sub(r'(?m)^(40[0-9]{2}_gz_[A-Za-z0-9_]+|COLCON_IGNORE)\s*\n', '', src)
-new_block = """${UAV_AIRFRAMES}""".strip() + '\n'
+# Strip ONLY the exact airframe filenames we own, plus any stray COLCON_IGNORE
+# (some prior install runs left one behind). Stock PX4 entries are untouched.
+for name in ours:
+    src = re.sub(r'(?m)^[ \t]*' + re.escape(name) + r'[ \t]*\n', '', src)
+src = re.sub(r'(?m)^[ \t]*COLCON_IGNORE[ \t]*\n', '', src)
+new_block = '\n'.join(ours) + '\n'
 marker = '# [22000, 22999] Reserve for custom models\n'
 if marker in src:
     src = src.replace(marker, marker + new_block, 1)
@@ -707,6 +736,22 @@ print_info "Installing RMW Zenoh for ROS2..."
 sudo apt install -y ros-jazzy-rmw-zenoh-cpp
 print_status "RMW Zenoh installed"
 
+# Runtime deps that aren't declared in package.xml but are needed at launch
+# time across simulators (arm control, URDF expansion, MoveIt integration).
+print_info "Installing simulation runtime deps (xacro, ros2_control, gz_ros2_control, MoveIt, robot/joint state publishers)..."
+sudo apt install -y \
+    ros-jazzy-xacro \
+    ros-jazzy-robot-state-publisher \
+    ros-jazzy-joint-state-publisher \
+    ros-jazzy-ros2-control \
+    ros-jazzy-ros2-controllers \
+    ros-jazzy-gz-ros2-control \
+    ros-jazzy-ros-gz \
+    ros-jazzy-ros-gz-bridge \
+    ros-jazzy-moveit \
+    || print_warning "Some runtime deps failed to install; check apt output above"
+print_status "Simulation runtime deps installed"
+
 # Install missing Python dependencies for ROS2 message generation
 print_info "Installing Python dependencies..."
 if pip3 install --break-system-packages lark empy catkin_pkg; then
@@ -749,7 +794,8 @@ install_simulator_deps() {
         mujoco)
             pip3 install --break-system-packages mujoco || pip3 install --user mujoco || \
                 print_warning "mujoco install failed"
-            sudo apt-get install -y ros-jazzy-ros2-control ros-jazzy-ros2-controllers || true
+            # ros2_control is now installed unconditionally above (it's needed for
+            # gazebo arm control too); the mujoco branch is just a no-op reminder.
             print_info "Note: mujoco_ros2_control may require source build; see docs/SIMULATORS.md"
             ;;
         isaac)
@@ -836,8 +882,23 @@ print_header "Installation Complete!"
 
 print_status "All packages are built successfully"
 print_status "Models and airframe config files are copied to ${PX4_DIR}"
-print_info "To run the simulation, source the workspace and use:"
+print_info "To run the simulation:"
+echo -e "  ${CYAN}# in terminal 1:${NC}"
+echo -e "  ${CYAN}source ${ROS2_WS}/install/setup.bash${NC}"
+echo -e "  ${CYAN}zenoh${NC}"
+echo -e "  ${CYAN}# in terminal 2:${NC}"
 echo -e "  ${CYAN}source ${ROS2_WS}/install/setup.bash${NC}"
 echo -e "  ${CYAN}ros2 launch uav_gz_sim sim.launch.py${NC}"
+
+# Re-source ~/.bashrc so the newly-added bash.sh aliases are picked up in
+# THIS shell when install.sh is invoked via `source ./install.sh`. When
+# run as `./install.sh` this is a no-op for the parent shell - the user
+# needs to open a new terminal or `source ~/.bashrc` themselves; we tell
+# them so.
+if [ -f "$HOME/.bashrc" ]; then
+    source "$HOME/.bashrc" 2>/dev/null || true
+fi
+print_info "If you ran this as \`./install.sh\` (not \`source ./install.sh\`),"
+print_info "open a new terminal or run \`source ~/.bashrc\` to pick up the aliases."
 
 cd $HOME
