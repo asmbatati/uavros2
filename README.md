@@ -66,6 +66,7 @@ simulator-agnostic.
 
 - **🔧 Complete Toolchain**: PX4 + ROS 2 Jazzy + Gazebo Harmonic + MAVROS, with auto-installed dependencies
 - **🎮 UAV Catalogue**: 9 x500 sensor / arm variants, each with a matching PX4 airframe (IDs 4020–4028), no overlap
+- **📐 Asset Descriptor System** (v1): generate a UAV's Gazebo SDF + PX4 airframe from a YAML descriptor instead of hand-editing — see [docs/ASSETS.md](docs/ASSETS.md). CLI: `uavros2-asset {list,show,validate,build,diff}`.
 - **🦾 Manipulators**: 4 floating-base arms (three_dof, OpenManipulator-X, Panda, UR5) with controllers + MoveIt configs
 - **🌐 World Library**: indoor `warehouse` + 5 outdoor `urban*` heightmap testbeds (git-lfs)
 - **🎛️ Multi-Simulator Dispatcher**: `simulator:=gazebo|webots|mujoco|isaac|pybullet|genesis` from one launch file

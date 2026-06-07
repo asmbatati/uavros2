@@ -26,11 +26,14 @@ setup(
         *recursive_data_files('arms'),
         *recursive_data_files('docs'),
         *recursive_data_files('scripts'),
+        *recursive_data_files('assets'),
+        # Jinja2 templates used by the asset_builder generators.
+        *recursive_data_files('uavros2/asset_builder/templates'),
         (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz')),
         *([(os.path.join('share', package_name, 'worlds'), glob('worlds/*'))]
           if os.path.exists('worlds') and glob('worlds/*') else []),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'pydantic>=2', 'jinja2', 'typer', 'pyyaml'],
     extras_require={'test': ['pytest']},
     zip_safe=True,
     maintainer='Abdulrahman S. Al-Batati',
@@ -49,6 +52,7 @@ setup(
             'adaptive_image_stitcher = uavros2.adaptive_image_stitcher:main',
             'sim_control_bridge = uavros2.sim_control_bridge:main',
             'sensor_relay = uavros2.sensor_relay:main',
+            'uavros2-asset = uavros2.asset_cli:main',
         ],
     },
 )

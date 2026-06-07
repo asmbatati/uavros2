@@ -1,0 +1,13 @@
+version: 1
+kind: sensor
+name: gps_default
+description: PX4 simulated GNSS receiver (NavSat).
+parameters:
+  update_rate_hz: 5
+gazebo:
+  gz_model: ""        # embedded in x500 base model SDF
+  body_link: null
+ros:
+  topic_template: "/{ns}/gps"
+  msg_type: sensor_msgs/NavSatFix
+  default_rate_hz: 5

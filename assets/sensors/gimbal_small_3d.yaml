@@ -1,0 +1,15 @@
+version: 1
+kind: sensor
+name: gimbal_small_3d
+description: Small 3-axis gimbal mount (no payload of its own).
+parameters:
+  pitch_range_deg: [-90, 90]
+  yaw_range_deg: [-180, 180]
+  roll_range_deg: [-45, 45]
+gazebo:
+  gz_model: gimbal_small_3d
+  body_link: base_link_gimbal
+ros:
+  topic_template: "/{ns}/{sensor_name}/orientation"
+  msg_type: geometry_msgs/QuaternionStamped
+  default_rate_hz: 50

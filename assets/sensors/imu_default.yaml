@@ -1,0 +1,17 @@
+version: 1
+kind: sensor
+name: imu_default
+description: Standard 6-DOF IMU embedded in the chassis base_link.
+parameters:
+  update_rate_hz: 250
+  noise:
+    gyro_stddev: 0.0009
+    accel_stddev: 0.0185
+gazebo:
+  # IMU is part of the x500 base model SDF; no separate include.
+  gz_model: ""
+  body_link: null
+ros:
+  topic_template: "/{ns}/imu"
+  msg_type: sensor_msgs/Imu
+  default_rate_hz: 250

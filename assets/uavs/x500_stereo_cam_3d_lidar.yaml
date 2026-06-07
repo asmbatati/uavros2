@@ -1,0 +1,31 @@
+version: 1
+kind: uav
+name: x500_stereo_cam_3d_lidar
+description: x500 + front-mounted stereo camera + 3D Velodyne LiDAR + gimbal mount.
+
+chassis:
+  ref: x500
+
+sensors:
+  # The IMU / GPS / barometer are embedded in the x500 base SDF, so they
+  # appear here only as documentation that they're part of the contract.
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+  - name: front_stereo
+    ref: stereo_camera
+    mount: base_link
+    pose: [0.20, 0.0, -0.10, 0, 0.17453293, 0]   # pitch 10° downward
+  - name: front_lidar
+    ref: velodyne_16
+    mount: base_link
+    pose: [0.0, 0.0, -0.12, 0, 1.57079633, 0]    # pitch 90° (axis pointing forward)
+  - name: gimbal
+    ref: gimbal_small_3d
+    mount: base_link
+    pose: [0.14, 0, -0.10, 1.57079633, 0, 1.57079633]  # 90/0/90
+
+px4:
+  airframe_id: 4023
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.60

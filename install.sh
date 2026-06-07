@@ -754,11 +754,11 @@ print_status "Simulation runtime deps installed"
 
 # Install missing Python dependencies for ROS2 message generation
 print_info "Installing Python dependencies..."
-if pip3 install --break-system-packages lark empy catkin_pkg; then
+if pip3 install --break-system-packages lark empy catkin_pkg pydantic jinja2 typer pyyaml; then
     print_status "Python dependencies installed"
 else
     print_warning "Failed to install Python dependencies with --break-system-packages, trying without..."
-    if pip3 install --user lark empy catkin_pkg; then
+    if pip3 install --user lark empy catkin_pkg pydantic jinja2 typer pyyaml; then
         print_status "Python dependencies installed (user mode)"
     else
         print_error "Failed to install Python dependencies"

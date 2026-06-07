@@ -1,0 +1,13 @@
+version: 1
+kind: sensor
+name: barometer_default
+description: PX4 simulated barometer.
+parameters:
+  update_rate_hz: 50
+gazebo:
+  gz_model: ""
+  body_link: null
+ros:
+  topic_template: "/{ns}/air_pressure"
+  msg_type: sensor_msgs/FluidPressure
+  default_rate_hz: 50

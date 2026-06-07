@@ -22,6 +22,12 @@
   <depend>python3-yaml</depend>
   <depend>python3-opencv</depend>
 
+  <!-- Asset descriptor system (uavros2-asset CLI). pydantic v2 + jinja2
+       + typer are pulled in via pip in install.sh because the rosdep
+       jazzy distro mapping for these is patchy. -->
+  <depend>python3-pydantic</depend>
+  <depend>python3-jinja2</depend>
+
   <!-- Runtime deps used by the launch files (not directly imported in
        Python). Declared as exec_depend so they don't bloat the build
        graph but are still picked up by rosdep over the source tree. -->

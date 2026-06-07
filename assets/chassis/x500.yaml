@@ -1,0 +1,36 @@
+# Hand-authored descriptor mirroring PX4's stock x500 quadrotor.
+# Generators emit model.sdf + PX4 airframe by composing this with
+# whatever sensors / arm the UAV assembly adds on top.
+version: 1
+kind: chassis
+name: x500
+description: PX4 x500 quadrotor, 1.5 kg, 250 mm arms.
+type: multirotor
+layout: quad_x
+arm_length_m: 0.25
+rotors:
+  fl: { name: rotor_fl, pose: [ 0.13,  0.22, 0.02, 0, 0, 0], spin: ccw, max_thrust_N: 8.0, km_torque_coef: 0.05 }
+  fr: { name: rotor_fr, pose: [ 0.13, -0.22, 0.02, 0, 0, 0], spin: cw,  max_thrust_N: 8.0, km_torque_coef: 0.05 }
+  rl: { name: rotor_rl, pose: [-0.13,  0.20, 0.02, 0, 0, 0], spin: cw,  max_thrust_N: 8.0, km_torque_coef: 0.05 }
+  rr: { name: rotor_rr, pose: [-0.13, -0.20, 0.02, 0, 0, 0], spin: ccw, max_thrust_N: 8.0, km_torque_coef: 0.05 }
+body:
+  collision:
+    type: box
+    size: [0.20, 0.20, 0.05]
+mass:
+  total_kg: 1.5
+  inertia:
+    auto: true
+    density_kg_per_m3: 800
+landing_gear:
+  type: skids
+  feet:
+    - { name: foot_fl, pose: [ 0.13,  0.13, -0.18, 0, 0, 0], shape: sphere, radius: 0.012 }
+    - { name: foot_fr, pose: [ 0.13, -0.13, -0.18, 0, 0, 0], shape: sphere, radius: 0.012 }
+    - { name: foot_rl, pose: [-0.13,  0.13, -0.18, 0, 0, 0], shape: sphere, radius: 0.012 }
+    - { name: foot_rr, pose: [-0.13, -0.13, -0.18, 0, 0, 0], shape: sphere, radius: 0.012 }
+mount_points:
+  - { name: base_link,      pose: [0,    0,  0,    0, 0, 0] }
+  - { name: payload_top,    pose: [0,    0,  0.06, 0, 0, 0] }
+  - { name: payload_bottom, pose: [0,    0, -0.05, 0, 0, 0] }
+  - { name: gimbal,         pose: [0.05, 0, -0.05, 0, 0, 0] }

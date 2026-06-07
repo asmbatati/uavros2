@@ -1,0 +1,17 @@
+version: 1
+kind: sensor
+name: stereo_camera
+description: Forward-facing stereo camera pair (RGB).
+parameters:
+  baseline_m: 0.06
+  resolution: [1280, 720]
+  fps: 30
+  hfov_deg: 90
+gazebo:
+  # Standalone sensor model under models/stereo_camera/
+  gz_model: stereo_camera
+  body_link: stereo_camera_link
+ros:
+  topic_template: "/{ns}/{sensor_name}/{side}/image_raw"
+  msg_type: sensor_msgs/Image
+  default_rate_hz: 30
