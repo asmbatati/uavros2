@@ -25,6 +25,11 @@ export RMW_IMPLEMENTATION=rmw_zenoh_cpp
 # export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 export ROS_DOMAIN_ID=0
 
+################# uavros2-asset CLI alias ######################
+# `asset list`, `asset validate`, `asset build <uav>`, `asset diff --all`, …
+# Wraps `ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2`.
+alias asset='ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2'
+
 ################# Sim dispatcher aliases #######################
 # Top-level multi-simulator launch dispatcher.
 alias warehouse='ros2 launch uavros2 sim.launch.py simulator:=gazebo world:=warehouse'

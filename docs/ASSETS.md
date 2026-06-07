@@ -32,17 +32,30 @@ self-contained descriptors:
 
 ## CLI
 
-The `uavros2-asset` command (installed as a console script when the
-package is built):
+The CLI installs as a ROS 2 console script. Three equivalent ways to invoke it:
 
 ```bash
-uavros2-asset list                              # show every primitive + UAV
-uavros2-asset show x500_stereo_cam_3d_lidar     # dump one descriptor
-uavros2-asset validate                          # schema + cross-checks
-uavros2-asset build  x500_stereo_cam_3d_lidar   # regen one UAV's artefacts
-uavros2-asset build  --all                      # regen everything
-uavros2-asset diff   --all                      # see what would change vs committed files
-uavros2-asset build  x500_d435 --target gazebo  # one generator only
+# After `source install/setup.bash` — preferred:
+ros2 run uavros2 uavros2-asset list --root src/uavros2
+
+# Directly from source tree, no install needed:
+cd ros2_ws/src/uavros2
+PYTHONPATH=. python3 -m uavros2.asset_cli list
+
+# Add a shell alias for convenience (drop into scripts/bash.sh):
+alias asset='ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2'
+```
+
+The commands:
+
+```bash
+ros2 run uavros2 uavros2-asset list                              # every primitive + UAV
+ros2 run uavros2 uavros2-asset show x500_stereo_cam_3d_lidar     # dump one descriptor
+ros2 run uavros2 uavros2-asset validate                          # schema + cross-checks
+ros2 run uavros2 uavros2-asset build x500_stereo_cam_3d_lidar    # regen one UAV's artefacts
+ros2 run uavros2 uavros2-asset build --all                       # regen everything
+ros2 run uavros2 uavros2-asset diff  --all                       # what would change vs committed
+ros2 run uavros2 uavros2-asset build x500_d435 --target gazebo   # one generator only
 ```
 
 All commands default to `--root .` so run them from the package source
