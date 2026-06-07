@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Webots backend for uav_gz_sim.
+"""Webots backend for uavros2.
 
 Current scope: a working Webots demo that opens the simulator and
 spawns a quadrotor, by wrapping the upstream `webots_ros2_crazyflie`
@@ -77,7 +77,7 @@ def _setup(context, *_args, **_kwargs):
     # Today it just announces itself; the Crazyflie driver publishes its
     # own sensor topics under the global namespace.
     bridge = Node(
-        package="uav_gz_sim", executable="sim_control_bridge",
+        package="uavros2", executable="sim_control_bridge",
         name="sim_control_bridge",
         namespace=ns,
         parameters=[

@@ -3,8 +3,8 @@
 ## Full install (host, all features)
 
 ```bash
-git clone https://github.com/asmbatati/uav_gz_sim.git ~/drone_arm_ws/ros2_ws/src/uav_gz_sim
-cd ~/drone_arm_ws/ros2_ws/src/uav_gz_sim
+git clone https://github.com/asmbatati/uavros2.git ~/drone_arm_ws/ros2_ws/src/uavros2
+cd ~/drone_arm_ws/ros2_ws/src/uavros2
 git submodule update --init --recursive
 export DEV_DIR=~/drone_arm_ws
 ./install.sh
@@ -15,7 +15,7 @@ This installs ROS 2 Jazzy, Gazebo Harmonic, PX4 SITL, MAVROS (custom fork), YOLO
 ```bash
 source ~/drone_arm_ws/ros2_ws/install/setup.bash
 zenoh &                                                 # in one terminal
-ros2 launch uav_gz_sim sim.launch.py                    # in another
+ros2 launch uavros2 sim.launch.py                    # in another
 ```
 
 ## Minimal install (CI / headless)
@@ -44,7 +44,7 @@ Without `--simulators`, only `gazebo` deps install (the only sim with a complete
 
 ## Docker
 
-The Docker setup lives in a separate git submodule: [`asmbatati/uav_gz_sim_docker`](https://github.com/asmbatati/uav_gz_sim_docker). It checks out under `uav_gz_sim/uav_gz_sim_docker/` and is populated automatically by `install.sh` (`git submodule update --init`) on every run, so a fresh `git clone` followed by `./install.sh` always pulls a current docker tree.
+The Docker setup lives in a separate git submodule: [`asmbatati/uav_gz_sim_docker`](https://github.com/asmbatati/uav_gz_sim_docker). It checks out under `uavros2/uav_gz_sim_docker/` and is populated automatically by `install.sh` (`git submodule update --init`) on every run, so a fresh `git clone` followed by `./install.sh` always pulls a current docker tree.
 
 Available images (see `uav_gz_sim_docker/docker/Makefile`):
 
@@ -60,14 +60,14 @@ Available images (see `uav_gz_sim_docker/docker/Makefile`):
 Build + run (Ubuntu 24 / Jazzy image — recommended for this workspace):
 
 ```bash
-cd ros2_ws/src/uav_gz_sim/uav_gz_sim_docker/docker
+cd ros2_ws/src/uavros2/uav_gz_sim_docker/docker
 make px4-dev-simulation-ubuntu24
 
 cd ..                                          # back to uav_gz_sim_docker/
 ./docker_run.sh                                # default container name; see script header
 
 # inside the container:
-cd ~/shared_volume/ros2_ws/src/uav_gz_sim
+cd ~/shared_volume/ros2_ws/src/uavros2
 ./install.sh
 ```
 

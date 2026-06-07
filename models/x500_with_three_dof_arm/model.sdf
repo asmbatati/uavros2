@@ -141,8 +141,8 @@
       simulators/gazebo.launch.py (gz_ros2_control does not expand
       $(find ...) or package:// URIs in <parameters>, and its
       controller_manager node defaults to the global root):
-        @UAV_GZ_SIM_PKG_SHARE@  - install share dir
-        @UAV_GZ_SIM_NAMESPACE@  - the drone's ROS namespace, so
+        @UAVROS2_PKG_SHARE@  - install share dir
+        @UAVROS2_NAMESPACE@  - the drone's ROS namespace, so
                                   controller_manager, robot_description
                                   subscription, and spawners all agree
                                   on /<ns>/controller_manager,
@@ -150,12 +150,12 @@
     -->
     <plugin filename='libgz_ros2_control-system.so'
             name='gz_ros2_control::GazeboSimROS2ControlPlugin'>
-      <parameters>@UAV_GZ_SIM_PKG_SHARE@/arms/three_dof/config/controllers.yaml</parameters>
+      <parameters>@UAVROS2_PKG_SHARE@/arms/three_dof/config/controllers.yaml</parameters>
       <robot_param>robot_description</robot_param>
       <robot_param_node>robot_state_publisher</robot_param_node>
       <controller_manager_node_name>controller_manager</controller_manager_node_name>
       <ros>
-        <namespace>@UAV_GZ_SIM_NAMESPACE@</namespace>
+        <namespace>@UAVROS2_NAMESPACE@</namespace>
       </ros>
     </plugin>
 

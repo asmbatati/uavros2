@@ -34,7 +34,7 @@ Heightmap-based outdoor terrain models ported from `gps_denied_navigation_sim`. 
 
 To materialize the binaries after clone:
 ```bash
-cd ros2_ws/src/uav_gz_sim
+cd ros2_ws/src/uavros2
 git lfs install
 git lfs pull
 ```

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sim-agnostic nodes for uav_gz_sim.
+"""Sim-agnostic nodes for uavros2.
 
 Runs the parts of the ROS-side stack that don't depend on which simulator
 is producing the canonical topics. Included by sim.launch.py after the
@@ -24,7 +24,7 @@ def _setup(context, *_args, **_kwargs):
     base = f"{ns}/base_link"
     odom = f"{ns}/odom"
 
-    pkg_share = get_package_share_directory("uav_gz_sim")
+    pkg_share = get_package_share_directory("uavros2")
     rviz_file = os.path.join(pkg_share, "rviz", "rviz_config.rviz")
 
     # TF tree: static transforms that are sim-agnostic. The new-style
@@ -54,7 +54,7 @@ def _setup(context, *_args, **_kwargs):
 
     # Dynamic odom -> base_link via tf_relay (MAVROS pose -> TF).
     odom2base = Node(
-        package="uav_gz_sim", executable="tf_relay",
+        package="uavros2", executable="tf_relay",
         name="odom2base_tf_relay",
         parameters=[
             {"use_sim_time": True},
@@ -69,7 +69,7 @@ def _setup(context, *_args, **_kwargs):
 
     # Camera fusion (auto-detects available cameras under /<ns>/).
     stitcher = Node(
-        package="uav_gz_sim", executable="adaptive_image_stitcher",
+        package="uavros2", executable="adaptive_image_stitcher",
         name="adaptive_image_stitcher",
         parameters=[
             {"use_sim_time": True},
@@ -84,7 +84,7 @@ def _setup(context, *_args, **_kwargs):
 
     # Ground-truth path publisher for RViz.
     traj_pub = Node(
-        package="uav_gz_sim", executable="trajectory_publisher",
+        package="uavros2", executable="trajectory_publisher",
         name="trajectory_publisher",
         parameters=[
             {"use_sim_time": True},

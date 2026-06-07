@@ -1,6 +1,6 @@
-# uav_gz_sim — Multi-Simulator UAV Testbed for ROS 2
+# uavros2 — Multi-Simulator UAV Testbed for ROS 2
 
-> **Working name:** `uav_gz_sim` (Python package + repo name). Brand candidates
+> **Working name:** `uavros2` (Python package + repo name). Brand candidates
 > for the published project are listed below; pick one when you're ready to
 > rename. Renaming touches `setup.py`, `package.xml`, every launch include,
 > and the GitHub URL, so it's worth a deliberate decision.
@@ -47,8 +47,8 @@ Python package).
 
 When you pick one, the rename is:
 1. Repo: `gh repo rename <new>` (or via the web UI)
-2. Python package: `setup.py.name`, `package.xml.name`, `uav_gz_sim/` dir
-3. Every `launch_arguments` / `FindPackageShare("uav_gz_sim")` reference
+2. Python package: `setup.py.name`, `package.xml.name`, `uavros2/` dir
+3. Every `launch_arguments` / `FindPackageShare("uavros2")` reference
 
 A single search-and-replace pass nails most of it.
 
@@ -156,8 +156,8 @@ simulator-agnostic.
 ```bash
 cd ~/ && mkdir -p ros2_ws/src && cd ros2_ws/src
 # Clone the repository
-git clone https://github.com/asmbatati/uav_gz_sim.git
-cd uav_gz_sim
+git clone https://github.com/asmbatati/uavros2.git
+cd uavros2
 
 # Set environment variables
 export DEV_DIR=~
@@ -173,9 +173,9 @@ chmod +x install.sh
 
 ```bash
 # Clone the repository
-git clone https://github.com/asmbatati/uav_gz_sim.git
+git clone https://github.com/asmbatati/uavros2.git
 git submodule update --init --recursive
-cd uav_gz_sim/px4_ros2_jazzy_docker/docker
+cd uavros2/px4_ros2_jazzy_docker/docker
 
 # Make the image
 make px4-dev-simulation-ubuntu24
@@ -197,8 +197,8 @@ Then install:
 # Clone the repository
 cd ~/shared_volume
 mkdir -p ros2_ws/src && cd ros2_ws/src
-git clone https://github.com/asmbatati/uav_gz_sim.git
-cd uav_gz_sim
+git clone https://github.com/asmbatati/uavros2.git
+cd uavros2
 
 # Run the installation script
 chmod +x install.sh
@@ -243,10 +243,10 @@ The installation script automatically:
 source ~/shared_volume/ros2_ws/install/setup.bash
 
 # Launch the simulation
-ros2 launch uav_gz_sim sim.launch.py
+ros2 launch uavros2 sim.launch.py
 
 # For tugbot depot world
-ros2 launch uav_gz_sim sim.launch.py world_type:=warehouse
+ros2 launch uavros2 sim.launch.py world_type:=warehouse
 ```
 
 ### Start PX4 SITL
@@ -293,7 +293,7 @@ qgc
 ```bash
 # Build specific package
 cd ~/shared_volume/ros2_ws
-colcon build --packages-select uav_gz_sim
+colcon build --packages-select uavros2
 
 # Build all packages
 colcon build
@@ -569,7 +569,7 @@ Parts of this simulation framework have been refactored and enhanced from the fo
 
 **Built with ❤️ for the UAV development community**
 
-[Report Bug](https://github.com/asmbatati/uav_gz_sim/issues) · [Request Feature](https://github.com/asmbatati/uav_gz_sim/issues) · [Documentation](https://github.com/asmbatati/uav_gz_sim/wiki)
+[Report Bug](https://github.com/asmbatati/uavros2/issues) · [Request Feature](https://github.com/asmbatati/uavros2/issues) · [Documentation](https://github.com/asmbatati/uavros2/wiki)
 
 </div>
 

@@ -13,12 +13,12 @@ def _find_workspace_px4_dir():
     env var is intentionally ignored. This guarantees the launch picks up
     the PX4 sibling of the active ``ros2_ws``, not a stray copy elsewhere.
 
-    Walks up from ``share/uav_gz_sim`` looking for a directory that contains
+    Walks up from ``share/uavros2`` looking for a directory that contains
     both ``ros2_ws`` and ``PX4-Autopilot`` siblings. Returns the PX4 path
     or None if not found.
     """
-    pkg_share = get_package_share_directory('uav_gz_sim')
-    # pkg_share is .../<DEV_DIR>/ros2_ws/install/uav_gz_sim/share/uav_gz_sim
+    pkg_share = get_package_share_directory('uavros2')
+    # pkg_share is .../<DEV_DIR>/ros2_ws/install/uavros2/share/uavros2
     cur = pkg_share
     for _ in range(8):
         cur = os.path.dirname(cur)

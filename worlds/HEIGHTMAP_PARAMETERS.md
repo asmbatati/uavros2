@@ -1,4 +1,4 @@
-# uav_gz_sim — World Catalogue
+# uavros2 — World Catalogue
 
 ## Overview
 This document provides detailed parameters, dimensions, and characteristics for all simulation worlds in the GPS-denied navigation simulation package.

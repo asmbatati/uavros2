@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PyBullet backend for uav_gz_sim — SCAFFOLDED.
+"""PyBullet backend for uavros2 — SCAFFOLDED.
 
 Loads the UAV URDF and runs sim_control_bridge in placeholder-PID mode.
 Sufficient for headless CI smoke tests; not for serious flight dynamics.
@@ -31,7 +31,7 @@ def _setup(context, *_args, **_kwargs):
     return [
         LogInfo(msg=f"[pybullet] Scaffolded backend — placeholder PID controller. uav={uav} arm={arm}"),
         Node(
-            package="uav_gz_sim", executable="sim_control_bridge",
+            package="uavros2", executable="sim_control_bridge",
             name="sim_control_bridge",
             namespace=ns,
             parameters=[

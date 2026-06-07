@@ -35,7 +35,7 @@ After `git clone`, run `git lfs pull` inside the package to materialize the bina
 
 Via the dispatcher (recommended):
 ```bash
-ros2 launch uav_gz_sim sim.launch.py \
+ros2 launch uavros2 sim.launch.py \
     simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban5
 ```
 

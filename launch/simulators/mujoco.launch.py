@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MuJoCo backend for uav_gz_sim.
+"""MuJoCo backend for uavros2.
 
 Working scope: x500 base UAV (cylinder-chain arms can be composed
 into the MJCF later). No PX4 - sim_control_bridge owns rotor mixing
@@ -43,7 +43,7 @@ def _setup(context, *_args, **_kwargs):
     arm = LaunchConfiguration("arm").perform(context)
     ns = LaunchConfiguration("namespace").perform(context)
 
-    pkg_share = get_package_share_directory("uav_gz_sim")
+    pkg_share = get_package_share_directory("uavros2")
 
     # Asset lookup: prefer composed UAV+arm MJCF, fall back to bare UAV.
     candidate_paths = []
@@ -71,7 +71,7 @@ def _setup(context, *_args, **_kwargs):
     )
 
     bridge = Node(
-        package="uav_gz_sim", executable="sim_control_bridge",
+        package="uavros2", executable="sim_control_bridge",
         name="sim_control_bridge",
         namespace=ns,
         parameters=[

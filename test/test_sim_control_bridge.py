@@ -9,7 +9,7 @@ import pytest
 
 # Import from control_math (no rclpy dependency) so tests are collectable
 # without a sourced ROS environment.
-from uav_gz_sim.control_math import quad_attitude_pid, rotor_mixer
+from uavros2.control_math import quad_attitude_pid, rotor_mixer
 
 
 # ----- quad_attitude_pid -----

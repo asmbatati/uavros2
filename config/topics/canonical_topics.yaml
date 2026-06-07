@@ -1,4 +1,4 @@
-# Canonical topic contract for uav_gz_sim.
+# Canonical topic contract for uavros2.
 #
 # Every simulator backend (gazebo, webots, mujoco, isaac, pybullet, genesis)
 # is responsible for producing these topics under the configured namespace.

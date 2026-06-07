@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>uav_gz_sim</name>
+  <name>uavros2</name>
   <version>1.0.0</version>
   <description>Simulation environment UAV in Gazebo.</description>
   <maintainer email="asmalbatati@hotmail.com">user</maintainer>

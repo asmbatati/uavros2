@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="x500_with_openmanip_x">
-  <xacro:include filename="$(find uav_gz_sim)/models/x500/urdf/x500.urdf.xacro"/>
+  <xacro:include filename="$(find uavros2)/models/x500/urdf/x500.urdf.xacro"/>
   <xacro:include filename="$(find open_manipulator_x_description)/urdf/open_manipulator_x.urdf.xacro"/>
 
   <joint name="arm_mount" type="fixed">

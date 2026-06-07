@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gazebo (Harmonic) backend for uav_gz_sim.
+"""Gazebo (Harmonic) backend for uavros2.
 
 Brings up:
 - PX4 SITL + Gazebo (via launch/gz_sim.launch.py)
@@ -41,15 +41,15 @@ def _materialize_live_models(pkg_share: str, namespace: str) -> str:
     instead of the in-tree ones.
     """
     live_dir = os.path.join(
-        tempfile.gettempdir(), f"uav_gz_sim_live_models_{os.getuid()}"
+        tempfile.gettempdir(), f"uavros2_live_models_{os.getuid()}"
     )
     src_models_dir = os.path.join(pkg_share, "models")
     if not os.path.isdir(src_models_dir):
         return live_dir
 
     substitutions = {
-        "@UAV_GZ_SIM_PKG_SHARE@": pkg_share,
-        "@UAV_GZ_SIM_NAMESPACE@": namespace,
+        "@UAVROS2_PKG_SHARE@": pkg_share,
+        "@UAVROS2_NAMESPACE@": namespace,
     }
 
     for model in os.listdir(src_models_dir):
@@ -151,7 +151,7 @@ def _setup(context, *_args, **_kwargs):
     # Materialize substituted-marker SDFs into a temp dir and prepend it
     # to GZ_SIM_RESOURCE_PATH so PX4/Gazebo finds these instead of the
     # raw in-tree ones (whose <parameters> still contains @MARKER@).
-    pkg_share_early = get_package_share_directory("uav_gz_sim")
+    pkg_share_early = get_package_share_directory("uavros2")
     live_models_dir = _materialize_live_models(pkg_share_early, ns)
     existing_resource = os.environ.get("GZ_SIM_RESOURCE_PATH", "")
     resource_path_value = (
@@ -174,7 +174,7 @@ def _setup(context, *_args, **_kwargs):
     gz_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
-                FindPackageShare("uav_gz_sim"), "launch", "gz_sim.launch.py",
+                FindPackageShare("uavros2"), "launch", "gz_sim.launch.py",
             ])
         ]),
         launch_arguments={
@@ -190,11 +190,11 @@ def _setup(context, *_args, **_kwargs):
         }.items(),
     )
 
-    pkg_share = get_package_share_directory("uav_gz_sim")
+    pkg_share = get_package_share_directory("uavros2")
     mavros_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
-                FindPackageShare("uav_gz_sim"), "launch", "mavros.launch.py",
+                FindPackageShare("uavros2"), "launch", "mavros.launch.py",
             ])
         ]),
         launch_arguments={

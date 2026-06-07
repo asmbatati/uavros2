@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genesis backend for uav_gz_sim — STUB.
+"""Genesis backend for uavros2 — STUB.
 
 The Genesis API is still moving; revisit when stable.
 """

@@ -1,6 +1,6 @@
 # Manipulators
 
-`uav_gz_sim` ships four floating-base manipulator configurations. Each composes an x500 quadcopter with a different robotic arm, mounted underneath the fuselage.
+`uavros2` ships four floating-base manipulator configurations. Each composes an x500 quadcopter with a different robotic arm, mounted underneath the fuselage.
 
 | Arm | DOF | Scaffold mass | Best for | Status |
 |---|---|---|---|---|
@@ -46,14 +46,14 @@ All four sit 21–34 mm above the landing gear feet, so the drone rests on the g
 End-to-end Gazebo + controller stack:
 
 ```bash
-ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo \
+ros2 launch uavros2 sim.launch.py simulator:=gazebo \
     uav:=x500_with_three_dof_arm arm:=three_dof
 ```
 
 With MoveIt (any of the four arms — all ship a complete config):
 
 ```bash
-ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo \
+ros2 launch uavros2 sim.launch.py simulator:=gazebo \
     uav:=x500_with_panda arm:=panda use_moveit:=true
 ```
 
@@ -90,7 +90,7 @@ The scaffolds are placeholders for real meshes / kinematics. To upgrade an arm t
 
 1. Install the upstream description package.
 2. Rewrite `arms/<arm>/urdf/<arm>.urdf.xacro` to xacro:include the upstream URDF (the `arms/mounts/x500_<arm>.urdf.xacro` already does this).
-3. Author or copy a Gazebo SDF for `models/x500_with_<arm>/` with the real meshes; keep the `gz_ros2_control` plugin block (and the `@UAV_GZ_SIM_PKG_SHARE@` + `@UAV_GZ_SIM_NAMESPACE@` markers) so the launch-time materializer still works.
+3. Author or copy a Gazebo SDF for `models/x500_with_<arm>/` with the real meshes; keep the `gz_ros2_control` plugin block (and the `@UAVROS2_PKG_SHARE@` + `@UAVROS2_NAMESPACE@` markers) so the launch-time materializer still works.
 4. Update `config/controllers.yaml` if the upstream's joint names differ (they shouldn't — the scaffolds intentionally match the upstream conventions).
 5. Update `arms/<arm>/config/moveit/<arm>.srdf` to reference the real link names.
 
@@ -102,7 +102,7 @@ Step 4 is usually a no-op because the scaffolds already use the upstream joint n
 2. Write `asset.yaml` (mount frame, joint names, EE link, default controller, `moveit: true/false`).
 3. Add `config/controllers.yaml` (wrap params under `/**:` so the namespaced controller_manager picks them up).
 4. Optionally ship `config/moveit/` — `arm_control.launch.py` auto-detects it.
-5. Hand-author a Gazebo SDF at `models/x500_with_<name>/model.sdf` with the `gz_ros2_control` plugin block (markers `@UAV_GZ_SIM_PKG_SHARE@` + `@UAV_GZ_SIM_NAMESPACE@`).
+5. Hand-author a Gazebo SDF at `models/x500_with_<name>/model.sdf` with the `gz_ros2_control` plugin block (markers `@UAVROS2_PKG_SHARE@` + `@UAVROS2_NAMESPACE@`).
 6. Add a PX4 airframe at `config/px4/40NN_gz_x500_with_<name>` (next free ID is 4029) and append it to `PX4-Autopilot/ROMFS/.../airframes/CMakeLists.txt`; `install.sh` handles the latter on re-run.
 7. Write `arms/mounts/x500_<name>.urdf.xacro` and register the arm in `arms/manifest.yaml`.
 

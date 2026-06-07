@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="x500_with_ur5">
-  <xacro:include filename="$(find uav_gz_sim)/models/x500/urdf/x500.urdf.xacro"/>
+  <xacro:include filename="$(find uavros2)/models/x500/urdf/x500.urdf.xacro"/>
   <xacro:include filename="$(find ur_description)/urdf/ur.urdf.xacro"/>
 
   <!-- ur_description's xacro takes ur_type:=ur5 as a parameter; the

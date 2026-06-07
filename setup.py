@@ -2,7 +2,7 @@ import os
 from glob import glob
 from setuptools import setup, find_packages
 
-package_name = 'uav_gz_sim'
+package_name = 'uavros2'
 
 
 def recursive_data_files(directory):
@@ -43,12 +43,12 @@ setup(
     license='MIT',
     entry_points={
         'console_scripts': [
-            'execute_random_trajectories = uav_gz_sim.execute_random_trajectories_node:main',
-            'tf_relay = uav_gz_sim.tf_relay:main',
-            'trajectory_publisher = uav_gz_sim.gt_trajectory_publisher:main',
-            'adaptive_image_stitcher = uav_gz_sim.adaptive_image_stitcher:main',
-            'sim_control_bridge = uav_gz_sim.sim_control_bridge:main',
-            'sensor_relay = uav_gz_sim.sensor_relay:main',
+            'execute_random_trajectories = uavros2.execute_random_trajectories_node:main',
+            'tf_relay = uavros2.tf_relay:main',
+            'trajectory_publisher = uavros2.gt_trajectory_publisher:main',
+            'adaptive_image_stitcher = uavros2.adaptive_image_stitcher:main',
+            'sim_control_bridge = uavros2.sim_control_bridge:main',
+            'sensor_relay = uavros2.sensor_relay:main',
         ],
     },
 )

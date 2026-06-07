@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Isaac Sim backend for uav_gz_sim — SCAFFOLDED.
+"""Isaac Sim backend for uavros2 — SCAFFOLDED.
 
 Not wired end-to-end. Documents the install path and exits with guidance.
 See docs/SIMULATORS.md for the PegasusSimulator-based PX4 integration.

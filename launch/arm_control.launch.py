@@ -36,7 +36,7 @@ def _setup(context, *_args, **_kwargs):
     if arm == "none":
         return [LogInfo(msg="[arm_control] arm:=none — nothing to launch.")]
 
-    pkg_share = get_package_share_directory("uav_gz_sim")
+    pkg_share = get_package_share_directory("uavros2")
     arm_share = os.path.join(pkg_share, "arms", arm)
     controllers_yaml = os.path.join(arm_share, "config", "controllers.yaml")
     xacro_path = os.path.join(arm_share, "urdf", f"{arm}.urdf.xacro")

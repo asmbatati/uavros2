@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ---------------------------------------------------------------------------
-# uav_gz_sim install.sh
+# uavros2 install.sh
 #
 # Flags:
 #   --minimal              Skip YOLOv8 + GeographicLib + QGC downloads (CI/headless).
@@ -34,13 +34,13 @@ sim_enabled() {
 }
 
 # Auto-detect DEV_DIR from this script's path. The expected layout is
-#     $DEV_DIR/ros2_ws/src/uav_gz_sim/install.sh
+#     $DEV_DIR/ros2_ws/src/uavros2/install.sh
 # so three `dirname`s up from this script lands at DEV_DIR. Honour an
 # explicit $DEV_DIR if the user set it (overrides the auto-detect).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DETECTED_DEV_DIR="$(cd "$SCRIPT_DIR/../../.." 2>/dev/null && pwd)"
 if [ -z "${DEV_DIR:-}" ]; then
-    if [ -n "$DETECTED_DEV_DIR" ] && [ -d "$DETECTED_DEV_DIR/ros2_ws/src/uav_gz_sim" ]; then
+    if [ -n "$DETECTED_DEV_DIR" ] && [ -d "$DETECTED_DEV_DIR/ros2_ws/src/uavros2" ]; then
         export DEV_DIR="$DETECTED_DEV_DIR"
     else
         export DEV_DIR="$HOME/drone_arm_ws"
@@ -292,7 +292,7 @@ check_host_dependencies() {
     fi
 }
 
-# This script sets up the uav_gz_sim simulation environment
+# This script sets up the uavros2 simulation environment
 print_header "UAV Gazebo Simulation Environment Setup"
 
 # Detect environment
@@ -351,12 +351,12 @@ fi
 
 print_section "Setting up Git Repository URLs"
 
-SIM_PKG_URL='https://github.com/asmbatati/uav_gz_sim.git'
+SIM_PKG_URL='https://github.com/asmbatati/uavros2.git'
 if [[ -n "$GIT_USER" ]] && [[ -n "$GIT_TOKEN" ]]; then
-    SIM_PKG_URL=https://$GIT_USER:$GIT_TOKEN@github.com/asmbatati/uav_gz_sim.git
+    SIM_PKG_URL=https://$GIT_USER:$GIT_TOKEN@github.com/asmbatati/uavros2.git
     print_status "Using authenticated Git URL"
 else
-    SIM_PKG_URL=https://github.com/asmbatati/uav_gz_sim.git
+    SIM_PKG_URL=https://github.com/asmbatati/uavros2.git
     print_warning "Using public Git URL (no authentication)"
 fi
 
@@ -366,23 +366,23 @@ print_status "Git LFS installed"
 
 print_section "Cloning UAV Gazebo Simulation Package"
 
-# Clone the uav_gz_sim if it doesn't exist
-if [ ! -d "$ROS2_SRC/uav_gz_sim" ]; then
-    print_info "Cloning uav_gz_sim repository..."
+# Clone the uavros2 if it doesn't exist
+if [ ! -d "$ROS2_SRC/uavros2" ]; then
+    print_info "Cloning uavros2 repository..."
     cd $ROS2_SRC || { print_error "Failed to change to $ROS2_SRC"; exit 1; }
     if git clone $SIM_PKG_URL; then
-        cd uav_gz_sim || { print_error "Failed to change to uav_gz_sim directory"; exit 1; }
+        cd uavros2 || { print_error "Failed to change to uavros2 directory"; exit 1; }
         git lfs install || print_warning "Git LFS install failed - continuing without LFS"
         git lfs pull || print_warning "Git LFS pull failed - continuing without LFS"
         git submodule update --init --remote --recursive || print_warning "Submodule update failed - continuing"
-        print_status "uav_gz_sim cloned successfully"
+        print_status "uavros2 cloned successfully"
     else
-        print_error "Failed to clone uav_gz_sim repository"
+        print_error "Failed to clone uavros2 repository"
         exit 1
     fi
 else
-    print_info "Updating existing uav_gz_sim repository..."
-    cd $ROS2_SRC/uav_gz_sim
+    print_info "Updating existing uavros2 repository..."
+    cd $ROS2_SRC/uavros2
     
     # Check for local modifications
     local_changes=$(git status --porcelain)
@@ -417,13 +417,13 @@ else
         print_info "but skipped --remote (would fetch latest tip on each submodule)"
     fi
 
-    print_status "uav_gz_sim repository ready for installation"
+    print_status "uavros2 repository ready for installation"
 fi
 
 # Copy bash.sh to DEV_DIR and setup bashrc sourcing
 print_info "Setting up bash aliases and environment..."
-if [ -f "$ROS2_SRC/uav_gz_sim/scripts/bash.sh" ]; then
-    cp $ROS2_SRC/uav_gz_sim/scripts/bash.sh $DEV_DIR/bash.sh
+if [ -f "$ROS2_SRC/uavros2/scripts/bash.sh" ]; then
+    cp $ROS2_SRC/uavros2/scripts/bash.sh $DEV_DIR/bash.sh
     print_status "bash.sh copied to $DEV_DIR"
     
     # Check if bash.sh is already sourced in bashrc
@@ -436,7 +436,7 @@ if [ -f "$ROS2_SRC/uav_gz_sim/scripts/bash.sh" ]; then
         print_status "bash.sh already sourced in ~/.bashrc"
     fi
 else
-    print_warning "bash.sh not found in uav_gz_sim/scripts/"
+    print_warning "bash.sh not found in uavros2/scripts/"
 fi
 
 # Check for QGroundControl AppImage and download if not present
@@ -578,38 +578,38 @@ print_section "Copying Configuration Files"
 
 # Copy files to $PX4_DIR
 print_info "Copying models to ${PX4_DIR}/Tools/simulation/gz/models/"
-if [ -d "${ROS2_SRC}/uav_gz_sim/models" ]; then
-    cp -r ${ROS2_SRC}/uav_gz_sim/models/* ${PX4_DIR}/Tools/simulation/gz/models/ || {
+if [ -d "${ROS2_SRC}/uavros2/models" ]; then
+    cp -r ${ROS2_SRC}/uavros2/models/* ${PX4_DIR}/Tools/simulation/gz/models/ || {
         print_error "Failed to copy models"
         exit 1
     }
     print_status "Models copied"
 else
-    print_error "Models directory not found at ${ROS2_SRC}/uav_gz_sim/models"
+    print_error "Models directory not found at ${ROS2_SRC}/uavros2/models"
     exit 1
 fi
 
 print_info "Copying worlds to ${PX4_DIR}/Tools/simulation/gz/worlds/"
-if [ -d "${ROS2_SRC}/uav_gz_sim/worlds" ]; then
-    cp -r ${ROS2_SRC}/uav_gz_sim/worlds/* ${PX4_DIR}/Tools/simulation/gz/worlds/ || {
+if [ -d "${ROS2_SRC}/uavros2/worlds" ]; then
+    cp -r ${ROS2_SRC}/uavros2/worlds/* ${PX4_DIR}/Tools/simulation/gz/worlds/ || {
         print_error "Failed to copy worlds"
         exit 1
     }
     print_status "Worlds copied"
 else
-    print_error "Worlds directory not found at ${ROS2_SRC}/uav_gz_sim/worlds"
+    print_error "Worlds directory not found at ${ROS2_SRC}/uavros2/worlds"
     exit 1
 fi
 
 print_info "Copying airframe configs to ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/"
-if [ -d "${ROS2_SRC}/uav_gz_sim/config/px4" ]; then
-    cp -r ${ROS2_SRC}/uav_gz_sim/config/px4/* ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/ || {
+if [ -d "${ROS2_SRC}/uavros2/config/px4" ]; then
+    cp -r ${ROS2_SRC}/uavros2/config/px4/* ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/ || {
         print_error "Failed to copy airframe configurations"
         exit 1
     }
     print_status "Airframe configurations copied"
 else
-    print_error "PX4 config directory not found at ${ROS2_SRC}/uav_gz_sim/config/px4"
+    print_error "PX4 config directory not found at ${ROS2_SRC}/uavros2/config/px4"
     exit 1
 fi
 
@@ -621,7 +621,7 @@ fi
 # "# [22000, 22999] Reserve for custom models" marker.
 print_info "Registering airframes in PX4 CMakeLists.txt"
 CMAKE_AIRFRAMES="${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt"
-UAV_AIRFRAMES=$(ls "${ROS2_SRC}/uav_gz_sim/config/px4" | grep -E '^[0-9]+_gz_' | sort)
+UAV_AIRFRAMES=$(ls "${ROS2_SRC}/uavros2/config/px4" | grep -E '^[0-9]+_gz_' | sort)
 if [ -f "$CMAKE_AIRFRAMES" ] && [ -n "$UAV_AIRFRAMES" ]; then
     python3 - "$CMAKE_AIRFRAMES" <<PY
 import sys, re
@@ -888,7 +888,7 @@ echo -e "  ${CYAN}source ${ROS2_WS}/install/setup.bash${NC}"
 echo -e "  ${CYAN}zenoh${NC}"
 echo -e "  ${CYAN}# in terminal 2:${NC}"
 echo -e "  ${CYAN}source ${ROS2_WS}/install/setup.bash${NC}"
-echo -e "  ${CYAN}ros2 launch uav_gz_sim sim.launch.py${NC}"
+echo -e "  ${CYAN}ros2 launch uavros2 sim.launch.py${NC}"
 
 # Re-source ~/.bashrc so the newly-added bash.sh aliases are picked up in
 # THIS shell when install.sh is invoked via `source ./install.sh`. When

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Top-level dispatcher for uav_gz_sim.
+"""Top-level dispatcher for uavros2.
 
 Reads the ``simulator:=`` argument and includes the matching
 ``launch/simulators/<simulator>.launch.py`` together with the sim-agnostic
@@ -48,7 +48,7 @@ def _dispatch(context, *_args, **_kwargs):
     sim_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
-                FindPackageShare("uav_gz_sim"),
+                FindPackageShare("uavros2"),
                 "launch", "simulators", f"{sim}.launch.py",
             ])
         ]),
@@ -58,7 +58,7 @@ def _dispatch(context, *_args, **_kwargs):
     common_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
-                FindPackageShare("uav_gz_sim"),
+                FindPackageShare("uavros2"),
                 "launch", "sim_common.launch.py",
             ])
         ]),
@@ -71,7 +71,7 @@ def _dispatch(context, *_args, **_kwargs):
         arm_launch = IncludeLaunchDescription(
             PythonLaunchDescriptionSource([
                 PathJoinSubstitution([
-                    FindPackageShare("uav_gz_sim"),
+                    FindPackageShare("uavros2"),
                     "launch", "arm_control.launch.py",
                 ])
             ]),

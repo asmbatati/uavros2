@@ -42,7 +42,7 @@ class MujocoAdapter(SimAdapter):
         """
         try:
             from ament_index_python import get_package_share_directory
-            share = get_package_share_directory("uav_gz_sim")
+            share = get_package_share_directory("uavros2")
         except Exception:
             share = os.path.join(os.path.dirname(__file__), "..", "..")
 

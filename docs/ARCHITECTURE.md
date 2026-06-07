@@ -1,10 +1,10 @@
 # Architecture
 
-`uav_gz_sim` is built around three pillars: a **simulator-dispatching launch system**, a **canonical ROS 2 topic contract**, and a **per-simulator adapter layer**. Downstream code (vision, control, recording) interacts only with the canonical contract, so swapping the physics engine never requires touching the application layer.
+`uavros2` is built around three pillars: a **simulator-dispatching launch system**, a **canonical ROS 2 topic contract**, and a **per-simulator adapter layer**. Downstream code (vision, control, recording) interacts only with the canonical contract, so swapping the physics engine never requires touching the application layer.
 
 ```
                 ┌───────────────────────────────────────────────────┐
-                │           ros2 launch uav_gz_sim sim.launch.py   │
+                │           ros2 launch uavros2 sim.launch.py   │
                 │    simulator:= uav:= arm:= world:=               │
                 └────────────────┬──────────────────────────────────┘
                                  │ OpaqueFunction dispatch
@@ -63,7 +63,7 @@ The same convention applies to UAVs (`models/<uav>/`) and composed `x500_with_<a
 
 ## `sim_control_bridge`
 
-Unified ROS 2 node with a pluggable per-simulator backend in `uav_gz_sim/adapters/`:
+Unified ROS 2 node with a pluggable per-simulator backend in `uavros2/adapters/`:
 
 | Simulator | Backend behavior |
 |---|---|
