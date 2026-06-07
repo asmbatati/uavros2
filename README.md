@@ -29,15 +29,21 @@ Isaac / PyBullet / Genesis scaffolded) with PX4 SITL + MAVROS integration.**
 
 ## 🏷️ Brand-name candidates
 
+The brand should make the ROS 2 dependency immediately obvious — these
+candidates all carry "ros2" / "r2" in the name itself:
+
 | Candidate | Vibe | Notes |
 |---|---|---|
-| **`aerolab`** ⭐ *(recommended)* | Research / lab | Short, easy to type, immediately conveys "aerial testbed", available on PyPI/GitHub as of this writing |
-| **`skybench`** | Benchmark / academic | Strong fit for the testbed framing; clean compound |
-| **`flightforge`** | Maker / builder | Implies you're *forging* flight tests; good for the dev-tools crowd |
-| **`aerodome`** | Contained world | Evokes a biodome — fits the multi-world / multi-sim story |
-| **`drone_arena`** | Playful / clear | Most literal; works as a Python package name |
-| **`flock`** | Swarm | One-word; reads well in code; future-proof if multi-UAV lands |
-| **`aviarium`** | Literary | Latin for "aviary"; distinctive, more academic feel |
+| **`r2flight`** ⭐ *(recommended)* | Playful + clear | `r2` instantly reads as ROS 2 (also a Star Wars wink). Short, single-word-feeling, easy as a Python package and GitHub repo. |
+| **`uavros2`** | Portmanteau | Very crisp; the existing `mavros` precedent makes the `*ros2` suffix legible at a glance |
+| **`ros2_aerolab`** | Descriptive lab | "ROS 2 aerial lab" — explicit about both pieces |
+| **`r2sky`** | Short + lyrical | Alliterative, slightly more brand-y than r2flight |
+| **`skybench_ros2`** | Benchmark / academic | Strong fit for the testbed framing if you want to lead with the function |
+| **`flock_ros2`** | Swarm | Future-proofs a multi-UAV roadmap |
+| **`aero_ros2`** | Maximally generic | If you'd rather the brand stay non-cute |
+
+Avoid: `rosflight` (an existing autopilot project), `roscopter` (existing
+Python package).
 
 When you pick one, the rename is:
 1. Repo: `gh repo rename <new>` (or via the web UI)
