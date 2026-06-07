@@ -69,7 +69,7 @@ simulator-agnostic.
 - **🦾 Manipulators**: 4 floating-base arms (three_dof, OpenManipulator-X, Panda, UR5) with controllers + MoveIt configs
 - **🌐 World Library**: indoor `warehouse` + 5 outdoor `urban*` heightmap testbeds (git-lfs)
 - **🎛️ Multi-Simulator Dispatcher**: `simulator:=gazebo|webots|mujoco|isaac|pybullet|genesis` from one launch file
-- **🐳 Docker Ready**: in-tree `uav_gz_sim_docker` submodule with Ubuntu 24 / Jazzy default + Ubuntu 22 / Humble + CUDA + WSL variants
+- **🐳 Docker Ready**: in-tree `uavros2_docker` submodule with Ubuntu 24 / Jazzy default + Ubuntu 22 / Humble + CUDA + WSL variants
 - **📡 Communication Middleware**: Zenoh RMW + XRCE-DDS + MAVLink/MAVROS dual bridges
 - **🛰️ Protocol Flexibility**: Choose between native uXRCE-DDS or classic MAVLink at launch time
 

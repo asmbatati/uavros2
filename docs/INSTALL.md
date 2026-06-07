@@ -44,9 +44,9 @@ Without `--simulators`, only `gazebo` deps install (the only sim with a complete
 
 ## Docker
 
-The Docker setup lives in a separate git submodule: [`asmbatati/uav_gz_sim_docker`](https://github.com/asmbatati/uav_gz_sim_docker). It checks out under `uavros2/uav_gz_sim_docker/` and is populated automatically by `install.sh` (`git submodule update --init`) on every run, so a fresh `git clone` followed by `./install.sh` always pulls a current docker tree.
+The Docker setup lives in a separate git submodule: [`asmbatati/uavros2_docker`](https://github.com/asmbatati/uavros2_docker). It checks out under `uavros2/uavros2_docker/` and is populated automatically by `install.sh` (`git submodule update --init`) on every run, so a fresh `git clone` followed by `./install.sh` always pulls a current docker tree.
 
-Available images (see `uav_gz_sim_docker/docker/Makefile`):
+Available images (see `uavros2_docker/docker/Makefile`):
 
 | Make target | Base | Primary | Notes |
 |---|---|:---:|---|
@@ -60,10 +60,10 @@ Available images (see `uav_gz_sim_docker/docker/Makefile`):
 Build + run (Ubuntu 24 / Jazzy image — recommended for this workspace):
 
 ```bash
-cd ros2_ws/src/uavros2/uav_gz_sim_docker/docker
+cd ros2_ws/src/uavros2/uavros2_docker/docker
 make px4-dev-simulation-ubuntu24
 
-cd ..                                          # back to uav_gz_sim_docker/
+cd ..                                          # back to uavros2_docker/
 ./docker_run.sh                                # default container name; see script header
 
 # inside the container:
