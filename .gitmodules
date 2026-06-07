@@ -1,0 +1,3 @@
+[submodule "uav_gz_sim_docker"]
+	path = uav_gz_sim_docker
+	url = git@github.com:asmbatati/uav_gz_sim_docker.git

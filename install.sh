@@ -383,16 +383,22 @@ else
         fi
     fi
     
-    # Update Git LFS and submodules only if no local changes
+    # Always run `git submodule update --init --recursive` so a stale local
+    # checkout still ends up with the docker submodule populated. The
+    # `--remote` flag (which fetches the latest commit on each submodule's
+    # tracked branch) is only added when the working tree is clean to avoid
+    # surprising the user with submodule updates underneath local changes.
+    git lfs install
     if [[ -z "$local_changes" ]]; then
-        git lfs install
         git lfs pull
-        git submodule update --remote --recursive
-        print_status "Git LFS and submodules updated"
+        git submodule update --init --remote --recursive
+        print_status "Git LFS pulled and submodules updated (incl. remote tip)"
     else
-        print_info "Skipping Git LFS and submodule updates due to local modifications"
+        git submodule update --init --recursive
+        print_info "Local modifications detected: ran submodule init/checkout"
+        print_info "but skipped --remote (would fetch latest tip on each submodule)"
     fi
-    
+
     print_status "uav_gz_sim repository ready for installation"
 fi
 

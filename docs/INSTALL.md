@@ -44,36 +44,48 @@ Without `--simulators`, only `gazebo` deps install (the only sim with a complete
 
 ## Docker
 
-The Docker setup is ported from `gps_denied_navigation_docker` (a known-optimized configuration with NVIDIA GPU support, X11 forwarding, SSH-agent passthrough, and shared-volume bind-mount). It now lives **in-tree** under `docker_setup/` — no submodule.
+The Docker setup lives in a separate git submodule: [`asmbatati/uav_gz_sim_docker`](https://github.com/asmbatati/uav_gz_sim_docker). It checks out under `uav_gz_sim/uav_gz_sim_docker/` and is populated automatically by `install.sh` (`git submodule update --init`) on every run, so a fresh `git clone` followed by `./install.sh` always pulls a current docker tree.
 
-Available images (see `docker_setup/docker/Makefile`):
+Available images (see `uav_gz_sim_docker/docker/Makefile`):
 
-| Make target | Base | Notes |
-|---|---|---|
-| `px4-dev-simulation-ubuntu22` | Ubuntu 22.04 + ROS Humble | CPU-only |
-| `px4-simulation-cuda11.7.1-ubuntu22` | + CUDA 11.7 | NVIDIA GPU compute |
-| `px4-simulation-cuda12.2.0-ubuntu22` | + CUDA 12.2 | Default; what `docker_run.sh` uses |
-| `px4.simulation.ubuntu22.wsl` | Ubuntu 22 + WSL2 tweaks | Windows host via WSL |
+| Make target | Base | Primary | Notes |
+|---|---|:---:|---|
+| `px4-dev-simulation-ubuntu24` | Ubuntu 24 + ROS 2 Jazzy | ✓ | This workspace's matching image |
+| `px4-dev-simulation-ubuntu22` | Ubuntu 22 + ROS 2 Humble | | Ported from gps_denied_navigation_docker |
+| `px4-dev-simulation-jammy` | Ubuntu 22 Jammy (ROS 1) | | Legacy |
+| `px4-simulation-cuda11.7.1-ubuntu22` | + CUDA 11.7 | | NVIDIA GPU compute |
+| `px4-simulation-cuda12.2.0-ubuntu22` | + CUDA 12.2 | | What gps_denied's `docker_run.sh` defaults to |
+| `px4.simulation.ubuntu22.wsl` | Ubuntu 22 + WSL2 tweaks | | Windows host via WSL |
 
-Build + run:
+Build + run (Ubuntu 24 / Jazzy image — recommended for this workspace):
 
 ```bash
-cd ros2_ws/src/uav_gz_sim/docker_setup/docker
-make px4-simulation-cuda12.2.0-ubuntu22       # builds mzahana/px4-simulation-cuda12.2.0-ubuntu22
+cd ros2_ws/src/uav_gz_sim/uav_gz_sim_docker/docker
+make px4-dev-simulation-ubuntu24
 
-cd ..                                          # back to docker_setup/
-./docker_run.sh                                # default container name "gpsdnav"
-# (or `./docker_run.sh myname` for a different name; that controls the
-#  shared-volume dir at ~/${name}_shared_volume)
+cd ..                                          # back to uav_gz_sim_docker/
+./docker_run.sh                                # default container name; see script header
 
 # inside the container:
 cd ~/shared_volume/ros2_ws/src/uav_gz_sim
 ./install.sh
 ```
 
-The container working directory `/home/user/shared_volume` is bind-mounted to `~/${CONTAINER_NAME}_shared_volume` on the host. Inside the container, `DEV_DIR=/home/user/shared_volume` is exported automatically.
+The container working directory `/home/user/shared_volume` is bind-mounted to a per-container host directory (default `~/${CONTAINER_NAME}_shared_volume`). Inside the container, `DEV_DIR=/home/user/shared_volume` is exported automatically.
 
-> **Note on host OS / ROS version:** The Dockerfiles target Ubuntu 22.04 + ROS 2 Humble (matching the gps_denied_navigation_docker upstream). The host workspace here is on Ubuntu 24.04 + ROS 2 Jazzy. The two stacks coexist: host-side dev uses Jazzy directly; container-side dev uses the Humble image with the same source tree bind-mounted. A Jazzy-host-native Dockerfile is a roadmap item.
+If you want a CUDA-capable container for vision workloads:
+
+```bash
+make px4-simulation-cuda12.2.0-ubuntu22       # builds mzahana/px4-simulation-cuda12.2.0-ubuntu22
+```
+
+WSL hosts can use the WSL-tuned image:
+
+```bash
+make px4.simulation.ubuntu22.wsl
+cd ..
+./docker_run_wsl.sh
+```
 
 ## Environment variables
 
