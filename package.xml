@@ -24,7 +24,7 @@
 
   <!-- Runtime deps used by the launch files (not directly imported in
        Python). Declared as exec_depend so they don't bloat the build
-       graph but are still picked up by `rosdep install --from-paths src`. -->
+       graph but are still picked up by rosdep over the source tree. -->
   <exec_depend>xacro</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>joint_state_publisher</exec_depend>
