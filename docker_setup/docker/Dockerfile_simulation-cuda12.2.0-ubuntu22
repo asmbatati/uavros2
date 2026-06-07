@@ -1,0 +1,281 @@
+#
+# PX4 Gazebo garden development environment in Ubuntu 22.04 jammy
+#
+
+FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
+# FROM osrf/ros:humble-desktop-full
+LABEL maintainer="Mohamed Abdelkader <mohamedashraf123@gmail.com>"
+
+#
+# Install ROS ros humble-dekptop-full
+#
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV ROS2_DISTRO=humble
+# Conveyor belt example works in Gazebo harmonic not garden
+# ENV GZ_RELEASE=garden
+ENV GZ_RELEASE=garden
+
+RUN apt update && apt install -y curl software-properties-common && add-apt-repository universe \
+	&& apt-get -y autoremove \
+	&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+
+	RUN apt-get update && apt-get -y --quiet --no-install-recommends install \
+	bzip2 \
+	ca-certificates \
+	ccache \
+	cmake \
+	cppcheck \
+	dirmngr \
+	doxygen \
+	file \
+	g++ \
+	gcc \
+	gdb \
+	git \
+	git-lfs \
+	gnupg \
+	gosu \
+	lcov \
+	libboost-thread-dev \
+	libboost-system-dev \
+	libboost-filesystem-dev \
+	libboost-regex-dev \
+	libboost-program-options-dev \
+	libconsole-bridge-dev \
+	libpoco-dev \
+	libtinyxml2-dev \
+	liblz4-dev \
+	libbz2-dev \
+	libfreetype6-dev \
+	libgtest-dev \
+	python3-setuptools \
+	python3-pip \
+	python3-venv \
+	python3-nose \
+	vim \
+	tmux \
+	tmuxinator \
+	nano \
+	net-tools \
+	iputils-ping \
+	libpng-dev \
+	libssl-dev \
+	lsb-release \
+	make \
+	openssh-client \
+	pkg-config \
+	python3-dev \
+	htop \
+	rsync \
+	shellcheck \
+	tzdata \
+	unzip \
+	valgrind \
+	wget \
+	xsltproc \
+	zip \
+	gedit \
+	jq\
+	bash-completion \
+	command-not-found \
+	sudo \
+&& apt-get -y autoremove \
+&& apt-get clean autoclean \
+&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+# install ROS2 humble
+RUN apt update && sudo apt install locales \
+&&  locale-gen en_US en_US.UTF-8 \
+&&  update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 \
+&& export LANG=en_US.UTF-8
+
+# set up ros2 repo
+RUN /bin/sh -c 'sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg' \
+&& /bin/sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null'
+
+RUN apt update && sudo apt install -y \
+ python3-rosdep \
+ ros-dev-tools \
+ && apt-get -y autoremove \
+	&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+RUN apt-get update &&  apt-get upgrade -y && sudo apt install ros-${ROS2_DISTRO}-desktop -y \
+	&& apt-get -y autoremove \
+		&& apt-get clean autoclean \
+		&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+RUN apt-get install -y python3-colcon-common-extensions \
+	&& apt-get -y autoremove \
+	&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+#install Gazebo (Garden/harmonic) based on ${GZ_RELEASE}
+RUN /bin/sh -c ' curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg' \
+&& /bin/sh -c 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] http://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null'
+RUN  apt-get update \
+&& apt-get install -y gz-${GZ_RELEASE}
+
+RUN apt-get install python-is-python3
+
+#Add mcap to bag things in ROS2
+RUN VERSION="releases/mcap-cli/v0.0.50" && \
+  RELEASE_URL=$(curl -s "https://api.github.com/repos/foxglove/mcap/releases/tags/${VERSION}" | jq -r --arg ARCH "$(dpkg --print-architecture)" '.assets[] | select(.name == "mcap-linux-"+$ARCH) | .browser_download_url') && \
+  echo "Downloading release $VERSION from: $RELEASE_URL" && \
+  curl -L -o /bin/mcap "$RELEASE_URL" && \
+  cd /bin && chmod +x mcap
+
+RUN pip install Jinja2
+RUN pip install future
+
+RUN apt install libboost-program-options-dev libusb-1.0-0-dev
+RUN pip3 install rowan transforms3d
+RUN apt-get update &&  apt-get upgrade -y && apt-get install -y \
+                   ros-${ROS2_DISTRO}-tf-transformations \
+                   ros-${ROS2_DISTRO}-nav2-map-server \
+                   ros-${ROS2_DISTRO}-nav2-lifecycle-manager \
+                   ros-${ROS2_DISTRO}-rosbridge-suite \
+                   ros-${ROS2_DISTRO}-rosbag2-storage-mcap \ 
+                   ros-${ROS2_DISTRO}-ros-gz-interfaces \
+                   ros-${ROS2_DISTRO}-ros-gz-bridge \
+                   ros-${ROS2_DISTRO}-octomap \
+                   ros-${ROS2_DISTRO}-octomap-ros \
+                   ros-${ROS2_DISTRO}-octomap-server \
+                   ros-${ROS2_DISTRO}-octomap-msgs \
+                   ros-${ROS2_DISTRO}-rmw-zenoh-cpp \
+                   ros-${ROS2_DISTRO}-rqt-tf-* \
+				   ros-${ROS2_DISTRO}-octomap-rviz-plugins \
+				   ros-${ROS2_DISTRO}-tf2 \
+				   ros-${ROS2_DISTRO}-tf2-ros \
+				   ros-${ROS2_DISTRO}-vision-msgs
+
+RUN apt install -y ros-${ROS2_DISTRO}-ros-gz${GZ_RELEASE}
+
+#
+# Setup XRCE-DDS Agent & Client
+#
+RUN git clone https://github.com/eProsima/Micro-XRCE-DDS-Agent.git && \
+    cd Micro-XRCE-DDS-Agent && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    make install && \
+    ldconfig /usr/local/lib/
+
+
+COPY scripts/px4_dev.sh /tmp/px4_dev.sh
+COPY scripts/requirements.txt /tmp/requirements.txt
+
+#
+# Install PX4 dev requirements
+#
+RUN /tmp/px4_dev.sh
+
+# create user with id 1001 (jenkins docker workflow default)
+RUN useradd --shell /bin/bash -u 1000 -c "" -m user && usermod -a -G dialout user && echo "user:user" | chpasswd && adduser user sudo
+
+# RUN export "source /etc/bash_completion" >> /home/user/.bashrc
+
+
+# Some QT-Apps/Gazebo don't not show controls without this
+ENV QT_X11_NO_MITSHM=1
+
+# Use UTF8 encoding in java tools (needed to compile jMAVSim)
+ENV JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
+
+# Install JSBSim
+RUN wget https://github.com/JSBSim-Team/jsbsim/releases/download/v1.1.13/JSBSim-devel_1.1.13-986.jammy.amd64.deb
+RUN dpkg -i JSBSim-devel_1.1.13-986.jammy.amd64.deb
+
+#
+# Insatll VS Code for easy code development
+#
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg && \
+	install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg && \
+	sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list' && \
+	rm -f packages.microsoft.gpg
+RUN apt install -y apt-transport-https && \
+	apt update && \
+	apt install -y code \
+	&& apt-get -y autoremove \
+	&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+RUN echo "source /opt/ros/humble/setup.bash" >> /home/user/.bashrc
+
+#
+# Remove binary pkg ros-humble-ros-gz-bridge. Not compatible with ros 2 humble. Need to build from source
+#
+# RUN apt remove -y ros-humble-ros-gz-bridge
+
+
+#
+# Install rqt_tf
+#
+RUN apt update &&  apt install -y ros-humble-rqt-tf-* \
+	&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+#
+# Install yolov8 dependencies
+# 
+RUN pip3 install opencv-python==4.8.0.76
+RUN pip3 install ultralytics==8.0.162
+RUN pip3 install lapx>=0.5.2
+
+#
+# MAVROS dependencies
+#
+RUN  apt update && \
+    apt install -y \
+        python3-vcstool \
+        python3-rosinstall-generator \
+        python3-osrf-pycommon \
+        geographiclib-tools \
+        libgeographic-dev \
+		libasio-dev \
+		libgoogle-glog-dev \
+		ros-humble-eigen-stl-containers \
+		ros-humble-diagnostic-updater \
+		ros-humble-geographic-msgs \
+		&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+RUN  geographiclib-get-geoids egm96-5 && \
+    geographiclib-get-gravity egm96 && \
+    geographiclib-get-magnetic emm2015
+RUN pip3 install future
+
+RUN pip3 install transformations
+
+#
+# Install QGroundControl
+#
+COPY scripts/install_qgc.sh /tmp/install_qgc.sh
+RUN /tmp/install_qgc.sh
+
+# for TERCOM packages
+RUN pip3 install "numpy<2.0.0" scipy rasterio pyproj pandas matplotlib
+
+# RViz plugins Qt5 dependencies
+RUN apt update && apt install -y libqt5charts5-dev \
+	&& apt-get clean autoclean \
+	&& rm -rf /var/lib/apt/lists/{apt,dpkg,cache,log} /tmp/* /var/tmp/*
+
+# create and start as LOCAL_USER_ID
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Copy middleware profiles
+RUN mkdir -p /usr/local/share/middleware_profiles
+COPY middleware_profiles/*profile.xml /usr/local/share/middleware_profiles/
+#ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+ENV RMW_IMPLEMENTATION=rmw_zenoh_cpp
+
+WORKDIR /home/user
+
+CMD ["/bin/bash"]

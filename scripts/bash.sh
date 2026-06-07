@@ -43,6 +43,20 @@ alias arm_ur5='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_
 # MuJoCo Panda sweet spot.
 alias mujoco_panda='ros2 launch uav_gz_sim sim.launch.py simulator:=mujoco uav:=x500 arm:=panda'
 
+################# DEM / TAIF world shortcuts (Gazebo) #######################
+# DEM worlds ported from gps_denied_navigation_sim. Each needs git-lfs
+# heightmap data inside the matching DEM model dir.
+alias mono_dem='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=dem_world'
+alias mono_taif='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=taif_world'
+alias mono_taif1='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=taif1_world'
+alias mono_taif4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=taif_test4'
+alias stereo_dem='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=dem_world'
+alias stereo_taif='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif_world'
+alias stereo_taif1='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif1_world'
+alias stereo_taif4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif_test4'
+alias twin_taif='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_twin_stereo_twin_velodyne world:=taif_world'
+alias twin_taif4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_twin_stereo_twin_velodyne world:=taif_test4'
+
 ################# Github Repos #################
 
 export GIT_USER=

@@ -44,17 +44,36 @@ Without `--simulators`, only `gazebo` deps install (the only sim with a complete
 
 ## Docker
 
+The Docker setup is ported from `gps_denied_navigation_docker` (a known-optimized configuration with NVIDIA GPU support, X11 forwarding, SSH-agent passthrough, and shared-volume bind-mount). It now lives **in-tree** under `docker_setup/` — no submodule.
+
+Available images (see `docker_setup/docker/Makefile`):
+
+| Make target | Base | Notes |
+|---|---|---|
+| `px4-dev-simulation-ubuntu22` | Ubuntu 22.04 + ROS Humble | CPU-only |
+| `px4-simulation-cuda11.7.1-ubuntu22` | + CUDA 11.7 | NVIDIA GPU compute |
+| `px4-simulation-cuda12.2.0-ubuntu22` | + CUDA 12.2 | Default; what `docker_run.sh` uses |
+| `px4.simulation.ubuntu22.wsl` | Ubuntu 22 + WSL2 tweaks | Windows host via WSL |
+
+Build + run:
+
 ```bash
-cd ros2_ws/src/uav_gz_sim/px4_ros2_jazzy_docker/docker
-make px4-dev-simulation-ubuntu24
-cd ..
-./docker_run.sh
-# inside container:
+cd ros2_ws/src/uav_gz_sim/docker_setup/docker
+make px4-simulation-cuda12.2.0-ubuntu22       # builds mzahana/px4-simulation-cuda12.2.0-ubuntu22
+
+cd ..                                          # back to docker_setup/
+./docker_run.sh                                # default container name "gpsdnav"
+# (or `./docker_run.sh myname` for a different name; that controls the
+#  shared-volume dir at ~/${name}_shared_volume)
+
+# inside the container:
 cd ~/shared_volume/ros2_ws/src/uav_gz_sim
 ./install.sh
 ```
 
-The Docker container's working directory (`/home/user/shared_volume`) is bind-mounted; `$DEV_DIR` defaults to it inside the container.
+The container working directory `/home/user/shared_volume` is bind-mounted to `~/${CONTAINER_NAME}_shared_volume` on the host. Inside the container, `DEV_DIR=/home/user/shared_volume` is exported automatically.
+
+> **Note on host OS / ROS version:** The Dockerfiles target Ubuntu 22.04 + ROS 2 Humble (matching the gps_denied_navigation_docker upstream). The host workspace here is on Ubuntu 24.04 + ROS 2 Jazzy. The two stacks coexist: host-side dev uses Jazzy directly; container-side dev uses the Humble image with the same source tree bind-mounted. A Jazzy-host-native Dockerfile is a roadmap item.
 
 ## Environment variables
 

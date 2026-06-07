@@ -1,5 +1,9 @@
 # Declares which worlds exist per simulator. The launch dispatcher reads
 # this to fail fast on unsupported (simulator, world) combinations.
+#
+# The TAIF / DEM worlds are ports from gps_denied_navigation_sim - they
+# need git-lfs to fetch the heightmap binaries inside their referenced
+# DEM models (see models/taif_dem, models/taif1_dem, etc).
 
 worlds:
   empty:
@@ -16,3 +20,18 @@ worlds:
     isaac: false
     pybullet: false
     genesis: false
+  dem_world:
+    gazebo: dem_world.sdf
+    note: "Original DEM world from gps_denied_navigation_sim; needs models/dem."
+  taif_world:
+    gazebo: taif_world.sdf
+    note: "TAIF DEM world; needs models/taif_dem (LFS heightmap)."
+  taif1_world:
+    gazebo: taif1_world.sdf
+    note: "TAIF 1 DEM world; needs models/taif1_dem (LFS heightmap)."
+  taif_test:
+    gazebo: taif_test.sdf
+    note: "TAIF test world; needs models/taif_test (LFS heightmap)."
+  taif_test4:
+    gazebo: taif_test4.sdf
+    note: "TAIF test 4 world; needs models/taif_test4 (LFS heightmap)."

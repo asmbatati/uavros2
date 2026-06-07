@@ -1,4 +1,0 @@
-[submodule "px4_ros2_jazzy_docker"]
-	path = px4_ros2_jazzy_docker
-	url = https://github.com/asmbatati/uav_gz_sim_docker.git
-	branch = main

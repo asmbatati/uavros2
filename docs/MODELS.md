@@ -20,6 +20,26 @@ The arm variants (4025–4028) are cylinder-chain scaffolds sized to fit under t
 
 Non-x500 platforms (`x3_uav`, `parrot_bebop_2`) are kept as legacy references.
 
+## DEM terrain models
+
+Heightmap-based outdoor terrain models ported from `gps_denied_navigation_sim`. Each is referenced by a matching world SDF (see [WORLDS.md](WORLDS.md)) via `model://<name>`. Binary assets (`.tif`, `.dae`, `.png`) are tracked via git-lfs.
+
+| Model | Companion world | Size | Notes |
+|---|---|---|---|
+| `dem` | `dem_world` | 13 MB | Original DEM testbed (Mt. Wilder area, USA) |
+| `taif_dem` | `taif_world` | 12 MB | TAIF (Taif city, KSA) — center 21.27 N, 40.35 E |
+| `taif1_dem` | `taif1_world` | 120 MB | TAIF variant 1, larger area |
+| `taif_test` | `taif_test` | 16 MB | TAIF test area (TERCOM benchmark) |
+| `taif_test4` | `taif_test4` | 41 MB | TAIF test 4 with `tercom_dem.json` companion |
+
+To materialize the binaries after clone:
+```bash
+cd ros2_ws/src/uav_gz_sim
+git lfs install
+git lfs pull
+```
+`install.sh` runs this automatically on first install.
+
 ## Adding a new UAV variant
 
 1. Add SDF under `models/<name>/{model.config,model.sdf}` (Gazebo path).
