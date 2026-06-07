@@ -3,52 +3,51 @@
 | World | Description | Gazebo | Webots | MuJoCo | Isaac | PyBullet | Genesis |
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
 | `empty` | Bare physics, default | ✓ | ✓ | ✓ | — | ✓ | — |
-| `tugbot_depot` | Warehouse with obstacles, AMRs | ✓ | — | — | — | — | — |
-| `dem_world` | Original DEM testbed (Mt. Wilder area) | ✓ | — | — | — | — | — |
-| `taif_world` | TAIF DEM (Taif city, KSA; center 21.27 N, 40.35 E) | ✓ | — | — | — | — | — |
-| `taif1_world` | TAIF DEM variant 1 (larger area, 120 MB heightmap) | ✓ | — | — | — | — | — |
-| `taif_test` | TAIF test area (TERCOM benchmark) | ✓ | — | — | — | — | — |
-| `taif_test4` | TAIF test 4 (with `tercom_dem.json` metadata) | ✓ | — | — | — | — | — |
+| `warehouse` | Indoor warehouse with obstacles + AMRs (formerly `tugbot_depot`) | ✓ | — | — | — | — | — |
+| `urban1` | Outdoor heightmap testbed (formerly `dem_world`, Mt. Wilder area) | ✓ | — | — | — | — | — |
+| `urban2` | Urban heightmap 2 (formerly `taif_world`) | ✓ | — | — | — | — | — |
+| `urban3` | Urban heightmap 3 (formerly `taif1_world`, larger area) | ✓ | — | — | — | — | — |
+| `urban4` | Urban heightmap 4 (formerly `taif_test`, terrain-correlation testbed) | ✓ | — | — | — | — | — |
+| `urban5` | Urban heightmap 5 (formerly `taif_test4`, ships `tercom_dem.json`) | ✓ | — | — | — | — | — |
 
 Per-simulator availability is declared in `worlds/manifest.yaml`. Asking the launch dispatcher for an unsupported world combination fails fast with a clear error message.
 
-## DEM worlds (TAIF / Mt. Wilder)
+## Urban / outdoor heightmap worlds
 
-These are heightmap-based outdoor terrains ported from `gps_denied_navigation_sim`, useful for:
-- GPS-denied navigation algorithms (TERCOM, MINS, OpenVINS, FAST-LIO, FAST-LIVO2, RTAB-Map, ORB-SLAM3)
+These are heightmap-based outdoor terrains, useful for:
 - High-altitude flight benchmarks
-- TERCOM (TERrain COntour Matching) testbeds — `taif_test4` ships a `tercom_dem.json` companion file
+- GPS-denied navigation algorithms (TERCOM, MINS, OpenVINS, FAST-LIO, …)
+- Terrain-correlation testbeds — `urban5` ships a `tercom_dem.json` companion file in its terrain model
 
-Heightmap binaries (`.tif`, `.dae`, `.png` textures) live in the matching `models/<name>_dem/` directory and are tracked via **git-lfs**. The total LFS payload across the 5 DEM worlds is ≈ 200 MB:
+Heightmap binaries (`.tif`, `.dae`, `.png` textures) live in the matching `models/urban<N>_terrain/` directory and are tracked via **git-lfs**. Total payload ≈ 200 MB:
 
-| Model | Size |
+| Terrain model | Size |
 |---|---|
-| `models/dem` | 13 MB |
-| `models/taif_dem` | 12 MB |
-| `models/taif1_dem` | 120 MB |
-| `models/taif_test` | 16 MB |
-| `models/taif_test4` | 41 MB |
+| `models/urban1_terrain` | 13 MB |
+| `models/urban2_terrain` | 12 MB |
+| `models/urban3_terrain` | 120 MB |
+| `models/urban4_terrain` | 16 MB |
+| `models/urban5_terrain` | 41 MB |
 
-After `git clone`, run `git lfs pull` inside the package to materialize the binaries. The `install.sh` script does this automatically.
+After `git clone`, run `git lfs pull` inside the package to materialize the binaries. `install.sh` does this automatically.
 
-## Launching a DEM world
+## Launching
 
 Via the dispatcher (recommended):
 ```bash
 ros2 launch uav_gz_sim sim.launch.py \
-    simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif_test4
+    simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban5
 ```
 
-Via the `bash.sh` aliases (mirrors the gps_denied pattern):
+Via `bash.sh` aliases (camera-rig × world matrix):
 ```
-mono_dem    mono_taif    mono_taif1    mono_taif4
-stereo_dem  stereo_taif  stereo_taif1  stereo_taif4
-            twin_taif                  twin_taif4
+mono_urban1   mono_urban2   mono_urban3   mono_urban4   mono_urban5
+stereo_urban1 stereo_urban2 stereo_urban3 stereo_urban4 stereo_urban5
+              twin_urban2                               twin_urban5
+warehouse                                  # x500_stereo_cam_3d_lidar in the warehouse
 ```
 
-Each alias is `simulator:=gazebo uav:=<camera_rig> world:=<terrain>`.
-
-Note that TAIF worlds spawn the UAV at high altitude (PX4 airframe pose offset ≈ 2000 m AMSL to match the DEM's reference elevation). The `world:=taif_test4` runs are the most validated.
+The urban worlds spawn the UAV at high altitude (PX4 airframe pose offset ≈ 2000 m AMSL to match the heightmap's reference elevation).
 
 ## File format notes
 

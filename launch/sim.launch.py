@@ -102,7 +102,7 @@ def generate_launch_description():
             description=f"Manipulator. One of: {sorted(SUPPORTED_ARMS)}",
         ),
         DeclareLaunchArgument(
-            "world", default_value="tugbot_depot",
+            "world", default_value="warehouse",
             description="World name (must exist in worlds/manifest.yaml for the chosen simulator)",
         ),
         DeclareLaunchArgument(

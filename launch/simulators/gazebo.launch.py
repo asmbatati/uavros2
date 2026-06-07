@@ -282,7 +282,7 @@ def _setup(context, *_args, **_kwargs):
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument("uav", default_value="x500_stereo_cam_3d_lidar"),
-        DeclareLaunchArgument("world", default_value="tugbot_depot"),
+        DeclareLaunchArgument("world", default_value="warehouse"),
         DeclareLaunchArgument("namespace", default_value="drone"),
         DeclareLaunchArgument("arm", default_value="none"),
         SetEnvironmentVariable(name="ROS_PARAM_use_sim_time", value="true"),

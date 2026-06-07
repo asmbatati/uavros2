@@ -27,7 +27,7 @@ export ROS_DOMAIN_ID=0
 
 ################# Sim dispatcher aliases #######################
 # Top-level multi-simulator launch dispatcher.
-alias tug='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo world:=tugbot_depot'
+alias warehouse='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo world:=warehouse'
 alias sim_gz='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo'
 alias sim_wb='ros2 launch uav_gz_sim sim.launch.py simulator:=webots'
 alias sim_mj='ros2 launch uav_gz_sim sim.launch.py simulator:=mujoco'
@@ -43,19 +43,21 @@ alias arm_ur5='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_
 # MuJoCo Panda sweet spot.
 alias mujoco_panda='ros2 launch uav_gz_sim sim.launch.py simulator:=mujoco uav:=x500 arm:=panda'
 
-################# DEM / TAIF world shortcuts (Gazebo) #######################
-# DEM worlds ported from gps_denied_navigation_sim. Each needs git-lfs
-# heightmap data inside the matching DEM model dir.
-alias mono_dem='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=dem_world'
-alias mono_taif='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=taif_world'
-alias mono_taif1='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=taif1_world'
-alias mono_taif4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=taif_test4'
-alias stereo_dem='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=dem_world'
-alias stereo_taif='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif_world'
-alias stereo_taif1='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif1_world'
-alias stereo_taif4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=taif_test4'
-alias twin_taif='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_twin_stereo_twin_velodyne world:=taif_world'
-alias twin_taif4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_twin_stereo_twin_velodyne world:=taif_test4'
+################# Urban / outdoor world shortcuts (Gazebo) #######################
+# Heightmap-based outdoor worlds. Each needs git-lfs to pull the matching
+# models/urban<N>_terrain heightmap binaries.
+alias mono_urban1='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=urban1'
+alias mono_urban2='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=urban2'
+alias mono_urban3='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=urban3'
+alias mono_urban4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=urban4'
+alias mono_urban5='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_mono_cam_3d_lidar world:=urban5'
+alias stereo_urban1='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban1'
+alias stereo_urban2='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban2'
+alias stereo_urban3='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban3'
+alias stereo_urban4='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban4'
+alias stereo_urban5='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_stereo_cam_3d_lidar world:=urban5'
+alias twin_urban2='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_twin_stereo_twin_velodyne world:=urban2'
+alias twin_urban5='ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_twin_stereo_twin_velodyne world:=urban5'
 
 ################# Github Repos #################
 

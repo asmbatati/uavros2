@@ -5,7 +5,7 @@
 
 model: x500_stereo_cam_3d_lidar
 instance: 0
-world: tugbot_depot
+world: warehouse
 namespace: drone
 
 # Direction symbols match ros_gz_bridge:

@@ -23,7 +23,7 @@ Default and most complete. Requires:
 Launch:
 ```bash
 # Sensors-only x500 (no arm)
-ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_d435 world:=tugbot_depot
+ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo uav:=x500_d435 world:=warehouse
 
 # x500 with arm (UAV name must be the composed model)
 ros2 launch uav_gz_sim sim.launch.py simulator:=gazebo \

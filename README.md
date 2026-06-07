@@ -1,4 +1,9 @@
-# UAV Gazebo Simulation Environment
+# uav_gz_sim — Multi-Simulator UAV Testbed for ROS 2
+
+> **Working name:** `uav_gz_sim` (Python package + repo name). Brand candidates
+> for the published project are listed below; pick one when you're ready to
+> rename. Renaming touches `setup.py`, `package.xml`, every launch include,
+> and the GitHub URL, so it's worth a deliberate decision.
 
 <div align="center">
 
@@ -9,7 +14,9 @@
 <img src="media/mavros_logo.png" alt="MAVROS Logo" width="90" style="vertical-align: middle;" />
 <img src="media/mavlink_logo.png" alt="MAVLink Logo" width="90" style="vertical-align: middle;" />
 
-**A comprehensive UAV simulation framework integrating PX4, ROS 2 Jazzy, and Gazebo Harmonic**
+**A ROS 2 UAV testbed shipping x500 + manipulator assets, indoor + outdoor
+worlds, and a multi-simulator dispatcher (Gazebo primary; MuJoCo / Webots /
+Isaac / PyBullet / Genesis scaffolded) with PX4 SITL + MAVROS integration.**
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![ROS2](https://img.shields.io/badge/ROS2-Jazzy-green.svg)](https://docs.ros.org/en/jazzy/)
@@ -20,20 +27,45 @@
 
 </div>
 
+## 🏷️ Brand-name candidates
+
+| Candidate | Vibe | Notes |
+|---|---|---|
+| **`aerolab`** ⭐ *(recommended)* | Research / lab | Short, easy to type, immediately conveys "aerial testbed", available on PyPI/GitHub as of this writing |
+| **`skybench`** | Benchmark / academic | Strong fit for the testbed framing; clean compound |
+| **`flightforge`** | Maker / builder | Implies you're *forging* flight tests; good for the dev-tools crowd |
+| **`aerodome`** | Contained world | Evokes a biodome — fits the multi-world / multi-sim story |
+| **`drone_arena`** | Playful / clear | Most literal; works as a Python package name |
+| **`flock`** | Swarm | One-word; reads well in code; future-proof if multi-UAV lands |
+| **`aviarium`** | Literary | Latin for "aviary"; distinctive, more academic feel |
+
+When you pick one, the rename is:
+1. Repo: `gh repo rename <new>` (or via the web UI)
+2. Python package: `setup.py.name`, `package.xml.name`, `uav_gz_sim/` dir
+3. Every `launch_arguments` / `FindPackageShare("uav_gz_sim")` reference
+
+A single search-and-replace pass nails most of it.
+
 ## 🚁 Overview
 
-This simulation environment provides a complete UAV development and testing platform, featuring high-fidelity physics simulation, realistic sensor models, and seamless integration between PX4 autopilot and ROS 2. Perfect for developing autonomous drone applications, computer vision algorithms, and flight control systems.
+This package ships a multi-simulator UAV development testbed: ROS 2 Jazzy + PX4
+autopilot + Gazebo Harmonic + MAVROS as the primary stack, with a dispatcher
+layer that fans out to MuJoCo, Webots, Isaac Sim, PyBullet, and Genesis. It
+includes a curated set of UAV assets (x500 base + sensor variants + four arm
+manipulators), indoor + outdoor world assets, per-simulator launch
+configurations, and a canonical ROS 2 topic contract so downstream code is
+simulator-agnostic.
 
 ### 🌟 Key Features
 
-- **🔧 Complete Toolchain**: PX4 + ROS 2 Jazzy + Gazebo Harmonic + MAVROS integration
-- **🎮 Advanced Models**: X500 quadcopter with Intel RealSense D435 depth camera
-- **🌐 Multi-Environment**: Support for various simulation worlds and scenarios
-- **🐳 Docker Ready**: Containerized development environment for consistent setup
-- **🚀 High Performance**: Optimized for real-time simulation and visualization
-- **📡 Communication Middleware**: Zenoh middleware support
-- **📡 Dual Communication**: Built-in XRCE-DDS and MAVLink/MAVROS support
-- **🛰️ Protocol Flexibility**: Choose between native uXRCE-DDS or classic MAVLink bridges
+- **🔧 Complete Toolchain**: PX4 + ROS 2 Jazzy + Gazebo Harmonic + MAVROS, with auto-installed dependencies
+- **🎮 UAV Catalogue**: 9 x500 sensor / arm variants, each with a matching PX4 airframe (IDs 4020–4028), no overlap
+- **🦾 Manipulators**: 4 floating-base arms (three_dof, OpenManipulator-X, Panda, UR5) with controllers + MoveIt configs
+- **🌐 World Library**: indoor `warehouse` + 5 outdoor `urban*` heightmap testbeds (git-lfs)
+- **🎛️ Multi-Simulator Dispatcher**: `simulator:=gazebo|webots|mujoco|isaac|pybullet|genesis` from one launch file
+- **🐳 Docker Ready**: in-tree `uav_gz_sim_docker` submodule with Ubuntu 24 / Jazzy default + Ubuntu 22 / Humble + CUDA + WSL variants
+- **📡 Communication Middleware**: Zenoh RMW + XRCE-DDS + MAVLink/MAVROS dual bridges
+- **🛰️ Protocol Flexibility**: Choose between native uXRCE-DDS or classic MAVLink at launch time
 
 ## 🛠️ What's Included
 
@@ -208,7 +240,7 @@ source ~/shared_volume/ros2_ws/install/setup.bash
 ros2 launch uav_gz_sim sim.launch.py
 
 # For tugbot depot world
-ros2 launch uav_gz_sim sim.launch.py world_type:=tugbot_depot
+ros2 launch uav_gz_sim sim.launch.py world_type:=warehouse
 ```
 
 ### Start PX4 SITL
@@ -221,7 +253,7 @@ cd ~/shared_volume/PX4-Autopilot
 make px4_sitl gz_x500_twin_stereo_twin_velodyne
 
 # For tugbot depot environment
-PX4_GZ_MODEL_POSE="0,0,0.1,0,0,0" make px4_sitl gz_x500_stereo_cam_3d_lidar PX4_GZ_WORLD=tugbot_depot
+PX4_GZ_MODEL_POSE="0,0,0.1,0,0,0" make px4_sitl gz_x500_stereo_cam_3d_lidar PX4_GZ_WORLD=warehouse
 ```
 
 ### Ground Control
