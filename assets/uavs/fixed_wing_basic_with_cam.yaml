@@ -1,6 +1,6 @@
 version: 1
 kind: uav
-name: fixed_wing_basic
+name: fixed_wing_basic_with_cam
 description: Basic fixed-wing trainer (rc_cessna-class) for SLAM / mission research.
 chassis:
   ref: fixed_wing_basic
@@ -13,6 +13,6 @@ sensors:
     mount: nose_payload
     pose: [0, 0, 0, 0, 0, 0]
 px4:
-  airframe_id: 4041
+  airframe_id: 4051
   spawn_pose_m: [0.0, 0.0, 0.5, 0, 0, 0]
   hover_thrust: 0.40

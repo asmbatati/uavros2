@@ -91,4 +91,25 @@ def validate_catalog(catalog: Catalog) -> List[str]:
                     f"is >3x arm_length ({chassis.arm_length_m}m); typo?"
                 )
 
+    # 7. UAV name must not collide with chassis include_uri tail. When chassis
+    #    points at a PX4 stock model (e.g. include_uri=model://standard_vtol),
+    #    the generated models/<uav>/model.sdf would shadow PX4's model and
+    #    cause a self-recursive <include>. Enforce different names.
+    for uav in catalog.uavs.values():
+        chassis = catalog.chassis.get(uav.chassis.ref)
+        if chassis is None:
+            continue
+        include_uri = chassis.gazebo.include_uri
+        if not include_uri or not include_uri.startswith("model://"):
+            continue
+        stock_name = include_uri[len("model://"):]
+        if uav.name == stock_name:
+            problems.append(
+                f"UAV {uav.name!r}: chassis {chassis.name!r} sets "
+                f"gazebo.include_uri={include_uri!r}, which collides with "
+                f"the UAV's own generated models/{uav.name}/ dir. Rename the "
+                f"UAV (e.g. {uav.name}_with_cam) to avoid shadowing the "
+                f"stock model and producing a self-recursive include."
+            )
+
     return problems

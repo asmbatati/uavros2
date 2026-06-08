@@ -1,6 +1,6 @@
 version: 1
 kind: uav
-name: standard_vtol
+name: standard_vtol_with_cam
 description: Standard VTOL with embedded sensors (PX4 stock model).
 chassis:
   ref: standard_vtol
@@ -13,6 +13,6 @@ sensors:
     mount: nose_payload
     pose: [0, 0, 0, 0, 0.17453293, 0]
 px4:
-  airframe_id: 4040
+  airframe_id: 4050
   spawn_pose_m: [0.0, 0.0, 0.5, 0, 0, 0]
   hover_thrust: 0.65

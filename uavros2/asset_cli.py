@@ -154,7 +154,13 @@ def cmd_build(
     targets: List[str] = TARGETS_OPT,
     root: pathlib.Path = ROOT_OPT,
 ):
-    """Regenerate Gazebo + PX4 artefacts under <root>/{models,config}/."""
+    """Regenerate Gazebo + PX4 artefacts under <root>/{models,config}/.
+
+    With ``--all``, also deletes any previously-generated artefact whose
+    UAV descriptor no longer exists in the catalog. This keeps stale
+    files (from renamed/deleted descriptors) from accumulating and
+    propagating into PX4 via ``install.sh``'s copy step.
+    """
     cat = _load_catalog(root)
     problems = validate_catalog(cat)
     if problems:
@@ -164,6 +170,7 @@ def cmd_build(
         raise typer.Exit(1)
     if all_:
         names = sorted(cat.uavs)
+        _purge_stale_artefacts(cat, root, targets)
     if not names:
         typer.secho("Pass a name or --all.", fg="yellow")
         raise typer.Exit(2)
@@ -171,6 +178,42 @@ def cmd_build(
     typer.secho(f"✓ wrote {len(written)} files", fg="green")
     for p in written:
         typer.echo(f"  • {p.relative_to(root)}")
+
+
+def _purge_stale_artefacts(catalog, root: pathlib.Path, targets: List[str]) -> None:
+    """Delete generated files for UAVs that no longer have a descriptor."""
+    import re
+    if "px4" in targets:
+        af_dir = root / "config" / "px4"
+        live = {f"{u.px4.airframe_id}_gz_{u.name}" for u in catalog.uavs.values()}
+        for f in sorted(af_dir.glob("*_gz_*")):
+            if f.name not in live:
+                typer.secho(f"  purging stale {f.relative_to(root)}", fg="yellow")
+                f.unlink()
+    if "gazebo" in targets:
+        models_dir = root / "models"
+        live_names = set(catalog.uavs)
+        # Only touch dirs whose name matches a UAV pattern we own —
+        # don't accidentally delete chassis-level sensor models.
+        for d in sorted(models_dir.glob("*")):
+            if not d.is_dir():
+                continue
+            # Heuristic: a UAV-generated dir always has model.sdf AND a
+            # matching descriptor. If neither match, leave it alone.
+            sdf = d / "model.sdf"
+            if not sdf.is_file():
+                continue
+            if d.name in live_names:
+                continue
+            # Read the file's first ~3 lines to check for the generator banner
+            try:
+                head = sdf.read_text().splitlines()[:3]
+            except Exception:
+                continue
+            if any("uavros2-asset build" in line for line in head):
+                typer.secho(f"  purging stale {d.relative_to(root)}", fg="yellow")
+                import shutil
+                shutil.rmtree(d)
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# @name Gazebo fixed_wing_basic
+# @name Gazebo fixed_wing_basic_with_cam
 #
 # @type Fixed-wing
 #
@@ -9,7 +9,7 @@
 
 PX4_SIMULATOR=${PX4_SIMULATOR:=gz}
 PX4_GZ_WORLD=${PX4_GZ_WORLD:=default}
-PX4_SIM_MODEL=${PX4_SIM_MODEL:=fixed_wing_basic}
+PX4_SIM_MODEL=${PX4_SIM_MODEL:=fixed_wing_basic_with_cam}
 
 param set-default SIM_GZ_EN 1
 param set-default UXRCE_DDS_DOM_ID 0

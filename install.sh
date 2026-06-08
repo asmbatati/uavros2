@@ -579,24 +579,19 @@ cd "$GZ_SIM_DIR"
 if [ -d ".git" ] || git rev-parse --git-dir > /dev/null 2>&1; then
     # Get current branch/commit info
     print_info "Current git state:"
-    git status --porcelain
-    git branch
+    git status --porcelain | head -5
+    git rev-parse --short HEAD
 
-    # Force reset everything to a clean state. This also wipes any models
-    # that were previously copied in by a past install run, so the copy
-    # below starts from a known-clean tree.
-    print_info "Forcing repository to clean state..."
+    # Reset to whatever commit PX4's main tree pins this submodule at.
+    # Don't try to track origin/main on our own - PX4 expects a specific
+    # commit (recorded in the PX4 .gitmodules / index) and a mismatch
+    # breaks the PX4 SITL build with "submodule is not in the recommended
+    # version" + a downstream CMake duplicate-target error.
+    print_info "Resetting to PX4-pinned commit (no rebase to origin/main)..."
     git stash push -u -m "Auto-stash before install.sh" || true
     git reset --hard HEAD || true
     git clean -fdx || true
-
-    # Fetch latest from origin to ensure we have all branches
-    git fetch origin || true
-
-    # Force checkout main branch (this will work even from detached HEAD)
-    print_info "Checking out main branch..."
-    git checkout -B main origin/main || git checkout main || true
-    print_status "Repository is now clean and on main branch"
+    print_status "Repository is now clean at PX4-pinned commit"
 else
     print_warning "$GZ_SIM_DIR is not a git repo; skipping reset/clean (continuing with raw copy)"
 fi
@@ -630,11 +625,27 @@ fi
 
 print_info "Copying airframe configs to ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/"
 if [ -d "${ROS2_SRC}/uavros2/config/px4" ]; then
-    cp -r ${ROS2_SRC}/uavros2/config/px4/* ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/ || {
+    AIRFRAMES_DIR="${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes"
+    MANIFEST="${PX4_DIR}/.uavros2_airframes_manifest"
+    # Drop airframes we installed on a prior run. This prevents stale files
+    # (e.g. after a uavros2 descriptor rename) from accumulating and
+    # confusing PX4's `*_gz_*` glob — which would otherwise see two files
+    # for the same model name and fail with a CMake duplicate-target error.
+    # We track our own files in a manifest so we never delete PX4 stock
+    # files even when their numeric ID range overlaps with ours.
+    if [ -f "$MANIFEST" ]; then
+        print_info "Cleaning up airframes from previous uavros2 install..."
+        while IFS= read -r prev; do
+            [ -n "$prev" ] && rm -f "${AIRFRAMES_DIR}/${prev}"
+        done < "$MANIFEST"
+    fi
+    cp -r ${ROS2_SRC}/uavros2/config/px4/* "${AIRFRAMES_DIR}/" || {
         print_error "Failed to copy airframe configurations"
         exit 1
     }
-    print_status "Airframe configurations copied"
+    # Record what we just installed so we can clean it up next time.
+    ls "${ROS2_SRC}/uavros2/config/px4" | grep -E '^[0-9]+_gz_' > "$MANIFEST" || true
+    print_status "Airframe configurations copied (manifest: $MANIFEST)"
 else
     print_error "PX4 config directory not found at ${ROS2_SRC}/uavros2/config/px4"
     exit 1
