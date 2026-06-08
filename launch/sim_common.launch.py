@@ -19,13 +19,37 @@ from launch_ros.actions import Node
 from ament_index_python import get_package_share_directory
 
 
+def _resolve_model_sdf(uav_name: str) -> tuple[str, str]:
+    """Locate ``models/<uav>/model.sdf`` for the drone_markers node.
+
+    Search order matches the install.sh copy target: PX4-Autopilot first
+    (since that's what's actually loaded by Gazebo), then the package
+    share dir (in-tree fallback).
+    """
+    candidates = []
+    px4_dir = os.environ.get("PX4_DIR")
+    dev_dir = os.environ.get("DEV_DIR", os.path.expanduser("~/drone_arm_ws"))
+    if px4_dir:
+        candidates.append(os.path.join(px4_dir, "Tools/simulation/gz/models"))
+    candidates.append(os.path.join(dev_dir, "PX4-Autopilot/Tools/simulation/gz/models"))
+    candidates.append(os.path.join(
+        get_package_share_directory("uavros2"), "models"))
+    for base in candidates:
+        sdf = os.path.join(base, uav_name, "model.sdf")
+        if os.path.isfile(sdf):
+            return sdf, base
+    return "", ""
+
+
 def _setup(context, *_args, **_kwargs):
     ns = LaunchConfiguration("namespace").perform(context)
+    uav = LaunchConfiguration("uav").perform(context)
+    use_rviz = LaunchConfiguration("use_rviz").perform(context) in ("true", "True", "1")
     base = f"{ns}/base_link"
     odom = f"{ns}/odom"
 
     pkg_share = get_package_share_directory("uavros2")
-    rviz_file = os.path.join(pkg_share, "rviz", "rviz_config.rviz")
+    rviz_file = os.path.join(pkg_share, "rviz", "drone_view.rviz")
 
     # TF tree: static transforms that are sim-agnostic. The new-style
     # named args (--x, --frame-id, ...) silence the "Old-style arguments
@@ -96,6 +120,22 @@ def _setup(context, *_args, **_kwargs):
         output="log",
     )
 
+    # RViz body markers (resolves model.sdf for full-fidelity rendering).
+    sdf_path, model_dir = _resolve_model_sdf(uav) if uav else ("", "")
+    drone_markers = Node(
+        package="uavros2", executable="drone_markers",
+        name="drone_markers",
+        namespace=ns,
+        parameters=[{
+            "use_sim_time": True,
+            "frame_id": base,
+            "marker_ns": ns,
+            "model_sdf": sdf_path,
+            "model_dir": model_dir,
+        }],
+        output="log",
+    )
+
     rviz_node = Node(
         package="rviz2", executable="rviz2", name="rviz2",
         output="log", arguments=["-d", rviz_file],
@@ -109,7 +149,10 @@ def _setup(context, *_args, **_kwargs):
         ],
     )
 
-    return static_tfs + [odom2base, stitcher, traj_pub, rviz_node]
+    actions = static_tfs + [odom2base, stitcher, traj_pub, drone_markers]
+    if use_rviz:
+        actions.append(rviz_node)
+    return actions
 
 
 def generate_launch_description():
@@ -118,5 +161,10 @@ def generate_launch_description():
         DeclareLaunchArgument("uav", default_value=""),
         DeclareLaunchArgument("world", default_value=""),
         DeclareLaunchArgument("arm", default_value="none"),
+        DeclareLaunchArgument(
+            "use_rviz", default_value="true",
+            description="Launch RViz with rviz/drone_view.rviz; set false "
+                        "for headless / CI runs.",
+        ),
         OpaqueFunction(function=_setup),
     ])

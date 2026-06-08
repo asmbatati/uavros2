@@ -53,7 +53,7 @@ Visualization Manager:
       Enabled: true
       Color: 0; 255; 0
       Topic:
-        Value: /drone/gt_trajectory
+        Value: /drone/gt_path
         Depth: 5
         Reliability Policy: Reliable
         Durability Policy: Volatile
@@ -61,7 +61,15 @@ Visualization Manager:
       Name: Front Stereo (left)
       Enabled: false
       Topic:
-        Value: /drone/front_stereo/left/image_raw
+        Value: /drone/front_stereo/left_cam/image_raw
+        Depth: 5
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+    - Class: rviz_default_plugins/Image
+      Name: Stitched Camera
+      Enabled: false
+      Topic:
+        Value: /drone/camera/stitched_image
         Depth: 5
         Reliability Policy: Best Effort
         Durability Policy: Volatile

@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""RViz drone visualization for uavros2.
+"""RViz drone visualization for uavros2 — standalone "attach to a running sim".
+
+The standard sim.launch.py path already includes drone_markers + RViz via
+sim_common.launch.py (gated on use_rviz). This launch file is the
+alternative for the case where you have a sim running already (someone
+else started it, you tore down RViz and want it back, you want a second
+RViz on a different config, etc.) and just want the viz layer.
 
 Launches:
-- ``drone_markers`` (uavros2 node) under the drone namespace, rendering the
-  full Gazebo model in RViz by parsing the UAV's ``model.sdf`` at startup
-- (optional) rviz2 with ``rviz/drone_view.rviz`` pre-loaded
+- ``drone_markers`` under the drone namespace, rendering the full Gazebo
+  model in RViz by parsing the UAV's ``model.sdf`` at startup
+- (optional, default true) rviz2 with ``rviz/drone_view.rviz`` pre-loaded
 
-The marker publisher needs the model.sdf path; we resolve it from the
-``uav:=`` argument by looking under PX4-Autopilot/Tools/simulation/gz/models/
-(the install.sh copy target) and falling back to share/uavros2/models/.
+Resolves the model.sdf path by searching PX4-Autopilot/Tools/simulation/gz/models/
+first, then share/uavros2/models/.
 """
 
 from __future__ import annotations

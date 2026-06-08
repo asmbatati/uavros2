@@ -44,6 +44,7 @@ def _dispatch(context, *_args, **_kwargs):
         "world": world,
         "arm": arm,
         "namespace": namespace,
+        "use_rviz": use_rviz,
     }
 
     sim_launch = IncludeLaunchDescription(
@@ -85,22 +86,9 @@ def _dispatch(context, *_args, **_kwargs):
         )
         actions.append(arm_launch)
 
-    if use_rviz in ("true", "True", "1"):
-        viz_launch = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([
-                PathJoinSubstitution([
-                    FindPackageShare("uavros2"),
-                    "launch", "visualization.launch.py",
-                ])
-            ]),
-            launch_arguments={
-                "uav": uav,
-                "namespace": namespace,
-                "use_rviz": "true",
-            }.items(),
-        )
-        actions.append(viz_launch)
-
+    # NOTE: drone_markers + RViz are now part of sim_common.launch.py (gated
+    # on its own `use_rviz` arg, threaded above via common_args). No separate
+    # visualization include here — that avoids the double-RViz overlap.
     return actions
 
 
@@ -132,10 +120,10 @@ def generate_launch_description():
                         "(requires arms/<arm>/config/moveit/ to exist).",
         ),
         DeclareLaunchArgument(
-            "use_rviz", default_value="false",
-            description="Launch RViz with drone_markers + drone_view.rviz "
-                        "for a visual on the UAV (parses model.sdf to render "
-                        "every visual mesh and spin the rotors).",
+            "use_rviz", default_value="true",
+            description="Launch RViz with drone_view.rviz + drone_markers "
+                        "(full-fidelity Gazebo-model rendering with spinning "
+                        "rotors). Set false for headless / CI runs.",
         ),
         OpaqueFunction(function=_dispatch),
     ])
