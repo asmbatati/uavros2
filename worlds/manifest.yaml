@@ -1,9 +1,15 @@
-# Declares which worlds exist per simulator. The launch dispatcher reads
-# this to fail fast on unsupported (simulator, world) combinations.
+# Declares which worlds exist per simulator, plus the spawn pose used
+# by PX4 SITL (passed via PX4_GZ_MODEL_POSE) and the map→odom static TF
+# lift in sim_common.launch.py.
 #
 # Urban worlds 1-5 are heightmap-based outdoor terrains; their referenced
 # DEM model dirs (models/urban<N>_terrain/) hold the heightmap binaries
-# and are git-lfs tracked.
+# and are git-lfs tracked. The spawn Z must be well above the local
+# terrain so the drone spawns in free air over the heightmap — values
+# below mirror gps_denied_navigation_sim/launch/dem.launch.py with a
+# sensible default for urban4 (which the reference repo didn't enumerate).
+#
+# spawn_pose is [x, y, z, roll, pitch, yaw] in metres / radians, ENU.
 
 worlds:
   empty:
@@ -13,6 +19,8 @@ worlds:
     isaac: false
     pybullet: true
     genesis: false
+    spawn_pose: [0.0, 0.0, 0.1, 0, 0, 0]
+
   warehouse:
     gazebo: warehouse.sdf
     webots: false
@@ -20,19 +28,32 @@ worlds:
     isaac: false
     pybullet: false
     genesis: false
+    spawn_pose: [0.0, 0.0, 0.1, 0, 0, 0]
     note: "Indoor warehouse (formerly tugbot_depot)."
+
   urban1:
     gazebo: urban1.sdf
+    spawn_pose: [0.0, 200.0, 900.0, 0, 0, 0]
     note: "Original DEM testbed (formerly dem_world; needs models/urban1_terrain)."
+
   urban2:
     gazebo: urban2.sdf
+    spawn_pose: [-583.3, 352.6, 1828.0, 0, 0, 0]
     note: "Urban heightmap 2 (formerly taif_world; needs models/urban2_terrain LFS)."
+
   urban3:
     gazebo: urban3.sdf
+    spawn_pose: [-948.0, 252.4, 754.0, 0, 0, 0]
     note: "Urban heightmap 3 (formerly taif1_world; needs models/urban3_terrain LFS, ~120 MB)."
+
   urban4:
     gazebo: urban4.sdf
-    note: "Urban heightmap 4 (formerly taif_test; needs models/urban4_terrain LFS)."
+    # Terrain extents from urban4_terrain SDF: 1710 x 1700 x ~150 m, pose @ (71.26, -70.85).
+    # Spawn ~200 m AGL relative to terrain pose to clear the highest peaks.
+    spawn_pose: [71.26, -70.85, 200.0, 0, 0, 0]
+    note: "Urban heightmap 4 (formerly taif_test, terrain-correlation testbed)."
+
   urban5:
     gazebo: urban5.sdf
-    note: "Urban heightmap 5 (formerly taif_test4; needs models/urban5_terrain LFS)."
+    spawn_pose: [71.26, -70.86, 76.4, 0, 0, 0]
+    note: "Urban heightmap 5 (formerly taif_test4, ships tercom_dem.json)."

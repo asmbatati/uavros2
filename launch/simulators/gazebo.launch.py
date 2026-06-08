@@ -168,7 +168,12 @@ def _setup(context, *_args, **_kwargs):
             f"Add an entry to UAV_AIRFRAME in {__file__}."
         )
 
-    xpos, ypos, zpos = "0.0", "0.0", "0.1"
+    # Per-world spawn pose from worlds/manifest.yaml. DEM-based outdoor
+    # worlds (urban1-5) have elevated terrain; default Z=0.1 would spawn
+    # the drone underground. The manifest holds the right Z for each.
+    from uavros2.world_meta import spawn_pose as _spawn_pose
+    sx, sy, sz, *_rpy = _spawn_pose(world)
+    xpos, ypos, zpos = f"{sx:g}", f"{sy:g}", f"{sz:g}"
     instance = 0
 
     gz_launch = IncludeLaunchDescription(

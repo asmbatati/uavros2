@@ -44,12 +44,19 @@ def _resolve_model_sdf(uav_name: str) -> tuple[str, str]:
 def _setup(context, *_args, **_kwargs):
     ns = LaunchConfiguration("namespace").perform(context)
     uav = LaunchConfiguration("uav").perform(context)
+    world = LaunchConfiguration("world").perform(context)
     use_rviz = LaunchConfiguration("use_rviz").perform(context) in ("true", "True", "1")
     base = f"{ns}/base_link"
     odom = f"{ns}/odom"
 
     pkg_share = get_package_share_directory("uavros2")
     rviz_file = os.path.join(pkg_share, "rviz", "drone_view.rviz")
+
+    # Map -> odom static TF Z must match the spawn Z so MAVROS local_position
+    # (which is zeroed at spawn) lands at the right absolute height in the
+    # `map` frame. For elevated DEM worlds this can be hundreds of metres.
+    from uavros2.world_meta import spawn_pose as _spawn_pose
+    _, _, spawn_z, *_ = _spawn_pose(world) if world else (0.0,) * 6
 
     # TF tree: static transforms that are sim-agnostic. The new-style
     # named args (--x, --frame-id, ...) silence the "Old-style arguments
@@ -69,7 +76,9 @@ def _setup(context, *_args, **_kwargs):
     static_tfs = [
         _stp("map2global_tf_node", 0, 0, 0, 0, 0, 0, "global", "map"),
         _stp("map2map_frd_tf_node", 0, 0, 0, 1.5708, 0, 1.5708, "map", "map_frd"),
-        _stp(f"map2px4_{ns}_tf_node", 0, 0, 0, 0, 0, 0, "map", odom),
+        # Lift odom by spawn_z so the drone's reported local_position.z=0
+        # corresponds to the elevated spawn altitude in the map frame.
+        _stp(f"map2px4_{ns}_tf_node", 0, 0, spawn_z, 0, 0, 0, "map", odom),
         _stp("front_lidar_tf_node",
              0.0, 0.0, -0.12,
              math.radians(0), math.radians(90), math.radians(0),
