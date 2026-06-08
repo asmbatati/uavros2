@@ -50,3 +50,12 @@ def spawn_pose(world: str) -> Tuple[float, float, float, float, float, float]:
     if len(p) < 6:
         p = list(p) + [0.0] * (6 - len(p))
     return tuple(float(v) for v in p[:6])  # type: ignore[return-value]
+
+
+def dem_viz(world: str) -> Dict[str, Any]:
+    """Return the ``dem_viz`` block for ``world``, or {} when absent.
+
+    Used by sim_common.launch.py to decide whether (and how) to launch
+    world_surface_publisher for the active world.
+    """
+    return world_entry(world).get("dem_viz") or {}

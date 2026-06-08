@@ -27,6 +27,7 @@
        jazzy distro mapping for these is patchy. -->
   <depend>python3-pydantic</depend>
   <depend>python3-jinja2</depend>
+  <depend>python3-pil</depend>
 
   <!-- Custom srv types for the runtime sensor-management API. -->
   <depend>uavros2_msgs</depend>

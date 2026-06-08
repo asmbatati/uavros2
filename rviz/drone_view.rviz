@@ -18,6 +18,25 @@ Visualization Manager:
       Color: 160; 160; 164
       Plane Cell Count: 40
       Cell Size: 1
+    - Class: rviz_default_plugins/Marker
+      Name: World Terrain (mesh)
+      Enabled: true
+      Topic:
+        Value: /world/surface_mesh
+        Depth: 1
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+    - Class: rviz_default_plugins/PointCloud2
+      Name: World Terrain (heightmap)
+      Enabled: true
+      Topic:
+        Value: /world/surface_cloud
+        Depth: 1
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+      Size (Pixels): 3
+      Style: Points
+      Color Transformer: RGB8
     - Class: rviz_default_plugins/TF
       Name: TF
       Enabled: true

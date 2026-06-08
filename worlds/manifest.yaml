@@ -34,16 +34,28 @@ worlds:
   urban1:
     gazebo: urban1.sdf
     spawn_pose: [0.0, 200.0, 900.0, 0, 0, 0]
+    dem_viz:
+      mode: mesh
+      mesh: model://urban1_terrain/media/untitled.dae
+      pose: [0.0, 0.0, 0.0]
     note: "Original DEM testbed (formerly dem_world; needs models/urban1_terrain)."
 
   urban2:
     gazebo: urban2.sdf
     spawn_pose: [-583.3, 352.6, 1828.0, 0, 0, 0]
+    dem_viz:
+      mode: mesh
+      mesh: model://urban2_terrain/media/taif.dae
+      pose: [0.0, 0.0, 0.0]
     note: "Urban heightmap 2 (formerly taif_world; needs models/urban2_terrain LFS)."
 
   urban3:
     gazebo: urban3.sdf
     spawn_pose: [-948.0, 252.4, 754.0, 0, 0, 0]
+    dem_viz:
+      mode: mesh
+      mesh: model://urban3_terrain/media/taif1.dae
+      pose: [0.0, 0.0, 0.0]
     note: "Urban heightmap 3 (formerly taif1_world; needs models/urban3_terrain LFS, ~120 MB)."
 
   urban4:
@@ -51,9 +63,23 @@ worlds:
     # Terrain extents from urban4_terrain SDF: 1710 x 1700 x ~150 m, pose @ (71.26, -70.85).
     # Spawn ~200 m AGL relative to terrain pose to clear the highest peaks.
     spawn_pose: [71.26, -70.85, 200.0, 0, 0, 0]
+    dem_viz:
+      mode: heightmap
+      heightmap: model://urban4_terrain/textures/taif_test_height_map.tif
+      texture:   model://urban4_terrain/textures/taif_test_aerial.png
+      pose: [71.26, -70.85, 0.0]
+      size: [1710.34, 1700.3, 150.6]
+      decimation: 4
     note: "Urban heightmap 4 (formerly taif_test, terrain-correlation testbed)."
 
   urban5:
     gazebo: urban5.sdf
     spawn_pose: [71.26, -70.86, 76.4, 0, 0, 0]
+    dem_viz:
+      mode: heightmap
+      heightmap: model://urban5_terrain/textures/taif_test4_height_map.tif
+      texture:   model://urban5_terrain/textures/taif_test4_aerial.png
+      pose: [71.26, -70.86, 0.0]
+      size: [2708.27, 2692.29, 285.9]
+      decimation: 6
     note: "Urban heightmap 5 (formerly taif_test4, ships tercom_dem.json)."

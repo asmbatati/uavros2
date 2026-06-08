@@ -145,6 +145,31 @@ def _setup(context, *_args, **_kwargs):
         output="log",
     )
 
+    # World terrain visualization: a Marker for COLLADA-based worlds
+    # (urban1/2/3), or a coloured PointCloud2 for heightmap-based worlds
+    # (urban4/5). The node reads its config from worlds/manifest.yaml's
+    # `dem_viz:` block for the active world. Worlds without that block
+    # (empty / warehouse) start the node in idle mode (no publishers).
+    from uavros2.world_meta import dem_viz as _dem_viz
+    viz_cfg = _dem_viz(world) if world else {}
+    world_surface_params = {
+        "use_sim_time": True,
+        "frame_id": "map",
+        "mode": viz_cfg.get("mode", ""),
+        "mesh": viz_cfg.get("mesh", ""),
+        "heightmap": viz_cfg.get("heightmap", ""),
+        "texture":   viz_cfg.get("texture", ""),
+        "pose":      list(viz_cfg.get("pose", [0.0, 0.0, 0.0])) + [0.0] * 3,
+        "size":      list(viz_cfg.get("size", [100.0, 100.0, 10.0])),
+        "decimation": int(viz_cfg.get("decimation", 4)),
+    }
+    world_surface = Node(
+        package="uavros2", executable="world_surface_publisher",
+        name="world_surface_publisher",
+        parameters=[world_surface_params],
+        output="log",
+    )
+
     rviz_node = Node(
         package="rviz2", executable="rviz2", name="rviz2",
         output="log", arguments=["-d", rviz_file],
@@ -158,7 +183,7 @@ def _setup(context, *_args, **_kwargs):
         ],
     )
 
-    actions = static_tfs + [odom2base, stitcher, traj_pub, drone_markers]
+    actions = static_tfs + [odom2base, stitcher, traj_pub, drone_markers, world_surface]
     if use_rviz:
         actions.append(rviz_node)
     return actions
