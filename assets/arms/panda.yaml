@@ -1,0 +1,14 @@
+version: 1
+kind: arm
+name: panda
+description: Franka Emika Panda 7-DOF (cylinder-chain scaffold; real meshes pluggable).
+dof: 7
+mass_kg: 0.18
+base_link: panda_link1
+ee_link: panda_ee
+joints: [panda_joint1, panda_joint2, panda_joint3, panda_joint4, panda_joint5, panda_joint6, panda_joint7]
+default_controller: joint_trajectory_controller
+moveit: true
+controllers_yaml: arms/panda/config/controllers.yaml
+urdf_xacro: arms/panda/urdf/panda.urdf.xacro
+px4_airframe_id_default: 4027

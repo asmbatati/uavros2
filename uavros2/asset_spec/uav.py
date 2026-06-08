@@ -50,6 +50,13 @@ class GazeboOverlay(_BaseModel):
     sensor_plugins: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     # Free-form SDF strings spliced into the model body. Use sparingly.
     extra_xml: List[str] = Field(default_factory=list)
+    # Escape hatch: when true, the Gazebo generator SKIPS model.sdf
+    # emission for this UAV. The committed hand-authored
+    # models/<name>/model.sdf is treated as the source of truth.
+    # Used for assemblies whose body geometry isn't yet expressible
+    # in the descriptor schema (composed arms with inline link chains,
+    # legacy assets, etc.).
+    import_existing_sdf: bool = False
 
 
 class PX4Overlay(_BaseModel):

@@ -1,0 +1,14 @@
+version: 1
+kind: arm
+name: three_dof
+description: Custom 3-DOF cylinder-chain scaffold (shoulder, elbow, wrist).
+dof: 3
+mass_kg: 0.10
+base_link: shoulder_link
+ee_link: ee_link
+joints: [j_shoulder, j_elbow, j_wrist]
+default_controller: joint_trajectory_controller
+moveit: true
+controllers_yaml: arms/three_dof/config/controllers.yaml
+urdf_xacro: arms/three_dof/urdf/three_dof.urdf.xacro
+px4_airframe_id_default: 4025

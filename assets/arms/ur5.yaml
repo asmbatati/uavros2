@@ -1,0 +1,14 @@
+version: 1
+kind: arm
+name: ur5
+description: Universal Robots UR5 6-DOF (cylinder-chain scaffold; real meshes pluggable).
+dof: 6
+mass_kg: 0.18
+base_link: ur5_link1
+ee_link: ur5_ee
+joints: [shoulder_pan_joint, shoulder_lift_joint, elbow_joint, wrist_1_joint, wrist_2_joint, wrist_3_joint]
+default_controller: joint_trajectory_controller
+moveit: true
+controllers_yaml: arms/ur5/config/controllers.yaml
+urdf_xacro: arms/ur5/urdf/ur5.urdf.xacro
+px4_airframe_id_default: 4028

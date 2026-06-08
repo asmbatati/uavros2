@@ -1,0 +1,26 @@
+version: 1
+kind: uav
+name: x500_mono_cam_3d_lidar
+description: x500 + downward-facing RealSense D435 + forward mono camera + upward 3D LiDAR.
+chassis:
+  ref: x500
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+  - name: down_d435
+    ref: realsense_d435
+    mount: base_link
+    pose: [0.15, 0.0, 0.25, 0, 0, 1.5707]
+  - name: front_mono
+    ref: mono_camera
+    mount: base_link
+    pose: [0.20, 0.0, 0.10, 0, 0.17453293, 0]
+  - name: front_lidar
+    ref: lidar_3d
+    mount: base_link
+    pose: [0.0, 0.0, 0.12, 0, 1.57079633, 0]
+px4:
+  airframe_id: 4022
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.60

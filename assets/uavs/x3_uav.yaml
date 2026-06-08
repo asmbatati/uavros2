@@ -1,0 +1,18 @@
+version: 1
+kind: uav
+name: x3_uav
+description: x3 research quadrotor (hand-authored body SDF; descriptor only
+  for catalog metadata + PX4 airframe regen).
+chassis:
+  ref: x3_uav
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+px4:
+  airframe_id: 4021
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.60
+overlays:
+  gazebo:
+    import_existing_sdf: true   # body SDF is hand-authored with full mesh / sensor blocks

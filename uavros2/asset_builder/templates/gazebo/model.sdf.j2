@@ -10,13 +10,14 @@
 {% if sensor.gz_model %}
     <!-- Sensor: {{ sensor.name }} (type={{ sensor.ref }}) -->
     <include merge='true'>
+      <name>{{ sensor.name }}</name>
       <uri>model://{{ sensor.gz_model }}</uri>
       <pose relative_to="{{ sensor.mount }}" degrees="true">{{ sensor.pose_sdf }}</pose>
     </include>
 {% if sensor.body_link %}
     <joint name="{{ sensor.name }}_joint" type="fixed">
       <parent>{{ sensor.mount }}</parent>
-      <child>{{ sensor.body_link }}</child>
+      <child>{{ sensor.name }}::{{ sensor.body_link }}</child>
       <pose relative_to="{{ sensor.mount }}" degrees="true">{{ sensor.pose_sdf }}</pose>
     </joint>
 {% endif %}

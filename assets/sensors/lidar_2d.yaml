@@ -1,0 +1,16 @@
+version: 1
+kind: sensor
+name: lidar_2d
+description: Generic 1D-plane LiDAR scanner.
+parameters:
+  samples: 360
+  range_min_m: 0.1
+  range_max_m: 30.0
+  update_rate_hz: 10
+gazebo:
+  gz_model: lidar
+  body_link: lidar_link
+ros:
+  topic_template: "/{ns}/{sensor_name}/scan"
+  msg_type: sensor_msgs/LaserScan
+  default_rate_hz: 10

@@ -1,0 +1,17 @@
+version: 1
+kind: sensor
+name: realsense_d435
+description: Intel RealSense D435 RGBD camera.
+parameters:
+  rgb_resolution: [1280, 720]
+  depth_resolution: [1280, 720]
+  fps: 30
+  depth_range_m: [0.2, 10.0]
+  hfov_deg: 86
+gazebo:
+  gz_model: RealSense_D435
+  body_link: link
+ros:
+  topic_template: "/{ns}/{sensor_name}/color/image_raw"
+  msg_type: sensor_msgs/Image
+  default_rate_hz: 30

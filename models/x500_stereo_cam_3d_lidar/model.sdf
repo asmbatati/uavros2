@@ -10,32 +10,35 @@
     <!-- Sensor: baro (type=barometer_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: front_stereo (type=stereo_camera) -->
     <include merge='true'>
+      <name>front_stereo</name>
       <uri>model://stereo_camera</uri>
       <pose relative_to="base_link" degrees="true">0.2 0 -0.1 0 10 0</pose>
     </include>
     <joint name="front_stereo_joint" type="fixed">
       <parent>base_link</parent>
-      <child>stereo_camera_link</child>
+      <child>front_stereo::stereo_camera_link</child>
       <pose relative_to="base_link" degrees="true">0.2 0 -0.1 0 10 0</pose>
     </joint>
     <!-- Sensor: front_lidar (type=velodyne_16) -->
     <include merge='true'>
+      <name>front_lidar</name>
       <uri>model://velodyne_16</uri>
       <pose relative_to="base_link" degrees="true">0 0 -0.12 0 90 0</pose>
     </include>
     <joint name="front_lidar_joint" type="fixed">
       <parent>base_link</parent>
-      <child>lidar3d_link</child>
+      <child>front_lidar::lidar3d_link</child>
       <pose relative_to="base_link" degrees="true">0 0 -0.12 0 90 0</pose>
     </joint>
     <!-- Sensor: gimbal (type=gimbal_small_3d) -->
     <include merge='true'>
+      <name>gimbal</name>
       <uri>model://gimbal_small_3d</uri>
       <pose relative_to="base_link" degrees="true">0.14 0 -0.1 90 0 90</pose>
     </include>
     <joint name="gimbal_joint" type="fixed">
       <parent>base_link</parent>
-      <child>base_link_gimbal</child>
+      <child>gimbal::base_link_gimbal</child>
       <pose relative_to="base_link" degrees="true">0.14 0 -0.1 90 0 90</pose>
     </joint>
   </model>

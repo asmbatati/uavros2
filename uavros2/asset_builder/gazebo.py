@@ -42,7 +42,28 @@ def build_gazebo(
     author_name: str = "Abdulrahman S. Al-Batati",
     author_email: str = "asmalbatati@hotmail.com",
 ) -> List[pathlib.Path]:
-    """Write ``models/<uav.name>/{model.sdf,model.config}`` and return the paths."""
+    """Write ``models/<uav.name>/{model.sdf,model.config}`` and return the paths.
+
+    When ``uav.overlays.gazebo.import_existing_sdf`` is true, the SDF
+    emission is skipped (the committed hand-authored model.sdf is
+    treated as the source of truth) and only model.config is rewritten.
+    """
+    if uav.overlays.gazebo.import_existing_sdf:
+        # Only regenerate model.config (cheap metadata) - leave model.sdf alone.
+        chassis = catalog.resolve_chassis(uav.chassis.ref)
+        cfg_text = _TEMPLATES.get_template("gazebo/model.config.j2").render(
+            uav=uav,
+            author_name=author_name,
+            author_email=author_email,
+            description=uav.description or chassis.description
+                or f"Imported / hand-authored UAV {uav.name}",
+        )
+        model_dir = out_dir / "models" / uav.name
+        model_dir.mkdir(parents=True, exist_ok=True)
+        cfg_path = model_dir / "model.config"
+        cfg_path.write_text(cfg_text)
+        return [cfg_path]
+
     chassis = catalog.resolve_chassis(uav.chassis.ref)
 
     # Build the per-sensor render context.

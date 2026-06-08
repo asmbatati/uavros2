@@ -1,0 +1,29 @@
+# Hex-rotor research quadrotor (x3 family). The model SDF is hand-authored
+# (it ships full link/joint/sensor bodies inline) and is treated as an
+# imported asset; this descriptor exists so the catalog has metadata for it
+# and so the PX4 airframe regenerates correctly.
+version: 1
+kind: chassis
+name: x3_uav
+description: x3 research quadrotor, 1.5 kg, 470 x 470 mm fuselage with mesh.
+type: multirotor
+layout: quad_x
+arm_length_m: 0.25
+rotors:
+  fl: { name: rotor_fl, pose: [ 0.13,  0.22, 0.02, 0, 0, 0], spin: ccw, max_thrust_N: 8.0, km_torque_coef: 0.05 }
+  fr: { name: rotor_fr, pose: [ 0.13, -0.22, 0.02, 0, 0, 0], spin: cw,  max_thrust_N: 8.0, km_torque_coef: 0.05 }
+  rl: { name: rotor_rl, pose: [-0.13,  0.20, 0.02, 0, 0, 0], spin: cw,  max_thrust_N: 8.0, km_torque_coef: 0.05 }
+  rr: { name: rotor_rr, pose: [-0.13, -0.20, 0.02, 0, 0, 0], spin: ccw, max_thrust_N: 8.0, km_torque_coef: 0.05 }
+body:
+  collision:
+    type: box
+    size: [0.47, 0.47, 0.11]
+mass:
+  total_kg: 1.5
+  inertia: { auto: false, ixx: 0.025, iyy: 0.009, izz: 0.033 }
+landing_gear:
+  type: skids
+  feet:
+    - { name: foot, pose: [0, 0, -0.10, 0, 0, 0], shape: sphere, radius: 0.015 }
+mount_points:
+  - { name: base_link, pose: [0, 0, 0, 0, 0, 0] }

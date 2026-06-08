@@ -1,0 +1,15 @@
+version: 1
+kind: sensor
+name: mono_camera
+description: Monocular RGB camera.
+parameters:
+  resolution: [640, 480]
+  fps: 30
+  hfov_deg: 90
+gazebo:
+  gz_model: mono_camera
+  body_link: mono_camera/base_link
+ros:
+  topic_template: "/{ns}/{sensor_name}/image_raw"
+  msg_type: sensor_msgs/Image
+  default_rate_hz: 30

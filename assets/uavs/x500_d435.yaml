@@ -1,0 +1,23 @@
+version: 1
+kind: uav
+name: x500_d435
+description: x500 + downward 1D LiDAR + gimbal mount. (The committed SDF
+  actually mounts a 1D lidar rather than the D435 — the name is legacy.)
+chassis:
+  ref: x500
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+  - name: lidar
+    ref: lidar_2d
+    mount: base_link
+    pose: [0.16, 0.0, 0.12, 0, 1.57079633, 0]
+  - name: gimbal
+    ref: gimbal_small_3d
+    mount: base_link
+    pose: [0.14, 0, -0.10, 1.57079633, 0, 1.57079633]
+px4:
+  airframe_id: 4020
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.60

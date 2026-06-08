@@ -1,0 +1,22 @@
+version: 1
+kind: uav
+name: x500_with_openmanip_x
+description: x500 + scaffold OpenManipulator-X. Arm bodies inline in hand-authored SDF.
+chassis:
+  ref: x500
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+arm:
+  ref: openmanip_x
+  mount: payload_bottom
+  pose: [0, 0, 0, 3.14159265, 0, 0]
+  namespace: drone
+px4:
+  airframe_id: 4026
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.65
+overlays:
+  gazebo:
+    import_existing_sdf: true

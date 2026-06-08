@@ -1,0 +1,32 @@
+version: 1
+kind: uav
+name: x500_twin_stereo_twin_velodyne
+description: x500 with front/rear stereo cameras + front/rear Velodyne 16
+  LiDARs for 360 deg coverage. Regenerating fixes the absolute paths in
+  the legacy hand-authored SDF.
+chassis:
+  ref: x500
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+  - name: front_stereo
+    ref: stereo_camera
+    mount: base_link
+    pose: [ 0.15, 0.0, -0.01, 0, 0.34906585, 0]      # 20 deg pitch
+  - name: rear_stereo
+    ref: stereo_camera
+    mount: base_link
+    pose: [-0.15, 0.0, -0.01, 0, 0.34906585, 3.14159265]
+  - name: front_lidar
+    ref: velodyne_16
+    mount: base_link
+    pose: [ 0.05, 0.0, -0.17, 0, 0.78539816, 0]      # 45 deg pitch
+  - name: rear_lidar
+    ref: velodyne_16
+    mount: base_link
+    pose: [-0.05, 0.0, -0.17, 0, 0.78539816, 3.14159265]
+px4:
+  airframe_id: 4024
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.62

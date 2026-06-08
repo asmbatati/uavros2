@@ -1,0 +1,23 @@
+version: 1
+kind: uav
+name: x500_with_three_dof_arm
+description: x500 + custom 3-DOF cylinder-chain arm. Arm bodies are inline
+  in the hand-authored SDF; descriptor exists for catalog + PX4 airframe regen.
+chassis:
+  ref: x500
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+arm:
+  ref: three_dof
+  mount: payload_bottom
+  pose: [0, 0, 0, 3.14159265, 0, 0]
+  namespace: drone
+px4:
+  airframe_id: 4025
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.62
+overlays:
+  gazebo:
+    import_existing_sdf: true

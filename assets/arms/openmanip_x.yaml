@@ -1,0 +1,14 @@
+version: 1
+kind: arm
+name: openmanip_x
+description: ROBOTIS OpenManipulator-X 4-DOF (cylinder-chain scaffold; real meshes pluggable).
+dof: 4
+mass_kg: 0.16
+base_link: openmanip_x_link1
+ee_link: openmanip_x_ee
+joints: [joint1, joint2, joint3, joint4]
+default_controller: joint_trajectory_controller
+moveit: true
+controllers_yaml: arms/openmanip_x/config/controllers.yaml
+urdf_xacro: arms/openmanip_x/urdf/openmanip_x.urdf.xacro
+px4_airframe_id_default: 4026
