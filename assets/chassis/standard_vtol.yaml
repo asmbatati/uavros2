@@ -1,0 +1,51 @@
+# Mirrors PX4's stock standard_vtol airframe. The Gazebo SDF is shipped
+# by PX4 itself (Tools/simulation/gz/models/standard_vtol/), so the
+# chassis descriptor points the Gazebo include URI at model://standard_vtol.
+version: 1
+kind: chassis
+name: standard_vtol
+description: Standard VTOL — quad lift + pusher cruise rotor + wing.
+type: vtol_standard
+lift_layout: quad_x
+lift_arm_length_m: 0.40
+lift_rotors:
+  fl: { name: rotor_fl, pose: [ 0.30,  0.30, 0.05, 0, 0, 0], spin: ccw, max_thrust_N: 25.0, km_torque_coef: 0.05 }
+  fr: { name: rotor_fr, pose: [ 0.30, -0.30, 0.05, 0, 0, 0], spin: cw,  max_thrust_N: 25.0, km_torque_coef: 0.05 }
+  rl: { name: rotor_rl, pose: [-0.30,  0.30, 0.05, 0, 0, 0], spin: cw,  max_thrust_N: 25.0, km_torque_coef: 0.05 }
+  rr: { name: rotor_rr, pose: [-0.30, -0.30, 0.05, 0, 0, 0], spin: ccw, max_thrust_N: 25.0, km_torque_coef: 0.05 }
+cruise_rotors:
+  pusher: { name: rotor_pusher, pose: [-0.50, 0.0, 0.0, 0, 0, 0], spin: ccw, max_thrust_N: 40.0, km_torque_coef: 0.05 }
+wing:
+  airfoil: naca0012
+  span_m: 1.60
+  chord_m: 0.20
+  pose: [0.0, 0.0, 0.10, 0, 0, 0]
+  cl_alpha: 5.7
+  cd0: 0.04
+  incidence_deg: 2.0
+control_surfaces:
+  - { name: aileron_left,  hinge_pose: [0.0,  0.50, 0.10, 0, 0, 0], axis: y, max_deflection_deg: 25 }
+  - { name: aileron_right, hinge_pose: [0.0, -0.50, 0.10, 0, 0, 0], axis: y, max_deflection_deg: 25 }
+  - { name: elevator,      hinge_pose: [-0.55, 0.0, 0.10, 0, 0, 0], axis: y, max_deflection_deg: 30 }
+  - { name: rudder,        hinge_pose: [-0.55, 0.0, 0.15, 0, 0, 0], axis: z, max_deflection_deg: 30 }
+transition:
+  trigger: airspeed
+  forward_airspeed_mps: 15.0
+  forward_pitch_deg: -10.0
+body:
+  collision: { type: box, size: [1.20, 0.30, 0.15] }
+mass:
+  total_kg: 5.5
+  inertia: { auto: true, density_kg_per_m3: 200 }
+landing_gear:
+  type: fixed_wheels
+  feet:
+    - { name: nose,        pose: [ 0.40,  0.00, -0.10, 0, 0, 0], shape: sphere, radius: 0.04 }
+    - { name: main_left,   pose: [-0.10,  0.20, -0.10, 0, 0, 0], shape: sphere, radius: 0.04 }
+    - { name: main_right,  pose: [-0.10, -0.20, -0.10, 0, 0, 0], shape: sphere, radius: 0.04 }
+mount_points:
+  - { name: base_link,    pose: [0.0,  0.0,  0.0,  0, 0, 0] }
+  - { name: nose_payload, pose: [0.40, 0.0,  0.05, 0, 0, 0] }
+  - { name: belly,        pose: [0.0,  0.0, -0.05, 0, 0, 0] }
+gazebo:
+  include_uri: model://standard_vtol

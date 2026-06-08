@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version='1.9'>
+  <model name='standard_vtol'>
+    <!-- Chassis: standard_vtol (vtol_standard) -->
+    <include merge='true'>
+      <uri>model://standard_vtol</uri>
+    </include>
+    <!-- Sensor: imu (type=imu_default, embedded in chassis SDF; documented only) -->
+    <!-- Sensor: gps (type=gps_default, embedded in chassis SDF; documented only) -->
+    <!-- Sensor: baro (type=barometer_default, embedded in chassis SDF; documented only) -->
+    <!-- Sensor: nose_cam (type=mono_camera) -->
+    <include merge='true'>
+      <name>nose_cam</name>
+      <uri>model://mono_camera</uri>
+      <pose relative_to="nose_payload" degrees="true">0 0 0 0 10 0</pose>
+    </include>
+    <joint name="nose_cam_joint" type="fixed">
+      <parent>nose_payload</parent>
+      <child>nose_cam::mono_camera/base_link</child>
+      <pose relative_to="nose_payload" degrees="true">0 0 0 0 10 0</pose>
+    </joint>
+  </model>
+</sdf>

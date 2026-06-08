@@ -86,6 +86,18 @@ MultirotorLayout = Literal[
 ]
 
 
+class GazeboChassisBinding(_BaseModel):
+    """How the chassis appears in Gazebo.
+
+    By default the chassis SDF generator emits ``model://<chassis_name>``,
+    referring to ``models/<chassis_name>/`` in this repo. For VTOL /
+    fixed-wing chassis we typically reuse PX4's stock model (shipped in
+    ``PX4-Autopilot/Tools/simulation/gz/models/``), so the include URI
+    is overridden here.
+    """
+    include_uri: Optional[str] = None    # e.g. "model://standard_vtol"
+
+
 class _ChassisBase(_BaseModel):
     """Fields common to every chassis variant."""
     version: int = 1
@@ -96,6 +108,7 @@ class _ChassisBase(_BaseModel):
     mass: Mass
     landing_gear: LandingGear
     mount_points: List[MountPoint] = Field(default_factory=list)
+    gazebo: GazeboChassisBinding = Field(default_factory=GazeboChassisBinding)
 
 
 class MultirotorChassis(_ChassisBase):

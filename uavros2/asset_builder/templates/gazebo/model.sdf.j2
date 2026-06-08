@@ -4,7 +4,7 @@
   <model name='{{ uav.name }}'>
     <!-- Chassis: {{ chassis.name }} ({{ chassis.type }}) -->
     <include merge='true'>
-      <uri>model://{{ chassis.name }}</uri>
+      <uri>{{ chassis.gazebo.include_uri or "model://" ~ chassis.name }}</uri>
     </include>
 {% for sensor in sensors %}
 {% if sensor.gz_model %}

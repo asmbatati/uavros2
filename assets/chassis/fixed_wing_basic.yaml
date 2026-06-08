@@ -1,0 +1,37 @@
+# Mirrors PX4's stock rc_cessna fixed-wing trainer. Gazebo SDF is shipped
+# by PX4 itself (Tools/simulation/gz/models/rc_cessna/).
+version: 1
+kind: chassis
+name: fixed_wing_basic
+description: Basic fixed-wing (rc_cessna-class) — single tractor prop + wing + tail.
+type: fixed_wing
+cruise_rotor: { name: rotor_prop, pose: [0.30, 0.0, 0.0, 0, 0, 0], spin: ccw, max_thrust_N: 25.0, km_torque_coef: 0.05 }
+wing:
+  airfoil: clark_y
+  span_m: 1.20
+  chord_m: 0.15
+  pose: [0.0, 0.0, 0.05, 0, 0, 0]
+  cl_alpha: 5.5
+  cd0: 0.04
+  incidence_deg: 2.0
+control_surfaces:
+  - { name: aileron_left,  hinge_pose: [-0.05,  0.50, 0.05, 0, 0, 0], axis: y, max_deflection_deg: 20 }
+  - { name: aileron_right, hinge_pose: [-0.05, -0.50, 0.05, 0, 0, 0], axis: y, max_deflection_deg: 20 }
+  - { name: elevator,      hinge_pose: [-0.30,  0.0,  0.05, 0, 0, 0], axis: y, max_deflection_deg: 25 }
+  - { name: rudder,        hinge_pose: [-0.30,  0.0,  0.10, 0, 0, 0], axis: z, max_deflection_deg: 25 }
+body:
+  collision: { type: box, size: [0.90, 0.20, 0.10] }
+mass:
+  total_kg: 1.8
+  inertia: { auto: true, density_kg_per_m3: 150 }
+landing_gear:
+  type: fixed_wheels
+  feet:
+    - { name: nose,       pose: [ 0.30,  0.00, -0.07, 0, 0, 0], shape: sphere, radius: 0.03 }
+    - { name: main_left,  pose: [-0.05,  0.10, -0.07, 0, 0, 0], shape: sphere, radius: 0.03 }
+    - { name: main_right, pose: [-0.05, -0.10, -0.07, 0, 0, 0], shape: sphere, radius: 0.03 }
+mount_points:
+  - { name: base_link,    pose: [0.0, 0.0,  0.0,  0, 0, 0] }
+  - { name: nose_payload, pose: [0.25, 0.0, 0.02, 0, 0, 0] }
+gazebo:
+  include_uri: model://rc_cessna

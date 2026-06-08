@@ -1,0 +1,10 @@
+version: 1
+kind: airfoil
+name: naca0012
+description: Symmetric NACA 0012 — fixed-wing, control surfaces.
+cl_alpha: 5.7      # 2*pi*α for a thin airfoil (approx)
+cl_0: 0.0
+cd_0: 0.0085
+cd_alpha: 0.30
+alpha_stall_deg: 14.0
+cm_0: 0.0

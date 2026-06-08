@@ -1,0 +1,10 @@
+version: 1
+kind: airfoil
+name: clark_y
+description: Clark-Y — high-lift fixed-wing airfoil.
+cl_alpha: 5.5
+cl_0: 0.35       # nonzero zero-AoA lift (cambered)
+cd_0: 0.0090
+cd_alpha: 0.32
+alpha_stall_deg: 15.0
+cm_0: -0.06
