@@ -420,6 +420,33 @@ else
     print_status "uavros2 repository ready for installation"
 fi
 
+# Clone the uavros2_msgs sibling repo (custom srv types for the runtime
+# sensor-management API). Like uavros2, idempotent: clone if missing,
+# pull when clean.
+MSGS_PKG_URL='https://github.com/asmbatati/uavros2_msgs.git'
+if [[ -n "$GIT_USER" ]] && [[ -n "$GIT_TOKEN" ]]; then
+    MSGS_PKG_URL=https://$GIT_USER:$GIT_TOKEN@github.com/asmbatati/uavros2_msgs.git
+fi
+if [ ! -d "$ROS2_SRC/uavros2_msgs" ]; then
+    print_info "Cloning uavros2_msgs sibling repository..."
+    cd $ROS2_SRC || { print_error "Failed to change to $ROS2_SRC"; exit 1; }
+    if git clone $MSGS_PKG_URL; then
+        print_status "uavros2_msgs cloned"
+    else
+        print_warning "Failed to clone uavros2_msgs (runtime sensor API will be unavailable until you fetch it manually)"
+    fi
+else
+    print_info "uavros2_msgs already present"
+    cd $ROS2_SRC/uavros2_msgs
+    if [[ -z "$(git status --porcelain 2>/dev/null)" ]]; then
+        git fetch origin >/dev/null 2>&1 && git pull origin main >/dev/null 2>&1 \
+            && print_status "uavros2_msgs updated" \
+            || print_info "uavros2_msgs pull skipped (offline or no remote)"
+    else
+        print_info "uavros2_msgs has local modifications - skipping pull"
+    fi
+fi
+
 # Copy bash.sh to DEV_DIR and setup bashrc sourcing
 print_info "Setting up bash aliases and environment..."
 if [ -f "$ROS2_SRC/uavros2/scripts/bash.sh" ]; then

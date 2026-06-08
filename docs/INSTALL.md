@@ -3,12 +3,20 @@
 ## Full install (host, all features)
 
 ```bash
-git clone https://github.com/asmbatati/uavros2.git ~/drone_arm_ws/ros2_ws/src/uavros2
-cd ~/drone_arm_ws/ros2_ws/src/uavros2
+mkdir -p ~/drone_arm_ws/ros2_ws/src && cd ~/drone_arm_ws/ros2_ws/src
+git clone https://github.com/asmbatati/uavros2.git
+git clone https://github.com/asmbatati/uavros2_msgs.git    # custom srv types for the runtime API
+cd uavros2
 git submodule update --init --recursive
 export DEV_DIR=~/drone_arm_ws
 ./install.sh
 ```
+
+`uavros2_msgs` is a separate ament_cmake package (custom service
+definitions for the runtime sensor-management API). It lives as a
+workspace sibling of `uavros2`. `colcon` builds both packages when you
+run `colcon build --packages-up-to uavros2` because `uavros2` declares
+`<depend>uavros2_msgs</depend>`.
 
 This installs ROS 2 Jazzy, Gazebo Harmonic, PX4 SITL, MAVROS (custom fork), YOLOv8 ROS, RMW Zenoh, GeographicLib, and QGroundControl. After completion:
 
