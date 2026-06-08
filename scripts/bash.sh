@@ -30,6 +30,12 @@ export ROS_DOMAIN_ID=0
 # Wraps `ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2`.
 alias asset='ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2'
 
+################# RViz drone visualization alias ###############
+# Launch drone_markers + rviz2 with drone_view.rviz on a running sim.
+# Usage: `viz` (defaults to drone namespace + x500_stereo_cam_3d_lidar)
+#        `viz uav:=x500_d435 namespace:=drone`
+alias viz='ros2 launch uavros2 visualization.launch.py'
+
 ################# Sim dispatcher aliases #######################
 # Top-level multi-simulator launch dispatcher.
 alias warehouse='ros2 launch uavros2 sim.launch.py simulator:=gazebo world:=warehouse'

@@ -1,0 +1,98 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 30
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Color: 160; 160; 164
+      Plane Cell Count: 40
+      Cell Size: 1
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Names: true
+      Marker Scale: 1
+    - Class: rviz_default_plugins/Odometry
+      Name: Drone Odom
+      Enabled: true
+      Topic:
+        Value: /drone/mavros/local_position/odom
+        Depth: 5
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+      Covariance:
+        Value: false
+      Keep: 1
+      Shape:
+        Color: 0; 170; 255
+        Shaft Length: 0.6
+        Shaft Radius: 0.06
+        Head Length: 0.2
+        Head Radius: 0.12
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Drone Body
+      Enabled: true
+      Topic:
+        Value: /drone/markers
+        Depth: 5
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+    - Class: rviz_default_plugins/Path
+      Name: Ground-Truth Path
+      Enabled: true
+      Color: 0; 255; 0
+      Topic:
+        Value: /drone/gt_trajectory
+        Depth: 5
+        Reliability Policy: Reliable
+        Durability Policy: Volatile
+    - Class: rviz_default_plugins/Image
+      Name: Front Stereo (left)
+      Enabled: false
+      Topic:
+        Value: /drone/front_stereo/left/image_raw
+        Depth: 5
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Front Lidar
+      Enabled: true
+      Topic:
+        Value: /drone/front_lidar/points
+        Depth: 5
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+      Size (Pixels): 2
+      Color Transformer: AxisColor
+      Style: Points
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/FocusCamera
+    - Class: rviz_default_plugins/Select
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Distance: 30
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 3
+      Pitch: 0.5
+      Yaw: 2.3
+Window Geometry:
+  Height: 900
+  Width: 1400
+  Displays:
+    collapsed: false

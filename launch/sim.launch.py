@@ -26,6 +26,7 @@ def _dispatch(context, *_args, **_kwargs):
     world = LaunchConfiguration("world").perform(context)
     namespace = LaunchConfiguration("namespace").perform(context)
     use_moveit = LaunchConfiguration("use_moveit").perform(context)
+    use_rviz = LaunchConfiguration("use_rviz").perform(context)
 
     if sim not in SUPPORTED_SIMS:
         raise RuntimeError(
@@ -84,6 +85,22 @@ def _dispatch(context, *_args, **_kwargs):
         )
         actions.append(arm_launch)
 
+    if use_rviz in ("true", "True", "1"):
+        viz_launch = IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                PathJoinSubstitution([
+                    FindPackageShare("uavros2"),
+                    "launch", "visualization.launch.py",
+                ])
+            ]),
+            launch_arguments={
+                "uav": uav,
+                "namespace": namespace,
+                "use_rviz": "true",
+            }.items(),
+        )
+        actions.append(viz_launch)
+
     return actions
 
 
@@ -113,6 +130,12 @@ def generate_launch_description():
             "use_moveit", default_value="false",
             description="Launch MoveIt's move_group alongside the arm "
                         "(requires arms/<arm>/config/moveit/ to exist).",
+        ),
+        DeclareLaunchArgument(
+            "use_rviz", default_value="false",
+            description="Launch RViz with drone_markers + drone_view.rviz "
+                        "for a visual on the UAV (parses model.sdf to render "
+                        "every visual mesh and spin the rotors).",
         ),
         OpaqueFunction(function=_dispatch),
     ])
