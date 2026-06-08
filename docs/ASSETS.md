@@ -203,19 +203,61 @@ must produce no output. CI runs this on every push. If it fails, either:
 
 The descriptor is the source of truth; the artefacts are downstream of it.
 
+## Runtime sensor hot-swap
+
+The descriptor's *runtime* counterpart is the `runtime_sensor_manager`
+node + three ROS 2 services. It lets you add / remove sensors on a
+running UAV without restarting the simulation.
+
+```bash
+ros2 run uavros2 runtime_sensor_manager \
+    --ros-args -p namespace:=drone -p world:=warehouse
+
+# add a downward LiDAR while the sim is flying
+ros2 service call /drone/runtime/add_sensor uavros2_msgs/srv/AddSensor \
+    "{uav_namespace: drone, name: down_lidar, sensor_ref: velodyne_16,
+      mount: base_link, pose: [0.0, 0.0, -0.15, 0.0, 0.0, 0.0]}"
+
+# list what's live
+ros2 service call /drone/runtime/list_sensors uavros2_msgs/srv/ListSensors \
+    "{uav_namespace: drone}"
+
+# remove it
+ros2 service call /drone/runtime/remove_sensor uavros2_msgs/srv/RemoveSensor \
+    "{uav_namespace: drone, name: down_lidar}"
+```
+
+The service inputs mirror the `assets/uavs/<uav>.yaml` `sensors:` list
+entry, so the same descriptor fragment used at build time is reusable
+at runtime. The node wraps Gazebo Sim's transport services
+(`/world/<world>/create` and `/remove`) under the hood; the spawned
+sensor uses the same `model://<gz_model>` include the asset generator
+would emit.
+
+Limitations (v1):
+
+- Gazebo only. MuJoCo / Webots / Isaac return "not supported".
+- The new sensor is parented to the world, not rigidly to the UAV body
+  (would need a wrapper SDF + Gazebo `<joint>` rejoin to bind).
+- The ros_gz_bridge YAML isn't auto-rewritten — for the new topic to
+  surface in ROS 2, launch a `parameter_bridge` for it, or restart the
+  bridge with an updated config.
+
 ## What's not done yet (v1 → v2 roadmap)
 
 | Item | Status |
 |---|---|
-| Gazebo SDF generator | ✅ shipped |
-| PX4 airframe generator | ✅ shipped |
-| Catalog: x500 + 6 seed sensors | ✅ shipped |
-| One UAV descriptor (x500_stereo_cam_3d_lidar) | ✅ shipped |
-| URDF / ros2_control generator | 🟡 not yet (composed-arm Gazebo plugin emit is in the SDF template) |
+| Gazebo SDF generator (multirotor) | ✅ shipped |
+| PX4 airframe generator (multirotor / VTOL standard / fixed-wing) | ✅ shipped |
+| Catalog: 4 chassis (x500, x3_uav, standard_vtol, fixed_wing_basic) | ✅ shipped |
+| Catalog: 10 sensors, 4 arms, 2 airfoils | ✅ shipped |
+| Every existing UAV authored as a descriptor (11 UAVs) | ✅ shipped |
+| Runtime sensor hot-swap (Gazebo) | ✅ shipped |
+| URDF / ros2_control generator | 🟡 not yet (composed-arm Gazebo plugin is in the SDF template) |
 | MJCF generator (MuJoCo) | 🟡 schema in place, no generator |
 | Webots PROTO generator | 🟡 schema in place, no generator |
 | USD generator (Isaac) | 🟡 schema in place, no generator |
-| Migrate every existing UAV to a descriptor | 🟡 in progress (1 / 9 done) |
-| VTOL / fixed-wing generator paths | 🔴 schema only — generators raise NotImplementedError |
-| Runtime mutation API (hot-swap a sensor) | 🔴 roadmap |
+| Tailsitter / tiltrotor PX4 generator | 🟡 schema in place, no generator |
+| Runtime hot-swap: rigid-attach + bridge auto-rewire | 🟡 wrapper SDF + Gazebo rejoin TBD |
+| Runtime hot-swap on non-Gazebo sims | 🔴 roadmap |
 | Web GUI on top of the descriptor | 🔴 roadmap |

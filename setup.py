@@ -53,6 +53,7 @@ setup(
             'sim_control_bridge = uavros2.sim_control_bridge:main',
             'sensor_relay = uavros2.sensor_relay:main',
             'uavros2-asset = uavros2.asset_cli:main',
+            'runtime_sensor_manager = uavros2.runtime_sensor_manager:main',
         ],
     },
 )

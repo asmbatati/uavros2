@@ -28,6 +28,9 @@
   <depend>python3-pydantic</depend>
   <depend>python3-jinja2</depend>
 
+  <!-- Custom srv types for the runtime sensor-management API. -->
+  <depend>uavros2_msgs</depend>
+
   <!-- Runtime deps used by the launch files (not directly imported in
        Python). Declared as exec_depend so they don't bloat the build
        graph but are still picked up by rosdep over the source tree. -->
