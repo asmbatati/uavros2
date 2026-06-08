@@ -66,7 +66,16 @@ def build_gazebo(
 
     chassis = catalog.resolve_chassis(uav.chassis.ref)
 
-    # Build the per-sensor render context.
+    # Count how many times each sensor TYPE (ref) appears so the template
+    # knows whether to emit a namespaced (multi-instance) or merged
+    # (single-instance) include block. `merge='true'` flattens links into
+    # the parent namespace but breaks if the same sensor type is included
+    # more than once. Without merge, each instance becomes a sub-model and
+    # joints address links as `<instance_name>::<body_link>`.
+    ref_counts: dict[str, int] = {}
+    for s in uav.sensors:
+        ref_counts[s.ref] = ref_counts.get(s.ref, 0) + 1
+
     sensors_ctx = []
     for s in uav.sensors:
         sd = catalog.resolve_sensor(s.ref)
@@ -77,6 +86,7 @@ def build_gazebo(
             "pose_sdf":  _pose_to_sdf_str(s.pose, degrees=True),
             "gz_model":  sd.gazebo.gz_model,
             "body_link": sd.gazebo.body_link,
+            "multi_instance": ref_counts[s.ref] > 1,
         })
 
     arm_ctx = None

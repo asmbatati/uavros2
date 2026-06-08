@@ -8,37 +8,34 @@
     <!-- Sensor: imu (type=imu_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: gps (type=gps_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: baro (type=barometer_default, embedded in chassis SDF; documented only) -->
-    <!-- Sensor: down_d435 (type=realsense_d435) -->
+    <!-- Sensor: down_d435 (type=realsense_d435; merged into parent namespace) -->
     <include merge='true'>
-      <name>down_d435</name>
       <uri>model://RealSense_D435</uri>
       <pose relative_to="base_link" degrees="true">0.15 0 0.25 0 0 89.9945</pose>
     </include>
     <joint name="down_d435_joint" type="fixed">
       <parent>base_link</parent>
-      <child>down_d435::link</child>
+      <child>link</child>
       <pose relative_to="base_link" degrees="true">0.15 0 0.25 0 0 89.9945</pose>
     </joint>
-    <!-- Sensor: front_mono (type=mono_camera) -->
+    <!-- Sensor: front_mono (type=mono_camera; merged into parent namespace) -->
     <include merge='true'>
-      <name>front_mono</name>
       <uri>model://mono_camera</uri>
       <pose relative_to="base_link" degrees="true">0.2 0 0.1 0 10 0</pose>
     </include>
     <joint name="front_mono_joint" type="fixed">
       <parent>base_link</parent>
-      <child>front_mono::mono_camera/base_link</child>
+      <child>mono_camera/base_link</child>
       <pose relative_to="base_link" degrees="true">0.2 0 0.1 0 10 0</pose>
     </joint>
-    <!-- Sensor: front_lidar (type=lidar_3d) -->
+    <!-- Sensor: front_lidar (type=lidar_3d; merged into parent namespace) -->
     <include merge='true'>
-      <name>front_lidar</name>
       <uri>model://lidar_3d</uri>
       <pose relative_to="base_link" degrees="true">0 0 0.12 0 90 0</pose>
     </include>
     <joint name="front_lidar_joint" type="fixed">
       <parent>base_link</parent>
-      <child>front_lidar::lidar3d_link</child>
+      <child>lidar3d_link</child>
       <pose relative_to="base_link" degrees="true">0 0 0.12 0 90 0</pose>
     </joint>
   </model>

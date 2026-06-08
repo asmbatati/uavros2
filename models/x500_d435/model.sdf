@@ -8,26 +8,24 @@
     <!-- Sensor: imu (type=imu_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: gps (type=gps_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: baro (type=barometer_default, embedded in chassis SDF; documented only) -->
-    <!-- Sensor: lidar (type=lidar_2d) -->
+    <!-- Sensor: lidar (type=lidar_2d; merged into parent namespace) -->
     <include merge='true'>
-      <name>lidar</name>
       <uri>model://lidar</uri>
       <pose relative_to="base_link" degrees="true">0.16 0 0.12 0 90 0</pose>
     </include>
     <joint name="lidar_joint" type="fixed">
       <parent>base_link</parent>
-      <child>lidar::lidar_link</child>
+      <child>lidar_link</child>
       <pose relative_to="base_link" degrees="true">0.16 0 0.12 0 90 0</pose>
     </joint>
-    <!-- Sensor: gimbal (type=gimbal_small_3d) -->
+    <!-- Sensor: gimbal (type=gimbal_small_3d; merged into parent namespace) -->
     <include merge='true'>
-      <name>gimbal</name>
       <uri>model://gimbal_small_3d</uri>
       <pose relative_to="base_link" degrees="true">0.14 0 -0.1 90 0 90</pose>
     </include>
     <joint name="gimbal_joint" type="fixed">
       <parent>base_link</parent>
-      <child>gimbal::base_link_gimbal</child>
+      <child>base_link_gimbal</child>
       <pose relative_to="base_link" degrees="true">0.14 0 -0.1 90 0 90</pose>
     </joint>
   </model>

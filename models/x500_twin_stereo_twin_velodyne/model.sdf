@@ -8,8 +8,8 @@
     <!-- Sensor: imu (type=imu_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: gps (type=gps_default, embedded in chassis SDF; documented only) -->
     <!-- Sensor: baro (type=barometer_default, embedded in chassis SDF; documented only) -->
-    <!-- Sensor: front_stereo (type=stereo_camera) -->
-    <include merge='true'>
+    <!-- Sensor: front_stereo (type=stereo_camera; multi-instance, namespaced) -->
+    <include>
       <name>front_stereo</name>
       <uri>model://stereo_camera</uri>
       <pose relative_to="base_link" degrees="true">0.15 0 -0.01 0 20 0</pose>
@@ -19,8 +19,8 @@
       <child>front_stereo::stereo_camera_link</child>
       <pose relative_to="base_link" degrees="true">0.15 0 -0.01 0 20 0</pose>
     </joint>
-    <!-- Sensor: rear_stereo (type=stereo_camera) -->
-    <include merge='true'>
+    <!-- Sensor: rear_stereo (type=stereo_camera; multi-instance, namespaced) -->
+    <include>
       <name>rear_stereo</name>
       <uri>model://stereo_camera</uri>
       <pose relative_to="base_link" degrees="true">-0.15 0 -0.01 0 20 180</pose>
@@ -30,8 +30,8 @@
       <child>rear_stereo::stereo_camera_link</child>
       <pose relative_to="base_link" degrees="true">-0.15 0 -0.01 0 20 180</pose>
     </joint>
-    <!-- Sensor: front_lidar (type=velodyne_16) -->
-    <include merge='true'>
+    <!-- Sensor: front_lidar (type=velodyne_16; multi-instance, namespaced) -->
+    <include>
       <name>front_lidar</name>
       <uri>model://velodyne_16</uri>
       <pose relative_to="base_link" degrees="true">0.05 0 -0.17 0 45 0</pose>
@@ -41,8 +41,8 @@
       <child>front_lidar::lidar3d_link</child>
       <pose relative_to="base_link" degrees="true">0.05 0 -0.17 0 45 0</pose>
     </joint>
-    <!-- Sensor: rear_lidar (type=velodyne_16) -->
-    <include merge='true'>
+    <!-- Sensor: rear_lidar (type=velodyne_16; multi-instance, namespaced) -->
+    <include>
       <name>rear_lidar</name>
       <uri>model://velodyne_16</uri>
       <pose relative_to="base_link" degrees="true">-0.05 0 -0.17 0 45 180</pose>

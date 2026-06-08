@@ -36,6 +36,27 @@ alias asset='ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2'
 #        `viz uav:=x500_d435 namespace:=drone`
 alias viz='ros2 launch uavros2 visualization.launch.py'
 
+################# Flight-control aliases ########################
+# Wrap the most common MAVROS arming / mode-switch service calls so day-to-day
+# flying is one word in a terminal. Default namespace is `drone`; override
+# with NS=other before the alias call: `NS=interceptor takeoff`.
+state()   { ros2 topic echo "/${NS:-drone}/mavros/state" --once ; }
+arm()     { ros2 service call "/${NS:-drone}/mavros/cmd/arming" \
+              mavros_msgs/srv/CommandBool "{value: true}" ; }
+disarm()  { ros2 service call "/${NS:-drone}/mavros/cmd/arming" \
+              mavros_msgs/srv/CommandBool "{value: false}" ; }
+takeoff() { ros2 service call "/${NS:-drone}/mavros/set_mode" \
+              mavros_msgs/srv/SetMode "{custom_mode: 'AUTO.TAKEOFF'}" ; }
+land()    { ros2 service call "/${NS:-drone}/mavros/set_mode" \
+              mavros_msgs/srv/SetMode "{custom_mode: 'AUTO.LAND'}" ; }
+hold()    { ros2 service call "/${NS:-drone}/mavros/set_mode" \
+              mavros_msgs/srv/SetMode "{custom_mode: 'AUTO.LOITER'}" ; }
+offboard(){ ros2 service call "/${NS:-drone}/mavros/set_mode" \
+              mavros_msgs/srv/SetMode "{custom_mode: 'OFFBOARD'}" ; }
+position(){ ros2 service call "/${NS:-drone}/mavros/set_mode" \
+              mavros_msgs/srv/SetMode "{custom_mode: 'POSCTL'}" ; }
+qgc()     { "${DEV_DIR:-$HOME/drone_arm_ws}/QGroundControl.AppImage" & }
+
 ################# Sim dispatcher aliases #######################
 # Top-level multi-simulator launch dispatcher.
 alias warehouse='ros2 launch uavros2 sim.launch.py simulator:=gazebo world:=warehouse'
