@@ -111,12 +111,14 @@ Visualization Manager:
     Current:
       Class: rviz_default_plugins/Orbit
       Name: Current View
-      Distance: 30
+      Target Frame: drone/base_link    # camera follows the drone
+      Distance: 100                    # ~100 m around the drone — works
+                                       # for warehouse + urban worlds alike
       Focal Point:
         X: 0
         Y: 0
-        Z: 3
-      Pitch: 0.5
+        Z: 0
+      Pitch: 0.4
       Yaw: 2.3
 Window Geometry:
   Height: 900

@@ -623,6 +623,63 @@ else
     exit 1
 fi
 
+# RViz uses Ogre which doesn't have a TIFF codec — meshes that reference
+# .tif textures (the urban1/2/3 terrain DAEs do) render as untextured.
+# Convert any .tif texture referenced by a .dae into .png and patch the
+# .dae to point at the new path. We do this on the PX4-side copy, not on
+# the LFS source, so the repo stays clean.
+print_info "Converting TIFF textures referenced by urban* terrain DAEs for RViz..."
+python3 - "${PX4_DIR}/Tools/simulation/gz/models" <<'PY' || \
+    print_warning "TIFF→PNG conversion failed; urban1/2/3 meshes may render untextured"
+import os, sys, re
+try:
+    from PIL import Image
+except ImportError:
+    print("Pillow not installed; skipping TIFF conversion")
+    sys.exit(0)
+
+models_root = sys.argv[1]
+converted = 0
+for entry in sorted(os.listdir(models_root)):
+    if not entry.startswith("urban") or not entry.endswith("_terrain"):
+        continue
+    model_dir = os.path.join(models_root, entry)
+    # Walk only this terrain dir
+    for dirpath, _, files in os.walk(model_dir):
+        for f in files:
+            if not f.lower().endswith(".dae"):
+                continue
+            dae_path = os.path.join(dirpath, f)
+            with open(dae_path) as df:
+                text = df.read()
+            # Find all <init_from>...tif</init_from> references
+            refs = re.findall(
+                r"<init_from>\s*([^<\s]+\.tif)\s*</init_from>",
+                text, flags=re.IGNORECASE)
+            for ref in set(refs):
+                # Resolve relative path against the DAE's dir
+                src = os.path.normpath(os.path.join(dirpath, ref))
+                if not os.path.isfile(src):
+                    continue
+                dst = os.path.splitext(src)[0] + ".png"
+                if not os.path.isfile(dst):
+                    try:
+                        Image.open(src).convert("RGB").save(dst)
+                        converted += 1
+                        print(f"  converted {src} → {dst}")
+                    except Exception as exc:
+                        print(f"  failed to convert {src}: {exc}")
+                        continue
+                # Patch the DAE: <init_from>foo.tif</init_from> →
+                # <init_from>foo.png</init_from>
+                new_ref = re.sub(r"\.tif$", ".png", ref, flags=re.IGNORECASE)
+                text = text.replace(ref, new_ref)
+            with open(dae_path, "w") as df:
+                df.write(text)
+print(f"TIFF→PNG conversion complete: {converted} new PNG(s)")
+PY
+print_status "TIFF textures converted to PNG (terrain meshes now render in RViz)"
+
 print_info "Copying airframe configs to ${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/"
 if [ -d "${ROS2_SRC}/uavros2/config/px4" ]; then
     AIRFRAMES_DIR="${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes"

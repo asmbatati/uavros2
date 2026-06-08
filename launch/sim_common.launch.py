@@ -52,11 +52,17 @@ def _setup(context, *_args, **_kwargs):
     pkg_share = get_package_share_directory("uavros2")
     rviz_file = os.path.join(pkg_share, "rviz", "drone_view.rviz")
 
-    # Map -> odom static TF Z must match the spawn Z so MAVROS local_position
-    # (which is zeroed at spawn) lands at the right absolute height in the
-    # `map` frame. For elevated DEM worlds this can be hundreds of metres.
+    # Map frame convention: the `map` origin is coincident with the drone's
+    # spawn position in the Gazebo world. This means:
+    #   - drone in map = MAVROS local_position (zeroed at spawn) → drone at
+    #     (0, 0, 0) at spawn, no static-TF lift needed.
+    #   - terrain in map = gazebo_xyz - spawn_xyz → terrain is centred near
+    #     the origin so the default RViz orbit camera sees it.
+    # The world_surface_publisher takes the spawn XYZ as `recenter_to` and
+    # subtracts it from emitted points/marker poses.
     from uavros2.world_meta import spawn_pose as _spawn_pose
-    _, _, spawn_z, *_ = _spawn_pose(world) if world else (0.0,) * 6
+    sx, sy, sz, *_ = _spawn_pose(world) if world else (0.0,) * 6
+    spawn_xyz = [float(sx), float(sy), float(sz)]
 
     # TF tree: static transforms that are sim-agnostic. The new-style
     # named args (--x, --frame-id, ...) silence the "Old-style arguments
@@ -76,9 +82,11 @@ def _setup(context, *_args, **_kwargs):
     static_tfs = [
         _stp("map2global_tf_node", 0, 0, 0, 0, 0, 0, "global", "map"),
         _stp("map2map_frd_tf_node", 0, 0, 0, 1.5708, 0, 1.5708, "map", "map_frd"),
-        # Lift odom by spawn_z so the drone's reported local_position.z=0
-        # corresponds to the elevated spawn altitude in the map frame.
-        _stp(f"map2px4_{ns}_tf_node", 0, 0, spawn_z, 0, 0, 0, "map", odom),
+        # map ≡ spawn position. MAVROS local_position is zeroed at spawn, so
+        # the drone shows at map(0,0,0) at takeoff. No Z lift here — the
+        # terrain (republished by world_surface_publisher) gets shifted to
+        # be relative to the spawn instead.
+        _stp(f"map2px4_{ns}_tf_node", 0, 0, 0, 0, 0, 0, "map", odom),
         _stp("front_lidar_tf_node",
              0.0, 0.0, -0.12,
              math.radians(0), math.radians(90), math.radians(0),
@@ -162,6 +170,9 @@ def _setup(context, *_args, **_kwargs):
         "pose":      list(viz_cfg.get("pose", [0.0, 0.0, 0.0])) + [0.0] * 3,
         "size":      list(viz_cfg.get("size", [100.0, 100.0, 10.0])),
         "decimation": int(viz_cfg.get("decimation", 4)),
+        # Re-centre the published terrain on the spawn position so map(0,0,0)
+        # coincides with where the drone takes off.
+        "recenter_to": spawn_xyz,
     }
     world_surface = Node(
         package="uavros2", executable="world_surface_publisher",

@@ -79,6 +79,12 @@ class WorldSurfacePublisher(Node):
         self.declare_parameter("mode", "")              # 'mesh' | 'heightmap' | ''
         self.declare_parameter("frame_id", "map")
         self.declare_parameter("pose", [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        # Translate emitted geometry by -recenter_to so the chosen point in
+        # Gazebo world coordinates ends up at the map frame origin. Used by
+        # the launch system to keep the drone (which spawns at this Gazebo
+        # XYZ) at map(0,0,0) and the terrain centred around it, so RViz's
+        # default orbit camera sees both. Pass (0,0,0) to disable.
+        self.declare_parameter("recenter_to", [0.0, 0.0, 0.0])
 
         # mesh-mode params
         self.declare_parameter("mesh", "")              # model:// or file:// or abs path
@@ -131,6 +137,7 @@ class WorldSurfacePublisher(Node):
             return
         uri = _file_uri(mesh)
         pose = list(self.get_parameter("pose").value)
+        recenter = list(self.get_parameter("recenter_to").value)
         scale = list(self.get_parameter("mesh_scale").value)
         color = list(self.get_parameter("mesh_color").value)
         frame_id = self.get_parameter("frame_id").value
@@ -144,7 +151,9 @@ class WorldSurfacePublisher(Node):
         m.action = Marker.ADD
         m.mesh_resource = uri
         m.mesh_use_embedded_materials = True
-        m.pose.position.x, m.pose.position.y, m.pose.position.z = pose[:3]
+        m.pose.position.x = pose[0] - recenter[0]
+        m.pose.position.y = pose[1] - recenter[1]
+        m.pose.position.z = pose[2] - recenter[2]
         # Default identity quat (mesh in upright pose).
         m.pose.orientation.w = 1.0
         m.scale.x, m.scale.y, m.scale.z = scale[:3]
@@ -189,7 +198,12 @@ class WorldSurfacePublisher(Node):
         frame_id = self.get_parameter("frame_id").value
 
         sx, sy, sz = (float(s) for s in size[:3])
-        px, py, pz = (float(p) for p in pose[:3])
+        # Pose minus recenter offset → terrain in `map` frame is centred on
+        # (terrain_world - recenter_to).
+        recenter = list(self.get_parameter("recenter_to").value)
+        px = float(pose[0]) - float(recenter[0])
+        py = float(pose[1]) - float(recenter[1])
+        pz = float(pose[2]) - float(recenter[2])
 
         # Read heightmap (single-channel TIFF). Normalise to [0..1].
         img = Image.open(hm_path)
