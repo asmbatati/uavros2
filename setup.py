@@ -17,6 +17,9 @@ setup(
     name=package_name,
     version='0.1.0',
     packages=find_packages(exclude=['test']),
+    # The asset builders load their Jinja2 templates relative to the module
+    # (uavros2/asset_builder/templates), so ship them inside the package.
+    package_data={'uavros2.asset_builder': ['templates/*/*.j2']},
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
@@ -27,8 +30,6 @@ setup(
         *recursive_data_files('docs'),
         *recursive_data_files('scripts'),
         *recursive_data_files('assets'),
-        # Jinja2 templates used by the asset_builder generators.
-        *recursive_data_files('uavros2/asset_builder/templates'),
         (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz')),
         *([(os.path.join('share', package_name, 'worlds'), glob('worlds/*'))]
           if os.path.exists('worlds') and glob('worlds/*') else []),

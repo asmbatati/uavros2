@@ -13,7 +13,7 @@ alias qgc="cd $DEV_DIR && ./QGroundControl.AppImage"
 
 ################# PX4 SITL (low-level) #################
 alias px4="cd $DEV_DIR/PX4-Autopilot && make px4_sitl gz_x500_twin_stereo_twin_velodyne"
-alias px4_tug="cd $DEV_DIR/PX4-Autopilot && PX4_GZ_MODEL_POSE='0,0,0.1,0,0,0' make px4_sitl gz_x500_stereo_cam_3d_lidar PX4_GZ_WORLD=tugbot_depot"
+alias px4_warehouse="cd $DEV_DIR/PX4-Autopilot && PX4_GZ_MODEL_POSE='0,0,0.1,0,0,0' make px4_sitl gz_x500_stereo_cam_3d_lidar PX4_GZ_WORLD=warehouse"
 
 ################# Build #################
 alias cbuav="cd $DEV_DIR/ros2_ws && colcon build --packages-select uavros2"
@@ -27,8 +27,12 @@ export ROS_DOMAIN_ID=0
 
 ################# uavros2-asset CLI alias ######################
 # `asset list`, `asset validate`, `asset build <uav>`, `asset diff --all`, …
-# Wraps `ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2`.
-alias asset='ros2 run uavros2 uavros2-asset --root $DEV_DIR/ros2_ws/src/uavros2'
+# Wraps `ros2 run uavros2 uavros2-asset <cmd> --root $DEV_DIR/ros2_ws/src/uavros2`
+# (--root is an option of each subcommand, so it has to follow <cmd>).
+asset() {
+  local cmd=$1; shift
+  ros2 run uavros2 uavros2-asset "$cmd" --root "$DEV_DIR/ros2_ws/src/uavros2" "$@"
+}
 
 ################# RViz drone visualization alias ###############
 # Launch drone_markers + rviz2 with drone_view.rviz on a running sim.
