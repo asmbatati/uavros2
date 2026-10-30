@@ -20,9 +20,8 @@ import tempfile
 from launch import LaunchDescription
 from launch.actions import (
     IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction,
-    SetEnvironmentVariable, ExecuteProcess, RegisterEventHandler,
+    SetEnvironmentVariable, LogInfo,
 )
-from launch.event_handlers import OnProcessExit
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
@@ -147,6 +146,8 @@ def _setup(context, *_args, **_kwargs):
     uav = LaunchConfiguration("uav").perform(context)
     world = LaunchConfiguration("world").perform(context)
     ns = LaunchConfiguration("namespace").perform(context)
+    instance = int(LaunchConfiguration("instance").perform(context))
+    headless = LaunchConfiguration("headless").perform(context)
 
     # Materialize substituted-marker SDFs into a temp dir and prepend it
     # to GZ_SIM_RESOURCE_PATH so PX4/Gazebo finds these instead of the
@@ -174,7 +175,6 @@ def _setup(context, *_args, **_kwargs):
     from uavros2.world_meta import spawn_pose as _spawn_pose
     sx, sy, sz, *_rpy = _spawn_pose(world)
     xpos, ypos, zpos = f"{sx:g}", f"{sy:g}", f"{sz:g}"
-    instance = 0
 
     gz_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
@@ -184,7 +184,7 @@ def _setup(context, *_args, **_kwargs):
         ]),
         launch_arguments={
             "gz_ns": ns,
-            "headless": "0",
+            "headless": headless,
             "gz_model_name": uav,
             "gz_world": world,
             "px4_autostart_id": airframe,
@@ -204,8 +204,10 @@ def _setup(context, *_args, **_kwargs):
         ]),
         launch_arguments={
             "mavros_namespace": f"{ns}/mavros",
-            "tgt_system": "1",
-            "fcu_url": "udp://:14540@127.0.0.1:14557",
+            # PX4 instance i: MAV_SYS_ID = i+1, offboard link on UDP
+            # 14540+i (remote) <-> 14580+i (PX4 local), per px4-rc.mavlink.
+            "tgt_system": f"{instance + 1}",
+            "fcu_url": f"udp://:{14540 + instance}@127.0.0.1:{14580 + instance}",
             "pluginlists_yaml": os.path.join(pkg_share, "config", "mavros", "drone_px4_pluginlists.yaml"),
             "config_yaml": os.path.join(pkg_share, "config", "mavros", "drone_px4_config.yaml"),
             "base_link_frame": f"{ns}/base_link",
@@ -215,24 +217,16 @@ def _setup(context, *_args, **_kwargs):
         }.items(),
     )
 
-    # Pre-flight: kill any stale Gazebo / PX4 SITL processes left over from
-    # a prior aborted launch. Without this, PX4 detects the orphan server
-    # via gz_bridge ("gazebo already running") and refuses to spawn.
-    #
-    # IMPORTANT: the Gazebo server runs with comm=ruby (it's wrapped in a
-    # Ruby launcher), so `pkill -x gz` does NOT match it. Match the full
-    # argv with a regex anchored at the start of the command line - that
-    # way the pkill command itself (which starts with "pkill", not "gz"
-    # or "...px4") cannot self-match.
-    kill_stale = ExecuteProcess(
-        cmd=[
-            "bash", "-c",
-            "pkill -9 -f '^gz sim' 2>/dev/null || true; "
-            "pkill -9 -f '^[^ ]*px4_sitl_default/bin/px4' 2>/dev/null || true; "
-            "sleep 0.5",
-        ],
-        output="log",
-    )
+    # Pre-flight: kill stale Gazebo / PX4 SITL processes left over from a
+    # prior aborted launch of THIS sim. Without this, PX4 detects the orphan
+    # server via gz_bridge ("gazebo already running") and refuses to spawn.
+    # Only processes in our GZ_PARTITION, our PX4 tree and our PX4 instance
+    # are touched (see uavros2/sim_cleanup.py), so other simulations on the
+    # same machine survive. It runs synchronously here, before any of the
+    # actions below exist, so it can never race with the new PX4.
+    from uavros2.px4_paths import find_px4_dir
+    from uavros2.sim_cleanup import kill_stale
+    killed = kill_stale(find_px4_dir(), instance)
 
     ros_gz_bridge = Node(
         package="ros_gz_bridge",
@@ -243,28 +237,16 @@ def _setup(context, *_args, **_kwargs):
         output="log",
     )
 
-    # PX4's gz_bridge launches both the Gazebo server AND a GUI client by
-    # default when the pre-flight kill has cleared any prior orphan server.
-    # We used to spawn `gz sim -g` ourselves, but that resulted in a
-    # duplicate window. If you ever need to force a GUI client (e.g. when
-    # PX4 detects an existing headless server and won't spawn one), bring
-    # back the TimerAction below.
-
-    # Sequence: kill_stale must FINISH before PX4/MAVROS/bridge start.
-    # ROS 2 launch runs LaunchDescription actions in parallel by default,
-    # so just appending in order is not enough — without the event handler,
-    # `pkill -9 -x px4` would race with and SIGKILL the brand-new PX4.
-    after_kill = RegisterEventHandler(
-        OnProcessExit(
-            target_action=kill_stale,
-            on_exit=[gz_launch, mavros_launch, ros_gz_bridge],
-        )
-    )
+    # PX4's gz_bridge launches both the Gazebo server AND a GUI client
+    # (headless:=1 starts a server only, see gz_sim.launch.py). We used to
+    # spawn `gz sim -g` ourselves, but that resulted in a duplicate window.
 
     # Gazebo-specific TF: connect Gazebo's sensor link to our canonical front_lidar_link.
     # Only emit when the UAV actually has a 3D LiDAR.
     # set_resource_path must come first so child processes inherit it.
-    actions = [set_resource_path, kill_stale, after_kill]
+    actions = [set_resource_path, gz_launch, mavros_launch, ros_gz_bridge]
+    if killed:
+        actions.insert(0, LogInfo(msg=f"[gazebo] killed stale sim processes: {killed}"))
     if "3d_lidar" in uav or "velodyne" in uav:
         gazebo_lidar_link = f"{uav}_{instance}/lidar3d_link/velodyne_16"
         actions.append(Node(
@@ -290,6 +272,14 @@ def generate_launch_description():
         DeclareLaunchArgument("world", default_value="warehouse"),
         DeclareLaunchArgument("namespace", default_value="drone"),
         DeclareLaunchArgument("arm", default_value="none"),
+        DeclareLaunchArgument(
+            "instance", default_value="0",
+            description="PX4 SITL instance: sets MAV_SYS_ID, MAVLink ports "
+                        "and the Gazebo model name <uav>_<instance>"),
+        DeclareLaunchArgument(
+            "headless", default_value="0",
+            description="1 = no Gazebo GUI; the server renders sensors "
+                        "through EGL (--headless-rendering)"),
         SetEnvironmentVariable(name="ROS_PARAM_use_sim_time", value="true"),
         OpaqueFunction(function=_setup),
     ])

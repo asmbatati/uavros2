@@ -27,6 +27,8 @@ def _dispatch(context, *_args, **_kwargs):
     namespace = LaunchConfiguration("namespace").perform(context)
     use_moveit = LaunchConfiguration("use_moveit").perform(context)
     use_rviz = LaunchConfiguration("use_rviz").perform(context)
+    instance = LaunchConfiguration("instance").perform(context)
+    headless = LaunchConfiguration("headless").perform(context)
 
     if sim not in SUPPORTED_SIMS:
         raise RuntimeError(
@@ -45,6 +47,8 @@ def _dispatch(context, *_args, **_kwargs):
         "arm": arm,
         "namespace": namespace,
         "use_rviz": use_rviz,
+        "instance": instance,
+        "headless": headless,
     }
 
     sim_launch = IncludeLaunchDescription(
@@ -124,6 +128,18 @@ def generate_launch_description():
             description="Launch RViz with drone_view.rviz + drone_markers "
                         "(full-fidelity Gazebo-model rendering with spinning "
                         "rotors). Set false for headless / CI runs.",
+        ),
+        DeclareLaunchArgument(
+            "instance", default_value="0",
+            description="PX4 SITL instance number (gazebo). Instance i uses "
+                        "MAV_SYS_ID i+1 and MAVLink UDP 14540+i / 14580+i, "
+                        "so several sims can share one machine.",
+        ),
+        DeclareLaunchArgument(
+            "headless", default_value="0",
+            description="1 = no Gazebo GUI (gazebo). The server renders "
+                        "camera / lidar sensors via EGL, so no X display "
+                        "is needed. Pair with use_rviz:=false.",
         ),
         OpaqueFunction(function=_dispatch),
     ])
