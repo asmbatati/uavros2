@@ -8,6 +8,7 @@ transform: the URDF arms pointed up while the simulated arms hung down).
 
 import shutil
 import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import numpy as np
@@ -57,9 +58,26 @@ def test_urdf_matches_sdf(arm):
                                    err_msg=f"{arm} EE orientation at q={qv}")
 
 
+def _initial_pose(urdf_xml, joints):
+    """Joint values the arm spawns with: ros2_control initial_value, else 0."""
+    q = dict.fromkeys(joints, 0.0)
+    for j in ET.fromstring(urdf_xml).findall("ros2_control/joint"):
+        for p in j.findall("state_interface/param"):
+            if p.get("name") == "initial_value" and j.get("name") in q:
+                q[j.get("name")] = float(p.text)
+    return q
+
+
 @pytest.mark.parametrize("arm", sorted(ARMS))
-def test_arm_hangs_below_base_link(arm):
+def test_arm_spawns_above_landing_gear(arm):
     model, ee, joints = ARMS[arm]
-    T = urdf_fk(_urdf(arm), "base_link", ee, dict.fromkeys(joints, 0.0))
-    # Zero configuration hangs straight down, above the gear feet (-0.2195 m).
-    assert -0.2195 < T[2, 3] < -0.1
+    urdf = _urdf(arm)
+    q = _initial_pose(urdf, joints)
+    links = [j.find("child").get("link") for j in ET.fromstring(urdf).findall("joint")]
+    # Every link frame of the spawn pose hangs below base_link but above the
+    # x500 gear feet (-0.2195 m), so the drone rests on its gear.
+    for link in links:
+        if link == "base_link":
+            continue
+        z = urdf_fk(urdf, "base_link", link, q)[2, 3]
+        assert -0.2195 < z < 0.0, f"{arm}: {link} at z={z:.3f} in the spawn pose"

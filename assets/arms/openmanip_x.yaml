@@ -1,11 +1,11 @@
 version: 1
 kind: arm
 name: openmanip_x
-description: ROBOTIS OpenManipulator-X 4-DOF (cylinder-chain scaffold; real meshes pluggable).
+description: ROBOTIS OpenManipulator-X 4-DOF (upstream kinematics, masses and inertias; box geometry).
 dof: 4
-mass_kg: 0.16
+mass_kg: 0.594
 base_link: openmanip_x_link1
-ee_link: openmanip_x_ee
+ee_link: end_effector_link
 joints: [joint1, joint2, joint3, joint4]
 default_controller: joint_trajectory_controller
 moveit: true

@@ -43,9 +43,10 @@ from tf2_ros import Buffer, TransformListener
 from trajectory_msgs.msg import JointTrajectoryPoint
 
 
-# Joint poses per arm: (label, positions). All four scaffolds are planar
-# pitch chains hanging below base_link, so a positive first joint swings
-# the arm (and its centre of mass) to one side of the hover point.
+# Joint poses per arm: (label, positions). three_dof, panda and ur5 are
+# planar pitch-chain scaffolds hanging below base_link, so a positive first
+# joint swings the arm (and its centre of mass) to one side of the hover
+# point.
 ARM_POSES = {
     "three_dof": [
         ("reach_a", [1.2, -0.6, 0.3]),
@@ -53,11 +54,15 @@ ARM_POSES = {
         ("fold", [0.4, 1.2, 0.8]),
         ("stow", [0.0, 0.0, 0.0]),
     ],
+    # OpenManipulator-X (real kinematics: joint1 yaw, joints 2-4 pitch).
+    # reach_a: forward reach, end effector ~0.31 m ahead of base_link;
+    # reach_b: the same reach swung 90 deg to the side; stow is the pose the
+    # arm spawns and lands in (above the landing gear).
     "openmanip_x": [
-        ("reach_a", [1.2, -0.5, 0.3, 0.2]),
-        ("reach_b", [-1.2, 0.5, -0.3, -0.2]),
-        ("fold", [0.4, 1.0, 0.8, 0.5]),
-        ("stow", [0.0, 0.0, 0.0, 0.0]),
+        ("reach_a", [0.0, 0.8, -0.3, 0.4]),
+        ("reach_b", [1.57, 0.8, -0.3, 0.4]),
+        ("fold", [0.0, -1.2, 1.4, 1.0]),
+        ("stow", [0.0, -1.5, 1.4, 1.5]),
     ],
     "panda": [
         ("reach_a", [1.0, -0.3, 0.2, 0.2, 0.1, 0.1, 0.0]),

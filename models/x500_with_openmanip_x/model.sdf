@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Composed model: PX4 x500 quadcopter + scaffold openmanip_x arm.
-  This is a cylinder-chain scaffold matching arms/openmanip_x/config/
-  controllers.yaml joint names, NOT the real openmanip_x kinematics. It
-  lets `arm:=openmanip_x` spawn and respond to ros2_control commands today;
-  real meshes / inertias can be back-filled by overwriting this SDF
-  later with one generated from the upstream description package.
+  Composed model: PX4 x500 quadcopter + ROBOTIS OpenManipulator-X.
+  Kinematics, masses, centres of mass, inertias and joint limits are the
+  upstream ROBOTIS values (see arms/openmanip_x/urdf/openmanip_x.urdf.xacro,
+  which this file must match: test/test_arm_kinematics.py). Geometry is
+  boxes, not the upstream meshes. The arm hangs below base_link (mount
+  0.05 m down, roll = pi) and starts in the stow pose set by the
+  ros2_control initial_value in the URDF.
   Joint commands routed through gz_ros2_control (see plugin below).
 -->
 <sdf version='1.9'>
@@ -18,142 +19,164 @@
     <link name='openmanip_x_link1'>
       <pose relative_to='base_link'>0 0 -0.05 3.14159 0 0</pose>
       <inertial>
-        <mass>0.04</mass>
-        <pose>0 0 0.0165 0 0 0</pose>
+        <mass>0.079119962</mass>
+        <pose>3.0876154e-04 0 -1.2176461e-04 0 0 0</pose>
         <inertia>
-          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
-          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          <ixx>1.2505234e-05</ixx><iyy>2.1898364e-05</iyy><izz>1.9267361e-05</izz>
+          <ixy>0</ixy><ixz>-1.7855208e-07</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link1_visual'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
-        <material><ambient>0.8 0.3 0.3 1</ambient><diffuse>0.8 0.3 0.3 1</diffuse></material>
+        <pose>0.012 0 0.0085 0 0 0</pose>
+        <geometry><box><size>0.045 0.045 0.017</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link1_collision'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
+        <pose>0.012 0 0.0085 0 0 0</pose>
+        <geometry><box><size>0.045 0.045 0.017</size></box></geometry>
       </collision>
     </link>
-    <joint name='joint1' type='revolute'>
+    <joint name='arm_mount' type='fixed'>
       <parent>base_link</parent>
       <child>openmanip_x_link1</child>
-      <axis>
-        <xyz>0 1 0</xyz>
-        <limit><lower>-3.14159</lower><upper>3.14159</upper>
-               <effort>2.0</effort><velocity>3.0</velocity></limit>
-        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
-      </axis>
     </joint>
     <link name='openmanip_x_link2'>
-      <pose relative_to='openmanip_x_link1'>0 0 0.0330 0 0 0</pose>
+      <pose relative_to='openmanip_x_link1'>0.012 0 0 0 0 0</pose>
       <inertial>
-        <mass>0.04</mass>
-        <pose>0 0 0.0165 0 0 0</pose>
+        <mass>0.098406837</mass>
+        <pose>-3.0184870e-04 5.4043684e-04 4.7433464e-02 0 0 0</pose>
         <inertia>
-          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
-          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          <ixx>3.4543422e-05</ixx><iyy>3.2689329e-05</iyy><izz>1.885032e-05</izz>
+          <ixy>-1.6031095e-08</ixy><ixz>-3.8375155e-07</ixz><iyz>2.8511935e-08</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link2_visual'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
-        <material><ambient>0.3 0.8 0.3 1</ambient><diffuse>0.3 0.8 0.3 1</diffuse></material>
+        <pose>0 0 0.03 0 0 0</pose>
+        <geometry><box><size>0.03 0.045 0.0595</size></box></geometry>
+        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.85 0.85 0.85 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link2_collision'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
+        <pose>0 0 0.03 0 0 0</pose>
+        <geometry><box><size>0.03 0.045 0.0595</size></box></geometry>
       </collision>
     </link>
-    <joint name='joint2' type='revolute'>
+    <joint name='joint1' type='revolute'>
       <parent>openmanip_x_link1</parent>
       <child>openmanip_x_link2</child>
       <axis>
-        <xyz>0 1 0</xyz>
+        <xyz>0 0 1</xyz>
         <limit><lower>-3.14159</lower><upper>3.14159</upper>
-               <effort>2.0</effort><velocity>3.0</velocity></limit>
+               <effort>4.1</effort><velocity>4.8</velocity></limit>
         <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
       </axis>
     </joint>
     <link name='openmanip_x_link3'>
-      <pose relative_to='openmanip_x_link2'>0 0 0.0330 0 0 0</pose>
+      <pose relative_to='openmanip_x_link2'>0 0 0.0595 0 0 0</pose>
       <inertial>
-        <mass>0.04</mass>
-        <pose>0 0 0.0165 0 0 0</pose>
+        <mass>0.13850917</mass>
+        <pose>1.0308393e-02 3.7743363e-04 1.0170197e-01 0 0 0</pose>
         <inertia>
-          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
-          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          <ixx>0.00033055381</ixx><iyy>0.00034290447</iyy><izz>6.0346498e-05</izz>
+          <ixy>-9.7940978e-08</ixy><ixz>-3.8505711e-05</ixz><iyz>-1.5717516e-06</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link3_visual'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
-        <material><ambient>0.3 0.3 0.8 1</ambient><diffuse>0.3 0.3 0.8 1</diffuse></material>
+        <pose>0.012 0 0.064 0 0 0</pose>
+        <geometry><box><size>0.035 0.03 0.15</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link3_collision'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
+        <pose>0.012 0 0.064 0 0 0</pose>
+        <geometry><box><size>0.035 0.03 0.15</size></box></geometry>
       </collision>
     </link>
-    <joint name='joint3' type='revolute'>
+    <joint name='joint2' type='revolute'>
       <parent>openmanip_x_link2</parent>
       <child>openmanip_x_link3</child>
       <axis>
         <xyz>0 1 0</xyz>
-        <limit><lower>-3.14159</lower><upper>3.14159</upper>
-               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <limit><lower>-1.5</lower><upper>1.5</upper>
+               <effort>4.1</effort><velocity>4.8</velocity></limit>
         <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
       </axis>
     </joint>
     <link name='openmanip_x_link4'>
-      <pose relative_to='openmanip_x_link3'>0 0 0.0330 0 0 0</pose>
+      <pose relative_to='openmanip_x_link3'>0.024 0 0.128 0 0 0</pose>
       <inertial>
-        <mass>0.04</mass>
-        <pose>0 0 0.0165 0 0 0</pose>
+        <mass>0.13274562</mass>
+        <pose>9.0909590e-02 3.8929816e-04 2.2413279e-04 0 0 0</pose>
         <inertia>
-          <ixx>4.270000e-06</ixx><iyy>4.270000e-06</iyy><izz>1.280000e-06</izz>
-          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          <ixx>3.0654178e-05</ixx><iyy>0.00024230292</iyy><izz>0.00025155057</izz>
+          <ixy>-1.2764155e-06</ixy><ixz>-2.6874417e-07</ixz><iyz>1.155955e-08</iyz>
         </inertia>
       </inertial>
       <visual name='openmanip_x_link4_visual'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
-        <material><ambient>0.8 0.8 0.3 1</ambient><diffuse>0.8 0.8 0.3 1</diffuse></material>
+        <pose>0.062 0 0 0 0 0</pose>
+        <geometry><box><size>0.124 0.03 0.03</size></box></geometry>
+        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.85 0.85 0.85 1</diffuse></material>
       </visual>
       <collision name='openmanip_x_link4_collision'>
-        <pose>0 0 0.0165 0 0 0</pose>
-        <geometry><cylinder><radius>0.008</radius><length>0.033</length></cylinder></geometry>
+        <pose>0.062 0 0 0 0 0</pose>
+        <geometry><box><size>0.124 0.03 0.03</size></box></geometry>
       </collision>
     </link>
-    <joint name='joint4' type='revolute'>
+    <joint name='joint3' type='revolute'>
       <parent>openmanip_x_link3</parent>
       <child>openmanip_x_link4</child>
       <axis>
         <xyz>0 1 0</xyz>
-        <limit><lower>-3.14159</lower><upper>3.14159</upper>
-               <effort>2.0</effort><velocity>3.0</velocity></limit>
+        <limit><lower>-1.5</lower><upper>1.4</upper>
+               <effort>4.1</effort><velocity>4.8</velocity></limit>
+        <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
+      </axis>
+    </joint>
+    <link name='openmanip_x_link5'>
+      <pose relative_to='openmanip_x_link4'>0.124 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.14527573</mass>
+        <pose>4.4206755e-02 3.6839985e-07 8.9142216e-03 0 0 0</pose>
+        <inertia>
+          <ixx>8.0870749e-05</ixx><iyy>7.5980465e-05</iyy><izz>9.3127351e-05</izz>
+          <ixy>0</ixy><ixz>-1.0157896e-06</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='openmanip_x_link5_visual'>
+        <pose>0.05 0 0 0 0 0</pose>
+        <geometry><box><size>0.10 0.05 0.03</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.25 0.25 0.25 1</diffuse></material>
+      </visual>
+      <collision name='openmanip_x_link5_collision'>
+        <pose>0.05 0 0 0 0 0</pose>
+        <geometry><box><size>0.10 0.05 0.03</size></box></geometry>
+      </collision>
+    </link>
+    <joint name='joint4' type='revolute'>
+      <parent>openmanip_x_link4</parent>
+      <child>openmanip_x_link5</child>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit><lower>-1.7</lower><upper>1.97</upper>
+               <effort>4.1</effort><velocity>4.8</velocity></limit>
         <dynamics><damping>0.05</damping><friction>0.01</friction></dynamics>
       </axis>
     </joint>
     <link name='end_effector_link'>
-      <pose relative_to='openmanip_x_link4'>0 0 0.0430 0 0 0</pose>
+      <pose relative_to='openmanip_x_link5'>0.126 0 0 0 0 0</pose>
       <inertial>
-        <mass>0.02</mass>
+        <mass>0.001</mass>
+        <pose>0 0 0 0 0 0</pose>
         <inertia>
-          <ixx>1e-5</ixx><iyy>1e-5</iyy><izz>1e-5</izz>
+          <ixx>1e-8</ixx><iyy>1e-8</iyy><izz>1e-8</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='end_effector_link_visual'>
-        <geometry><sphere><radius>0.018</radius></sphere></geometry>
+        <geometry><sphere><radius>0.01</radius></sphere></geometry>
         <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
       </visual>
-      <collision name='end_effector_link_collision'>
-        <geometry><sphere><radius>0.018</radius></sphere></geometry>
-      </collision>
     </link>
     <joint name='j_ee' type='fixed'>
-      <parent>openmanip_x_link4</parent>
+      <parent>openmanip_x_link5</parent>
       <child>end_effector_link</child>
     </joint>
 

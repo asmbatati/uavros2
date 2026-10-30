@@ -1,8 +1,4 @@
-"""Verify that every URDF/Xacro source parses without error.
-
-xacro doesn't need to fully resolve $(find ...) for upstream-only arm
-mounts, but the file should at least be valid XML.
-"""
+"""Verify that every URDF/Xacro source is valid XML."""
 
 import glob
 import os
@@ -16,7 +12,6 @@ PKG_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 def _all_xacros():
     patterns = [
         os.path.join(PKG_ROOT, "arms", "*", "urdf", "*.urdf.xacro"),
-        os.path.join(PKG_ROOT, "arms", "mounts", "*.urdf.xacro"),
         os.path.join(PKG_ROOT, "models", "*", "urdf", "*.urdf.xacro"),
     ]
     files = []

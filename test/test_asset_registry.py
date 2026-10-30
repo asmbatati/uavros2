@@ -60,10 +60,13 @@ def test_asset_yaml_joint_count_matches_dof(arm):
     )
 
 
-def test_each_arm_has_mount_xacro(arm_names):
+def test_each_arm_has_composed_model(arm_names):
+    # The mount is the first joint of each arm URDF and the first link pose of
+    # the composed Gazebo model (test_arm_kinematics.py checks they agree).
     for arm in arm_names:
-        mount = os.path.join(ARMS_DIR, "mounts", f"x500_{arm}.urdf.xacro")
-        assert os.path.isfile(mount), f"missing mount file: {mount}"
+        name = "x500_with_three_dof_arm" if arm == "three_dof" else f"x500_with_{arm}"
+        sdf = os.path.join(PKG_ROOT, "models", name, "model.sdf")
+        assert os.path.isfile(sdf), f"missing composed model: {sdf}"
 
 
 def test_each_arm_has_px4_airframe(manifest):
