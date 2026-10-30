@@ -196,6 +196,7 @@ def _setup(context, *_args, **_kwargs):
     )
 
     pkg_share = get_package_share_directory("uavros2")
+    from uavros2.mavros_layout import mavros_namespace
     mavros_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             PathJoinSubstitution([
@@ -203,7 +204,9 @@ def _setup(context, *_args, **_kwargs):
             ])
         ]),
         launch_arguments={
-            "mavros_namespace": f"{ns}/mavros",
+            # /<ns>/mavros/<topic> for both the fork and upstream MAVROS
+            # (see uavros2/mavros_layout.py).
+            "mavros_namespace": mavros_namespace(ns),
             # PX4 instance i: MAV_SYS_ID = i+1, offboard link on UDP
             # 14540+i (remote) <-> 14580+i (PX4 local), per px4-rc.mavlink.
             "tgt_system": f"{instance + 1}",
