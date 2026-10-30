@@ -34,14 +34,19 @@ ns=${NAMESPACE:-drone}
 mkdir -p "$out"
 log="$out/${arm}_sim.log"
 
-ros2 launch uavros2 sim.launch.py simulator:=gazebo uav:="$uav" arm:="$arm" \
-  world:="${WORLD:-warehouse}" namespace:="$ns" instance:="$instance" \
-  headless:=1 use_rviz:=false > "$log" 2>&1 &
-launch_pid=$!
+launch_pid=
+start_sim() {
+  ros2 launch uavros2 sim.launch.py simulator:=gazebo uav:="$uav" arm:="$arm" \
+    world:="${WORLD:-warehouse}" namespace:="$ns" instance:="$instance" \
+    headless:=1 use_rviz:=false > "$log" 2>&1 &
+  launch_pid=$!
+}
 stop_sim() {
+  [ -n "$launch_pid" ] || return 0
   kill -INT "$launch_pid" 2>/dev/null || true
   for _ in $(seq 30); do kill -0 "$launch_pid" 2>/dev/null || break; sleep 1; done
   kill -KILL "$launch_pid" 2>/dev/null || true
+  launch_pid=
   # Anything that still survived (this sim's partition / PX4 instance only).
   python3 -c "from uavros2.px4_paths import find_px4_dir
 from uavros2.sim_cleanup import kill_stale
@@ -50,13 +55,31 @@ print('[experiment] killed leftovers:', k) if k else None" || true
 }
 trap stop_sim EXIT
 
+# Ready = the arm controller is active (if any) and MAVROS hears PX4. PX4
+# occasionally gives up at startup ("gz_bridge: timed out waiting for clock
+# message", about 1 launch in 15 here); then restart the sim once.
+sim_ready() {
+  local need=('CON: Got HEARTBEAT')
+  [ "$arm" = none ] || need+=('Configured and activated joint_trajectory_controller')
+  for _ in $(seq 60); do
+    grep -q 'px4 -i .*process has died' "$log" && return 1
+    local ok=1
+    for pat in "${need[@]}"; do grep -q "$pat" "$log" || ok=0; done
+    [ $ok = 1 ] && return 0
+    sleep 2
+  done
+  return 1
+}
+
 echo "[experiment] $arm on instance $instance; sim log: $log"
-ready='Configured and activated joint_trajectory_controller'
-[ "$arm" = none ] && ready='CON: Got HEARTBEAT'
-if ! timeout 120 bash -c "until grep -q '$ready' '$log'; do sleep 2; done"; then
-  echo "[experiment] sim did not come up; see $log" >&2
-  exit 1
-fi
+for attempt in 1 2; do
+  start_sim
+  sim_ready && break
+  echo "[experiment] sim did not come up (attempt $attempt); see $log" >&2
+  stop_sim
+  [ $attempt = 2 ] && exit 1
+  mv "$log" "${log%.log}_failed$attempt.log"
+done
 # PX4 needs a few seconds after the controller spawns for EKF2 to align.
 sleep 10
 ros2 run uavros2 aerial_arm_demo --ros-args -p arm:="$arm" -p namespace:="$ns" \

@@ -229,10 +229,11 @@ class AerialArmDemo(Node):
     def _log(self):
         if self.pose is None or self.setpoint is None:
             return
-        p = self.pose.pose.position
+        p, o = self.pose.pose.position, self.pose.pose.orientation
         row = {
             "t": time.monotonic() - self.t0, "phase": self.phase,
             "x": p.x, "y": p.y, "z": p.z,
+            "qx": o.x, "qy": o.y, "qz": o.z, "qw": o.w,
             "sp_x": self.setpoint[0], "sp_y": self.setpoint[1], "sp_z": self.setpoint[2],
             "joint_err_norm": None, "ee_x": None, "ee_y": None, "ee_z": None,
         }

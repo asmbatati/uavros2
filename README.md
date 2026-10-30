@@ -114,8 +114,9 @@ scripts/plot_aerial_arm.py ~/uavros2_results                       # figures + s
 The drone takes off in OFFBOARD, hovers at 2 m, moves the arm through four
 poses (forward reach, side reach, fold, stow) and lands, logging hover error,
 joint tracking and the end effector's world position. The OpenManipulator-X
-(0.59 kg) displaces the x500 by 3-4 times its hover noise while it moves;
-the light scaffold arms do not measurably. Protocol, numbers and figures:
+(0.59 kg) displaces the x500 by 2-5 times its hover noise (peaks up to 0.5 m
+for 2 s arm motions, roughly halved at 6 s); the light scaffold arms do not
+measurably. Protocol, numbers and figures:
 [docs/AERIAL_ARM.md](docs/AERIAL_ARM.md).
 
 ## Models
