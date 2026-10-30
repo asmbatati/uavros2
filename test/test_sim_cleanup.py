@@ -47,22 +47,34 @@ def _tree(tmp_path):
           other, OTHER_PX4 + rootfs + "4", title=True)
     _proc(root, 203, ["/opt/ros/jazzy/lib/ros_gz_bridge/parameter_bridge", "/clock"],
           other, "/home/u")
-    # unrelated process in our partition
+    # our sim's other ROS nodes and an earlier launch
+    _proc(root, 105, ["/opt/ros/jazzy/lib/tf2_ros/static_transform_publisher",
+                        "--x", "0", "--ros-args", "-r", "__ns:=/drone"], mine, "/home/u")
+    _proc(root, 106, ["/usr/bin/python3", "/opt/ros/jazzy/bin/ros2", "launch",
+                        "uavros2", "sim.launch.py"], mine, "/home/u")
+    # the same nodes of the other sim
+    _proc(root, 205, ["/opt/ros/jazzy/lib/tf2_ros/static_transform_publisher",
+                        "--x", "0", "--ros-args"], other, "/home/u")
+    _proc(root, 206, ["/usr/bin/python3", "/opt/ros/jazzy/bin/ros2", "launch",
+                        "drone_interception_sim", "x.launch.py"], other, "/home/u")
+    # unrelated process in our partition (no --ros-args)
     _proc(root, 301, ["python3", "node.py"], mine, "/home/u")
     return root
 
 
 def test_selects_only_this_sims_processes(tmp_path):
     root = _tree(tmp_path)
-    got = find_stale(MY_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=1)
-    assert got == [101, 102, 103]
+    got = find_stale(MY_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=1,
+                     own_pgid=False)
+    assert got == [101, 102, 103, 105, 106]
 
 
 def test_other_partition_never_selected(tmp_path):
     root = _tree(tmp_path)
     # Even pointing at the other tree, our partition excludes its processes.
-    got = find_stale(OTHER_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=1)
-    assert 201 not in got and 202 not in got and 203 not in got
+    got = find_stale(OTHER_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=1,
+                     own_pgid=False)
+    assert not {201, 202, 203, 205, 206} & set(got)
 
 
 def test_unset_partition_requires_our_px4_tree(tmp_path):
@@ -75,11 +87,25 @@ def test_unset_partition_requires_our_px4_tree(tmp_path):
     _proc(root, 22, ["gz", "sim", "-s", OTHER_PX4 + "/w.sdf"], {}, "/tmp", title=True)
     # bridges are never swept without a named partition
     _proc(root, 23, ["parameter_bridge", "/clock"], {}, "/tmp")
-    got = find_stale(MY_PX4, 0, "", "", proc_root=str(root), self_pid=1)
+    _proc(root, 24, ["robot_state_publisher", "--ros-args"], {}, "/tmp")
+    got = find_stale(MY_PX4, 0, "", "", proc_root=str(root), self_pid=1,
+                     own_pgid=False)
     assert got == [11, 12]
 
 
 def test_self_is_skipped(tmp_path):
     root = _tree(tmp_path)
-    got = find_stale(MY_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=101)
+    got = find_stale(MY_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=101,
+                     own_pgid=False)
     assert 101 not in got
+
+
+def test_own_process_group_is_skipped(tmp_path):
+    # Fake /proc pids don't exist for os.getpgid, so they never match a real
+    # process group; the real current process does.
+    root = tmp_path / "proc"
+    root.mkdir()
+    me = os.getpid()
+    _proc(root, me, ["/usr/bin/python3", "/opt/ros/jazzy/bin/ros2", "launch", "x"],
+          {"GZ_PARTITION": "uavsim", "ROS_DOMAIN_ID": "24"}, "/home/u")
+    assert find_stale(MY_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=1) == []

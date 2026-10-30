@@ -1,4 +1,4 @@
-"""Find and kill stale Gazebo / PX4 SITL processes left by an earlier launch.
+"""Find and kill stale processes of this simulation left by an earlier launch.
 
 Several simulations can share one machine, each in its own ``GZ_PARTITION``
 with its own PX4 instance number. A crashed run of *this* sim leaves an
@@ -14,8 +14,16 @@ only stale when all of these hold:
     - ``gz sim``: its command line or cwd points into our PX4 tree, or the
       partition is set and non-empty (a server in our named partition is
       ours whatever tree started it);
-    - ``parameter_bridge``: the partition is set and non-empty and the
-      bridge runs in our ``ROS_DOMAIN_ID``.
+    - ``parameter_bridge``, any other ROS node (``--ros-args`` on its
+      command line: MAVROS, static TF publishers, robot_state_publisher,
+      move_group, uavros2 nodes) and earlier ``ros2 launch`` processes: the
+      partition is set and non-empty and the process runs in our
+      ``ROS_DOMAIN_ID``. Orphaned nodes otherwise keep publishing TF and
+      ``robot_description`` into the next run (a new gz_ros2_control can
+      pick up the old description).
+
+Processes in the caller's own process group are never selected, so a
+launch never sweeps itself or what it has already started.
 """
 
 import os
@@ -76,12 +84,27 @@ def _is_bridge(argv):
     return bool(argv) and os.path.basename(argv[0]) == "parameter_bridge"
 
 
+def _is_ros_node(argv):
+    return "--ros-args" in argv
+
+
+def _is_launch(argv):
+    return any(os.path.basename(a) == "ros2" for a in argv[:2]) and "launch" in argv[1:4]
+
+
+def _pgid(pid):
+    try:
+        return os.getpgid(int(pid))
+    except OSError:
+        return None
+
+
 def _inside(path, root):
     return bool(path) and (path == root or path.startswith(root.rstrip("/") + "/"))
 
 
 def find_stale(px4_dir, instance, partition=None, domain_id=None,
-               proc_root="/proc", self_pid=None):
+               proc_root="/proc", self_pid=None, own_pgid=None):
     """Return the pids of stale processes that belong to this sim.
 
     ``partition`` and ``domain_id`` default to this process's
@@ -93,6 +116,8 @@ def find_stale(px4_dir, instance, partition=None, domain_id=None,
         domain_id = os.environ.get("ROS_DOMAIN_ID", "")
     if self_pid is None:
         self_pid = os.getpid()
+    if own_pgid is None:
+        own_pgid = os.getpgid(0)
     px4_dir = os.path.realpath(px4_dir)
     instance = str(instance)
 
@@ -101,7 +126,10 @@ def find_stale(px4_dir, instance, partition=None, domain_id=None,
         if not pid.isdigit() or int(pid) == self_pid:
             continue
         argv = _read_cmdline(proc_root, pid)
-        if not (_is_px4(argv) or _is_gz_sim(argv) or _is_bridge(argv)):
+        if not (_is_px4(argv) or _is_gz_sim(argv) or _is_bridge(argv)
+                or _is_ros_node(argv) or _is_launch(argv)):
+            continue
+        if own_pgid is not False and _pgid(pid) == own_pgid:
             continue
         env = _read_environ(proc_root, pid)
         if env is None or env.get("GZ_PARTITION", "") != partition:
@@ -112,7 +140,7 @@ def find_stale(px4_dir, instance, partition=None, domain_id=None,
         elif _is_gz_sim(argv):
             mine = (bool(partition) or _inside(cwd, px4_dir)
                     or any(px4_dir in a for a in argv))
-        else:
+        else:  # bridge, other ROS node, or an earlier launch
             mine = bool(partition) and env.get("ROS_DOMAIN_ID", "") == domain_id
         if mine:
             stale.append(int(pid))
