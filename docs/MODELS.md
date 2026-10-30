@@ -49,7 +49,7 @@ git lfs pull
 
 ## Mount points for arms
 
-Composed `x500_with_<arm>` mounts live under `models/x500_with_<arm>/`. The mount xacro at `arms/mounts/x500_<arm>.urdf.xacro` xacro-includes the x500 base URDF and the arm URDF, joining them with a rigid joint at the configured mount frame (default: `x500/base_link` z = -0.05 m, pointing down).
+Composed `x500_with_<arm>` models live under `models/x500_with_<arm>/`: the x500 included with `merge=true` plus the arm links, mounted 0.05 m below `base_link` and flipped to hang down. The same mount is the first joint of each arm URDF (see [MANIPULATORS.md](MANIPULATORS.md)).
 
 Each arm declares its mount frame and any required ballast in its `asset.yaml`. The composer reads both and emits a single URDF that ros2_control + sim_control_bridge consume.
 

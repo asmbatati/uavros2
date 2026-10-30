@@ -1,577 +1,198 @@
-# uavros2 — Multi-Simulator UAV Testbed for ROS 2
-
-> **Working name:** `uavros2` (Python package + repo name). Brand candidates
-> for the published project are listed below; pick one when you're ready to
-> rename. Renaming touches `setup.py`, `package.xml`, every launch include,
-> and the GitHub URL, so it's worth a deliberate decision.
+# uavros2: PX4 UAV and aerial-manipulator simulation for ROS 2
 
 <div align="center">
 
-<img src="media/px4_logo.png" alt="PX4 Logo" width="90" style="vertical-align: middle;" />
-<img src="media/ros2_logo.png" alt="ROS2 Logo" width="90" style="vertical-align: middle;" />
-<img src="media/gazebo_logo.png" alt="Gazebo Logo" width="90" style="vertical-align: middle;" />
-<img src="media/docker_logo.png" alt="Docker Logo" width="90" style="vertical-align: middle;" />
-<img src="media/mavros_logo.png" alt="MAVROS Logo" width="90" style="vertical-align: middle;" />
-<img src="media/mavlink_logo.png" alt="MAVLink Logo" width="90" style="vertical-align: middle;" />
+<img src="media/px4_logo.png" alt="PX4" width="80" />
+<img src="media/ros2_logo.png" alt="ROS 2" width="80" />
+<img src="media/gazebo_logo.png" alt="Gazebo" width="80" />
+<img src="media/docker_logo.png" alt="Docker" width="80" />
+<img src="media/mavros_logo.png" alt="MAVROS" width="80" />
 
-**A ROS 2 UAV testbed shipping x500 + manipulator assets, indoor + outdoor
-worlds, and a multi-simulator dispatcher (Gazebo primary; MuJoCo / Webots /
-Isaac / PyBullet / Genesis scaffolded) with PX4 SITL + MAVROS integration.**
-
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![ROS2](https://img.shields.io/badge/ROS2-Jazzy-green.svg)](https://docs.ros.org/en/jazzy/)
+[![ROS 2](https://img.shields.io/badge/ROS2-Jazzy-green.svg)](https://docs.ros.org/en/jazzy/)
 [![Gazebo](https://img.shields.io/badge/Gazebo-Harmonic-orange.svg)](https://gazebosim.org/)
-[![PX4](https://img.shields.io/badge/PX4-v1.14+-red.svg)](https://px4.io/)
-[![MAVROS](https://img.shields.io/badge/MAVROS-Jazzy-blue.svg)](https://github.com/mavlink/mavros)
-[![MAVLink](https://img.shields.io/badge/MAVLink-v2.0-purple.svg)](https://mavlink.io/)
+[![PX4](https://img.shields.io/badge/PX4-v1.15.4-red.svg)](https://px4.io/)
 
 </div>
 
-## 🏷️ Brand-name candidates
+`uavros2` simulates PX4 multirotors in Gazebo Harmonic with ROS 2 Jazzy and
+MAVROS: a catalogue of x500 sensor variants, an indoor warehouse and five
+outdoor terrain worlds, four manipulator arms mounted under the x500 (one of
+them a mass-accurate ROBOTIS OpenManipulator-X), a YAML asset generator for
+models and PX4 airframes, RViz visualisation, and a dispatcher that can start
+the same scene in other simulators. Downstream code talks to a fixed set of
+canonical topics, whichever simulator runs.
 
-The brand should make the ROS 2 dependency immediately obvious — these
-candidates all carry "ros2" / "r2" in the name itself:
+| Part | Status (Ubuntu 24.04, Jazzy, PX4 v1.15.4) |
+|---|---|
+| Gazebo + PX4 SITL + MAVROS, all UAVs | Working; flights verified headless |
+| Arms under the x500 (`gz_ros2_control`, MoveIt configs) | Working; all four fly the arm experiment |
+| Aerial-arm experiment + figures | Working ([docs/AERIAL_ARM.md](docs/AERIAL_ARM.md)) |
+| Docker images | Ubuntu 24 / Jazzy dev image and a ready-to-run image ([uavros2_docker](uavros2_docker)) |
+| MuJoCo, Webots | Demos (x500 + Panda in MuJoCo, x500 in Webots) |
+| Isaac, PyBullet / Genesis | Scaffolded / stub ([docs/SIMULATORS.md](docs/SIMULATORS.md)) |
 
-| Candidate | Vibe | Notes |
+![OpenManipulator-X moving under a hovering x500](docs/figures/aerial_arm/omx_2_s_motions_flight.png)
+
+## Install
+
+### On Ubuntu 24.04
+
+`install.sh` expects the workspace layout `$DEV_DIR/{PX4-Autopilot,ros2_ws}`
+(default `DEV_DIR=~/drone_arm_ws`). It installs ROS 2 Jazzy, Gazebo Harmonic
+and the PX4 toolchain if missing (sudo), clones PX4 **v1.15.4** (override with
+`PX4_REF`), mavlink, mavros and `uavros2_msgs`, copies this package's models,
+worlds and airframes into PX4, builds PX4 SITL and the workspace, and adds
+`source $DEV_DIR/bash.sh` to `~/.bashrc`.
+
+```bash
+mkdir -p ~/drone_arm_ws/ros2_ws/src && cd ~/drone_arm_ws/ros2_ws/src
+git clone --recursive https://github.com/asmbatati/uavros2.git
+cd uavros2 && ./install.sh --minimal     # --minimal: skip YOLOv8, QGC, GeographicLib downloads
+```
+
+The models are stored with git-lfs; run `git lfs pull` if the terrain meshes
+come out as small text files.
+
+### With Docker
+
+```bash
+cd uavros2/uavros2_docker/docker
+make px4-dev-simulation-ubuntu24     # ROS 2 Jazzy + Gazebo + PX4 toolchain + MoveIt + ros2_control
+make uavros2                         # + PX4 v1.15.4 SITL and this package, built (uavros2:jazzy)
+```
+
+`docker_run.sh` starts an interactive dev container from the first image with
+X11 and the GPU; the second runs experiments with no display. See
+[uavros2_docker/README.md](uavros2_docker/README.md).
+
+## Run
+
+```bash
+source ~/drone_arm_ws/ros2_ws/install/setup.bash
+ros2 launch uavros2 sim.launch.py                         # x500_stereo_cam_3d_lidar in warehouse
+ros2 launch uavros2 sim.launch.py uav:=x500_with_openmanip_x arm:=openmanip_x
+ros2 launch uavros2 sim.launch.py uav:=x500_d435 world:=urban5 headless:=1 use_rviz:=false
+```
+
+| Argument | Default | Meaning |
 |---|---|---|
-| **`r2flight`** ⭐ *(recommended)* | Playful + clear | `r2` instantly reads as ROS 2 (also a Star Wars wink). Short, single-word-feeling, easy as a Python package and GitHub repo. |
-| **`uavros2`** | Portmanteau | Very crisp; the existing `mavros` precedent makes the `*ros2` suffix legible at a glance |
-| **`ros2_aerolab`** | Descriptive lab | "ROS 2 aerial lab" — explicit about both pieces |
-| **`r2sky`** | Short + lyrical | Alliterative, slightly more brand-y than r2flight |
-| **`skybench_ros2`** | Benchmark / academic | Strong fit for the testbed framing if you want to lead with the function |
-| **`flock_ros2`** | Swarm | Future-proofs a multi-UAV roadmap |
-| **`aero_ros2`** | Maximally generic | If you'd rather the brand stay non-cute |
+| `simulator` | `gazebo` | `gazebo`, `webots`, `mujoco`, `isaac`, `pybullet`, `genesis` |
+| `uav` | `x500_stereo_cam_3d_lidar` | model under `models/` (table below) |
+| `arm` | `none` | `three_dof`, `openmanip_x`, `panda`, `ur5`; pair with `uav:=x500_with_<arm>` |
+| `world` | `warehouse` | `warehouse`, `urban1` … `urban5` (spawn heights in `worlds/manifest.yaml`) |
+| `namespace` | `drone` | ROS namespace of MAVROS, sensors and the arm |
+| `instance` | `0` | PX4 SITL instance N: MAV_SYS_ID N+1, MAVLink UDP 14540+N / 14580+N, Gazebo model `<uav>_N` |
+| `headless` | `0` | `1`: no Gazebo window; sensors render through EGL, no X display needed |
+| `use_rviz` | `true` | RViz with the drone model and world terrain |
+| `use_moveit` | `false` | start `move_group` for the arm |
 
-Avoid: `rosflight` (an existing autopilot project), `roscopter` (existing
-Python package).
+Fly it with the bash helpers from `scripts/bash.sh` (`arm`, `takeoff`, `land`,
+`offboard`, …) or programmatically through MAVROS; see
+[docs/FLYING.md](docs/FLYING.md).
 
-When you pick one, the rename is:
-1. Repo: `gh repo rename <new>` (or via the web UI)
-2. Python package: `setup.py.name`, `package.xml.name`, `uavros2/` dir
-3. Every `launch_arguments` / `FindPackageShare("uavros2")` reference
+### Several simulations on one machine
 
-A single search-and-replace pass nails most of it.
-
-## 🚁 Overview
-
-This package ships a multi-simulator UAV development testbed: ROS 2 Jazzy + PX4
-autopilot + Gazebo Harmonic + MAVROS as the primary stack, with a dispatcher
-layer that fans out to MuJoCo, Webots, Isaac Sim, PyBullet, and Genesis. It
-includes a curated set of UAV assets (x500 base + sensor variants + four arm
-manipulators), indoor + outdoor world assets, per-simulator launch
-configurations, and a canonical ROS 2 topic contract so downstream code is
-simulator-agnostic.
-
-### 🌟 Key Features
-
-- **🔧 Complete Toolchain**: PX4 + ROS 2 Jazzy + Gazebo Harmonic + MAVROS, with auto-installed dependencies
-- **🎮 UAV Catalogue**: 9 x500 sensor / arm variants, each with a matching PX4 airframe (IDs 4020–4028), no overlap
-- **📐 Asset Descriptor System** (v1): generate a UAV's Gazebo SDF + PX4 airframe from a YAML descriptor instead of hand-editing — see [docs/ASSETS.md](docs/ASSETS.md). CLI: `uavros2-asset {list,show,validate,build,diff}`.
-- **🕹️ Flying made easy**: bash aliases `arm` / `takeoff` / `hold` / `land` / `disarm` / `offboard` / `qgc` for the common MAVROS service calls; see [docs/FLYING.md](docs/FLYING.md).
-- **🦾 Manipulators**: 4 floating-base arms (three_dof, OpenManipulator-X, Panda, UR5) with controllers + MoveIt configs
-- **🌐 World Library**: indoor `warehouse` + 5 outdoor `urban*` heightmap testbeds (git-lfs)
-- **🎛️ Multi-Simulator Dispatcher**: `simulator:=gazebo|webots|mujoco|isaac|pybullet|genesis` from one launch file
-- **🐳 Docker Ready**: in-tree `uavros2_docker` submodule with Ubuntu 24 / Jazzy default + Ubuntu 22 / Humble + CUDA + WSL variants
-- **📡 Communication Middleware**: Zenoh RMW + XRCE-DDS + MAVLink/MAVROS dual bridges
-- **🛰️ Protocol Flexibility**: Choose between native uXRCE-DDS or classic MAVLink at launch time
-
-## 🛠️ What's Included
-
-<div align="center">
-
-<table>
-  <thead>
-    <tr>
-      <th>Component</th>
-      <th>Description</th>
-      <th>Version</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><img src="media/ros2_logo.png" alt="ROS2" width="40"></td>
-      <td><strong>ROS 2 Jazzy</strong><br>Complete robotics middleware</td>
-      <td>Latest</td>
-    </tr>
-    <tr>
-      <td><img src="media/gazebo_logo.png" alt="Gazebo" width="40"></td>
-      <td><strong>Gazebo Harmonic</strong><br>Physics simulation engine</td>
-      <td>Latest</td>
-    </tr>
-    <tr>
-      <td><img src="media/px4_logo.png" alt="PX4" width="40"></td>
-      <td><strong>PX4 Autopilot</strong><br>Flight control stack</td>
-      <td>v1.14+</td>
-    </tr>
-    <tr>
-      <td><img src="media/mavros_logo.png" alt="MAVROS" width="40"></td>
-      <td><strong>MAVROS</strong><br>MAVLink-ROS 2 bridge</td>
-      <td>Jazzy</td>
-    </tr>
-    <tr>
-      <td><img src="media/mavlink_logo.png" alt="MAVLink" width="40"></td>
-      <td><strong>MAVLink Protocol</strong><br>Micro air vehicle communication</td>
-      <td>v2.0</td>
-    </tr>
-    <tr>
-      <td><img src="media/qgc_logo.png" alt="QGC" width="40"></td>
-      <td><strong>QGroundControl</strong><br>Ground control station</td>
-      <td>Latest</td>
-    </tr>
-    <tr>
-      <td><img src="media/rviz2_logo.png" alt="RViz2" width="40"></td>
-      <td><strong>RViz2</strong><br>3D visualization tool</td>
-      <td>Jazzy</td>
-    </tr>
-    <tr>
-      <td><img src="media/zenoh_logo.png" alt="Zenoh" width="40"></td>
-      <td><strong>Zenoh Middleware</strong><br>High-performance communication</td>
-      <td>Latest</td>
-    </tr>
-  </tbody>
-</table>
-
-</div>
-
-## 🎯 Simulation Showcase
-
-<div align="center">
-
-### Gazebo Simulation Environment
-![Gazebo Simulation](media/gazebo_sim.png)
-*High-fidelity UAV simulation with realistic physics and sensor models*
-
-### QGroundControl Integration
-![QGroundControl](media/qgc.png)
-*Real-time monitoring and control interface*
-
-### RViz2 Visualization
-![RViz2](media/rviz2.png)
-*Advanced 3D visualization and debugging tools*
-
-</div>
-
-## 🚀 Quick Start
-
-### Option 1: Install in your Ubuntu 24 system
+Each simulation needs its own `GZ_PARTITION` (Gazebo transport), its own
+`ROS_DOMAIN_ID`, and its own PX4 `instance:=`; set `PX4_UXRCE_DDS_PORT` too if
+another sim runs a uXRCE-DDS agent. Before starting, the launch kills stale
+Gazebo / PX4 / bridge processes of *its own* partition, PX4 tree and instance
+only (`uavros2/sim_cleanup.py`), so other users' simulations are never
+touched.
 
 ```bash
-cd ~/ && mkdir -p ros2_ws/src && cd ros2_ws/src
-# Clone the repository
-git clone https://github.com/asmbatati/uavros2.git
-cd uavros2
-
-# Set environment variables
-export DEV_DIR=~
-export GIT_USER=your_github_username  # Optional
-export GIT_TOKEN=your_github_token    # Optional
-
-# Run the installation script
-chmod +x install.sh
-./install.sh
+export GZ_PARTITION=mysim ROS_DOMAIN_ID=24 PX4_UXRCE_DDS_PORT=8924
+ros2 launch uavros2 sim.launch.py instance:=4 headless:=1 use_rviz:=false
 ```
 
-### Option 2: Docker Environment
+## Aerial-arm experiment
 
 ```bash
-# Clone the repository
-git clone https://github.com/asmbatati/uavros2.git
-git submodule update --init --recursive
-cd uavros2/px4_ros2_jazzy_docker/docker
-
-# Make the image
-make px4-dev-simulation-ubuntu24
+scripts/aerial_arm_experiment.sh openmanip_x 4 ~/uavros2_results   # launch, fly, stop (headless)
+scripts/plot_aerial_arm.py ~/uavros2_results                       # figures + summary table
 ```
-Then run docker container:
+
+The drone takes off in OFFBOARD, hovers at 2 m, moves the arm through four
+poses (forward reach, side reach, fold, stow) and lands, logging hover error,
+joint tracking and the end effector's world position. The OpenManipulator-X
+(0.59 kg) displaces the x500 by 3-4 times its hover noise while it moves;
+the light scaffold arms do not measurably. Protocol, numbers and figures:
+[docs/AERIAL_ARM.md](docs/AERIAL_ARM.md).
+
+## Models
+
+| UAV | PX4 airframe | Sensors / payload |
+|---|---|---|
+| `x500` | 4001 (stock) | none |
+| `x500_d435` | 4020 | RealSense D435 |
+| `x3_uav` | 4021 | IMU, baro, magnetometer, GPS (the iHunter interceptor airframe) |
+| `x500_mono_cam_3d_lidar` | 4022 | mono camera, 3D lidar |
+| `x500_stereo_cam_3d_lidar` | 4023 | stereo camera, 3D lidar |
+| `x500_twin_stereo_twin_velodyne` | 4024 | two stereo pairs, two Velodynes |
+| `x500_with_three_dof_arm` | 4025 | 3-DOF scaffold arm |
+| `x500_with_openmanip_x` | 4026 | OpenManipulator-X (real kinematics and masses) |
+| `x500_with_panda` | 4027 | Panda-named 7-DOF scaffold |
+| `x500_with_ur5` | 4028 | UR5-named 6-DOF scaffold |
+| `standard_vtol_with_cam`, `fixed_wing_basic_with_cam` | 4050, 4051 | camera (asset generator examples) |
+
+UAVs are described in `assets/uavs/*.yaml`; `uavros2-asset build <uav>`
+generates the Gazebo model and PX4 airframe ([docs/ASSETS.md](docs/ASSETS.md)).
+PX4 only sees what is copied into its tree: after editing `models/`,
+`worlds/` or `config/px4/`, run `scripts/sync_px4_assets.sh` and
+`make px4_sitl` in PX4-Autopilot.
+
+## Develop and test
 
 ```bash
-# Navigate to Docker setup
-cd ..
-
-# Build and run the container
-chmod +x docker_run.sh
-./docker_run.sh
-```
-Then install:
-
-```bash
-# This is inside the container
-# Clone the repository
-cd ~/shared_volume
-mkdir -p ros2_ws/src && cd ros2_ws/src
-git clone https://github.com/asmbatati/uavros2.git
-cd uavros2
-
-# Run the installation script
-chmod +x install.sh
-./install.sh #if asked, passwod is "user"
+cd ~/drone_arm_ws/ros2_ws
+colcon build --packages-select uavros2 && source install/setup.bash
+cd src/uavros2 && python3 -m pytest test/ -q
 ```
 
-## 📋 Prerequisites
-
-### System Requirements
-
-- **OS**: Ubuntu 22.04/24.04 LTS or WSL2
-- **RAM**: Minimum 8GB (16GB recommended)
-- **GPU**: NVIDIA GPU recommended for optimal performance
-- **Storage**: At least 20GB free space
-
-### Dependencies (Auto-installed)
-
-- **ROS 2 Jazzy Desktop**: Complete robotics development stack
-- **Gazebo Harmonic**: Latest simulation environment
-- **PX4 Development Tools**: Firmware development and simulation
-- **MAVROS**: MAVLink-ROS 2 communication bridge
-- **Python Dependencies**: NumPy, Matplotlib, PyMAVLink, and more
-- **Communication Middleware**: Zenoh, XRCE-DDS, MAVLink protocols
-
-## 🏗️ Installation Details
-
-The installation script automatically:
-
-1. **🔍 Environment Detection**: Identifies container vs host environment
-2. **📦 Dependency Management**: Installs all required packages (ROS 2, Gazebo, MAVROS, etc.)
-3. **🔧 System Configuration**: Sets up permissions and environment variables
-4. **🌐 Repository Cloning**: Downloads PX4, MAVROS, and simulation packages
-5. **🏗️ Building**: Compiles all ROS 2 packages with smart retry logic
-6. **⚙️ Configuration**: Copies models, worlds, and airframe configurations
-
-## 🎮 Usage
-
-### Launch Simulation
-
-```bash
-# Source the workspace
-source ~/shared_volume/ros2_ws/install/setup.bash
-
-# Launch the simulation
-ros2 launch uavros2 sim.launch.py
-
-# For tugbot depot world
-ros2 launch uavros2 sim.launch.py world_type:=warehouse
-```
-
-### Start PX4 SITL
-
-```bash
-# Navigate to PX4 directory
-cd ~/shared_volume/PX4-Autopilot
-
-# Launch X500 with stereo camera and lidar
-make px4_sitl gz_x500_twin_stereo_twin_velodyne
-
-# For tugbot depot environment
-PX4_GZ_MODEL_POSE="0,0,0.1,0,0,0" make px4_sitl gz_x500_stereo_cam_3d_lidar PX4_GZ_WORLD=warehouse
-```
-
-### Ground Control
-
-```bash
-# Launch QGroundControl
-~/shared_volume/QGroundControl.AppImage
-
-# Or use the alias (after sourcing bash.sh)
-qgc
-```
-
-## 🛰️ Available Models & Worlds
-
-### UAV Models
-- **X500 Quadcopter**: Basic configuration
-- **X500 + Intel RealSense D435**: With depth camera
-- **X500 + Stereo Cameras**: Dual camera setup
-- **X500 + LiDAR**: 3D scanning configuration
-- **X500 Complete**: Stereo cameras + dual LiDAR
-
-### Simulation Worlds
-- **Default Empty World**: Basic testing environment
-- **Tugbot Depot**: Warehouse simulation with obstacles
-- **Custom Worlds**: Expandable world configurations
-
-## 🔧 Development
-
-### Building Packages
-
-```bash
-# Build specific package
-cd ~/shared_volume/ros2_ws
-colcon build --packages-select uavros2
-
-# Build all packages
-colcon build
-
-# Source after building
-source install/setup.bash
-```
-
-### Adding Custom Models
-
-1. Place model files in `models/` directory
-2. Add world files to `worlds/` directory  
-3. Configure airframes in `config/px4/` directory
-4. Rebuild the workspace
-
-## 🤝 Communication Architecture
-
-This simulation environment supports **two distinct communication architectures** that allow ROS 2 to interface with PX4. Each has its own advantages and use cases, giving you the flexibility to choose the best approach for your specific needs.
-
----
-
-### 🚀 Architecture 1: Native PX4-ROS 2 Bridge (uXRCE-DDS)
-
-<div align="center">
-<img src="media/zenoh_logo.png" alt="uXRCE-DDS" width="60" style="vertical-align: middle;" />
-<strong>Modern • Official • High Performance</strong>
-</div>
-
-**Overview:** This is the **modern, official, and recommended** architecture by the PX4 development team for ROS 2 integration. It provides the highest performance by connecting directly to PX4's internal uORB messaging system.
-
-#### 🔧 How It Works
-- **Bridge Component**: A lightweight `uxrce_dds_client` runs directly on PX4
-- **Communication**: Talks to a `Micro-XRCE-DDS Agent` on the companion computer
-- **Protocol**: Directly translates PX4's internal uORB messages to/from DDS standard
-- **Integration**: Makes PX4's uORB topics appear as native ROS 2 topics
-
-#### ⚡ Key Advantages
-- **High Performance**: Direct, native integration with minimal overhead
-- **Low Latency**: No protocol conversion delays
-- **Official Support**: Maintained by PX4 development team
-- **Future-Proof**: Designed for modern ROS 2 ecosystem
-
-```mermaid
-graph TD
-    subgraph "🖥️ Companion Computer (ROS 2 Ecosystem)"
-        C[🤖 ROS 2 Nodes]
-        B[🌉 Micro-XRCE-DDS Agent]
-        F[👁️ RViz2 Visualization]
-        H[🔗 ros_gz_bridge]
-    end
-
-    subgraph "🌍 Simulation Environment"
-        A[🚁 PX4 SITL Autopilot]
-        D[🎮 Gazebo Physics Engine]
-    end
-
-    subgraph "📱 Ground Control"
-        E[🎛️ QGroundControl]
-    end
-
-    %% Primary Data Flow (uXRCE-DDS)
-    A -.->|"⚡ uORB → DDS<br/>Native Bridge"| B
-    B <-->|"📡 ROS 2 Topics<br/>High Performance"| C
-    
-    %% Simulation Integration
-    A <-->|"🔌 Physics Interface<br/>Real-time Sync"| D
-    D -->|"📊 Sensor Data<br/>ROS 2 Topics"| H
-    H <-->|"🔄 Gazebo ↔ ROS 2"| C
-    
-    %% Visualization & Monitoring
-    C -->|"📈 State Visualization"| F
-    A -.->|"📻 MAVLink UDP<br/>Telemetry"| E
-
-    %% Styling
-    classDef primary fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef simulation fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef ground fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    
-    class A,B,C primary
-    class D,H simulation
-    class E,F ground
-```
-
----
-
-### 🛰️ Architecture 2: Classic MAVLink Bridge (MAVROS)
-
-<div align="center">
-<img src="media/mavros_logo.png" alt="MAVROS" width="40" style="vertical-align: middle;" />
-<img src="media/mavlink_logo.png" alt="MAVLink" width="40" style="vertical-align: middle;" />
-<strong>Battle-Tested • Versatile • Cross-Platform</strong>
-</div>
-
-**Overview:** This is the **classic, highly mature, and versatile** architecture that has been the backbone of drone development for years. It uses MAVLink as the communication protocol, which is the industry standard for autopilot communication.
-
-#### 🔧 How It Works
-- **Bridge Component**: The `mavros` ROS 2 node runs on the companion computer
-- **Communication**: PX4 communicates using the standard MAVLink protocol
-- **Protocol**: MAVLink messages are translated into ROS 2 topics and services
-- **Compatibility**: Works with multiple autopilots (PX4, ArduPilot, etc.)
-
-#### 🛡️ Key Advantages
-- **Battle-Tested**: Years of production use and community validation
-- **Cross-Platform**: Supports multiple autopilot systems beyond PX4
-- **Mature Ecosystem**: Extensive documentation and community support
-- **Robust**: Well-established error handling and recovery mechanisms
-
-```mermaid
-graph TD
-    subgraph "🖥️ Companion Computer (ROS 2 Ecosystem)"
-        C[🤖 ROS 2 Nodes]
-        B[🌉 MAVROS Bridge Node]
-        F[👁️ RViz2 Visualization]
-        H[🔗 ros_gz_bridge]
-    end
-
-    subgraph "🌍 Simulation Environment"
-        A[🚁 PX4 SITL Autopilot]
-        D[🎮 Gazebo Physics Engine]
-    end
-
-    subgraph "📱 Ground Control"
-        E[🎛️ QGroundControl]
-    end
-
-    %% Primary Data Flow (MAVLink)
-    A -.->|"📻 MAVLink UDP<br/>Industry Standard"| B
-    B <-->|"📡 ROS 2 Topics<br/>Translated Messages"| C
-    
-    %% Simulation Integration
-    A <-->|"🔌 Physics Interface<br/>Real-time Sync"| D
-    D -->|"📊 Sensor Data<br/>ROS 2 Topics"| H
-    H <-->|"🔄 Gazebo ↔ ROS 2"| C
-    
-    %% Visualization & Monitoring
-    C -->|"📈 State Visualization"| F
-    A -.->|"📻 MAVLink UDP<br/>Direct Connection"| E
-
-    %% Styling
-    classDef primary fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef simulation fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef ground fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    
-    class A,B,C primary
-    class D,H simulation
-    class E,F ground
-```
-
----
-
-### 🤔 Which Architecture Should You Choose?
-
-| Criteria | uXRCE-DDS | MAVROS/MAVLink |
-|----------|-----------|-----------------|
-| **Performance** | ⭐⭐⭐⭐⭐ Highest | ⭐⭐⭐⭐ High |
-| **Latency** | ⭐⭐⭐⭐⭐ Minimal | ⭐⭐⭐ Low |
-| **Maturity** | ⭐⭐⭐ Newer | ⭐⭐⭐⭐⭐ Very Mature |
-| **Community Support** | ⭐⭐⭐ Growing | ⭐⭐⭐⭐⭐ Extensive |
-| **Cross-Platform** | ⭐⭐ PX4 Focused | ⭐⭐⭐⭐⭐ Universal |
-| **Future-Proof** | ⭐⭐⭐⭐⭐ Yes | ⭐⭐⭐⭐ Established |
-
-#### 💡 Recommendations
-
-**Choose uXRCE-DDS if:**
-- You're building new applications with PX4
-- Performance and latency are critical
-- You want the latest, official integration approach
-- You're working primarily with PX4 autopilots
-
-**Choose MAVROS/MAVLink if:**
-- You need maximum compatibility across different autopilots
-- You're working with legacy systems or existing MAVLink infrastructure
-- You prefer battle-tested, production-proven solutions
-- You need extensive community support and documentation
-
----
-
-### 🔧 Implementation Notes
-
-Both architectures are **fully supported** in this simulation environment:
-
-- **Automatic Setup**: The installation script configures both communication bridges
-- **Runtime Selection**: Switch between architectures based on your launch parameters
-- **Parallel Operation**: Both can run simultaneously for development and testing
-- **Complete Integration**: Full support for sensor data, telemetry, and command interfaces
-
-## 📚 Documentation & Resources
-
-- **[PX4 Documentation](https://docs.px4.io/)** - Complete PX4 development guide
-- **[ROS 2 Jazzy Docs](https://docs.ros.org/en/jazzy/)** - ROS 2 development resources
-- **[Gazebo Tutorials](https://gazebosim.org/docs)** - Simulation environment guides
-- **[MAVROS Documentation](https://github.com/mavlink/mavros/tree/ros2/mavros)** - MAVLink-ROS 2 bridge documentation
-- **[MAVLink Developer Guide](https://mavlink.io/en/)** - MAVLink protocol specification
-- **[QGroundControl User Guide](https://docs.qgroundcontrol.com/)** - Ground station documentation
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-<details>
-<summary><strong>Build Errors with CMake Cache</strong></summary>
-
-```bash
-# Clean and rebuild
-cd ~/shared_volume/ros2_ws
-rm -rf build/ install/ log/
-colcon build
-```
-</details>
-
-<details>
-<summary><strong>Serial Port Permissions</strong></summary>
-
-```bash
-# Add user to dialout group
-sudo usermod -a -G dialout $USER
-# Logout and login again
-```
-</details>
-
-<details>
-<summary><strong>GPU Acceleration Issues</strong></summary>
-
-```bash
-# Check NVIDIA driver
-nvidia-smi
-
-# For WSL2, ensure WSL GPU support is enabled
-```
-</details>
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-### Special Thanks
-
-We extend our heartfelt gratitude to the following individuals and organizations for their invaluable contributions to the UAV simulation community:
-
-- **[RIOTU Lab](https://github.com/riotu-lab)** - AI, Deep Learning, ROS, and IoT research laboratory for their innovative work in autonomous systems
-- **[Dr. Mohamed Abdelkader Zahana](https://github.com/mzahana)** - For his extensive contributions to PX4 integration, multi-agent systems, and drone control frameworks
-- **[Eng. Khaled Gabr](https://github.com/khaledgabr77)** - For his expertise in autonomous navigation and ROS 2 development
-
-### Code Attribution
-
-Parts of this simulation framework have been refactored and enhanced from the following excellent open-source repositories:
-
-- **[d2dtracker_sim](https://github.com/mzahana/d2dtracker_sim)** - Drone-to-drone tracking simulation framework
-- **[gps_denied_navigation_sim](https://github.com/riotu-lab/gps_denied_navigation_sim)** - GPS-denied navigation simulation environment
-
-### Community Acknowledgments
-
-- **PX4 Development Team** - For the excellent autopilot software
-- **Open Robotics** - For ROS 2 and Gazebo simulation tools
-- **Eclipse Zenoh** - For high-performance middleware
-- **Community Contributors** - For continuous improvements and feedback
-
----
-
-<div align="center">
-
-**Built with ❤️ for the UAV development community**
-
-[Report Bug](https://github.com/asmbatati/uavros2/issues) · [Request Feature](https://github.com/asmbatati/uavros2/issues) · [Documentation](https://github.com/asmbatati/uavros2/wiki)
-
-</div>
-
+The suite covers the asset schemas and generators, xacro parsing, the
+canonical topic contract, the `sim_control_bridge` mixer/PID, the runtime
+sensor manager, the stale-process sweep, and URDF-vs-Gazebo kinematics of
+every arm. `test_flake8` / `test_pep257` currently fail on style (double
+quotes vs ament's single-quote rule).
+
+## Documentation
+
+| Doc | Content |
+|---|---|
+| [INSTALL.md](docs/INSTALL.md) | Installer details and flags |
+| [FLYING.md](docs/FLYING.md) | Arming, takeoff, OFFBOARD, bash helpers |
+| [MANIPULATORS.md](docs/MANIPULATORS.md) | Arms, mount, OpenManipulator-X, commanding, adding an arm |
+| [AERIAL_ARM.md](docs/AERIAL_ARM.md) | Flight experiment protocol and results |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Dispatcher, canonical topics, `sim_control_bridge` |
+| [COMMUNICATION.md](docs/COMMUNICATION.md) | MAVROS vs uXRCE-DDS |
+| [SIMULATORS.md](docs/SIMULATORS.md) | Per-simulator status |
+| [ASSETS.md](docs/ASSETS.md), [MODELS.md](docs/MODELS.md), [WORLDS.md](docs/WORLDS.md) | Asset descriptors, models, worlds |
+| [NAMING.md](docs/NAMING.md) | Brand-name candidates (open decision) |
+
+## Troubleshooting
+
+- **`gazebo already running` / PX4 does not spawn:** a stale server in your
+  partition. The launch sweeps it; if you started Gazebo by hand, stop it.
+- **A node dies with "A module that was compiled using NumPy 1.x cannot be
+  run in NumPy 2.x":** a pip-installed numpy 2 in `~/.local` shadows Ubuntu's
+  numpy 1.26 that ROS's `cv_bridge` is built against. Uninstall it or run
+  with `PYTHONNOUSERSITE=1`.
+- **`uavros2-asset` fails with `field_validator`:** it needs pydantic 2
+  (`pip install --break-system-packages "pydantic>=2"`); Ubuntu ships 1.10.
+- **Terrain meshes grey in RViz:** RViz cannot read TIFF; `sync_px4_assets.sh`
+  converts the textures to PNG.
+
+## Acknowledgments
+
+- [RIOTU Lab](https://github.com/riotu-lab)
+- [Dr. Mohamed Abdelkader Zahana](https://github.com/mzahana): PX4 integration, multi-agent systems, drone control
+- [Eng. Khaled Gabr](https://github.com/khaledgabr77): autonomous navigation and ROS 2
+
+Parts of this package were refactored from
+[d2dtracker_sim](https://github.com/mzahana/d2dtracker_sim) and
+[gps_denied_navigation_sim](https://github.com/riotu-lab/gps_denied_navigation_sim).
+The OpenManipulator-X parameters come from
+[ROBOTIS open_manipulator](https://github.com/ROBOTIS-GIT/open_manipulator) (Apache-2.0).
+
+## License
+
+MIT (as declared in `package.xml` / `setup.py`; the LICENSE file is still to be added).
