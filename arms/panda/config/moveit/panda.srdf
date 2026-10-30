@@ -18,8 +18,8 @@
     <joint name="panda_joint7"/>
   </group>
 
-  <end_effector name="ee" parent_link="panda_link7"
-                group="arm" parent_group="arm"/>
+  <!-- No end_effector element: it needs its own (gripper) group;
+       declaring the arm group as its own parent is rejected by MoveIt. -->
 
   <group_state name="home" group="arm">
     <joint name="panda_joint1" value="0"/>

@@ -55,14 +55,17 @@ ARM_POSES = {
         ("stow", [0.0, 0.0, 0.0]),
     ],
     # OpenManipulator-X (real kinematics: joint1 yaw, joints 2-4 pitch).
-    # reach_a: forward reach, end effector ~0.31 m ahead of base_link;
-    # reach_b: the same reach swung 90 deg to the side; stow is the pose the
-    # arm spawns and lands in (above the landing gear).
+    # Arm centre of mass relative to the mount, in base_link:
+    #   reach_a  forward reach, end effector ~0.31 m ahead  CoM +0.13 m x
+    #   reach_b  the same reach yawed 90 deg to the side    CoM -0.12 m y
+    #   fold     arm swung back under the body               CoM -0.13 m x
+    #   stow     folded; the pose it spawns and lands in     CoM  0
+    # All four are free of self-collision (MoveIt can plan between them).
     "openmanip_x": [
         ("reach_a", [0.0, 0.8, -0.3, 0.4]),
         ("reach_b", [1.57, 0.8, -0.3, 0.4]),
-        ("fold", [0.0, -1.2, 1.4, 1.0]),
-        ("stow", [0.0, -1.5, 1.4, 1.5]),
+        ("fold", [0.0, -1.5, -1.5, 0.1]),
+        ("stow", [0.0, -1.1, 1.2, 0.9]),
     ],
     "panda": [
         ("reach_a", [1.0, -0.3, 0.2, 0.2, 0.1, 0.1, 0.0]),

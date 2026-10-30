@@ -16,15 +16,15 @@
     <joint name="joint4"/>
   </group>
 
-  <end_effector name="ee" parent_link="openmanip_x_link5"
-                group="arm" parent_group="arm"/>
+  <!-- No end_effector element: an end effector needs its own group (a
+       gripper), and the fingers are not modelled yet. -->
 
   <!-- home = the stow pose the arm spawns in (fits above the landing gear) -->
   <group_state name="home" group="arm">
     <joint name="joint1" value="0"/>
-    <joint name="joint2" value="-1.5"/>
-    <joint name="joint3" value="1.4"/>
-    <joint name="joint4" value="1.5"/>
+    <joint name="joint2" value="-1.1"/>
+    <joint name="joint3" value="1.2"/>
+    <joint name="joint4" value="0.9"/>
   </group_state>
   <group_state name="reach" group="arm">
     <joint name="joint1" value="0"/>
@@ -40,7 +40,5 @@
   <disable_collisions link1="openmanip_x_link3" link2="openmanip_x_link4" reason="Adjacent"/>
   <disable_collisions link1="openmanip_x_link4" link2="openmanip_x_link5" reason="Adjacent"/>
   <disable_collisions link1="openmanip_x_link5" link2="end_effector_link" reason="Adjacent"/>
-  <!-- folded (stow) poses put the wrist next to the upper arm -->
-  <disable_collisions link1="openmanip_x_link3" link2="openmanip_x_link5" reason="Never"/>
 
 </robot>

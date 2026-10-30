@@ -14,7 +14,8 @@
     <joint name="j_wrist"/>
   </group>
 
-  <end_effector name="ee" parent_link="forearm_link" group="arm" parent_group="arm"/>
+  <!-- No end_effector element: it needs its own (gripper) group;
+       declaring the arm group as its own parent is rejected by MoveIt. -->
 
   <!-- Reasonable named poses for testing -->
   <group_state name="home" group="arm">

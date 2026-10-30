@@ -21,12 +21,14 @@
 -->
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="openmanip_x">
 
-  <!-- Stow pose: upper arm swung back, forearm folded forward; every point of
-       the arm stays above z = -0.17 m (gear feet at -0.2195 m). -->
+  <!-- Stow pose: upper arm swung back, forearm and wrist folded forward. The
+       arm's centre of mass sits right under the mount (no static pitch
+       moment), its lowest point is 1.6 cm above the gear feet (-0.2195 m),
+       and no two non-adjacent links touch, so MoveIt can plan from it. -->
   <xacro:property name="stow_j1" value="0.0"/>
-  <xacro:property name="stow_j2" value="-1.5"/>
-  <xacro:property name="stow_j3" value="1.4"/>
-  <xacro:property name="stow_j4" value="1.5"/>
+  <xacro:property name="stow_j2" value="-1.1"/>
+  <xacro:property name="stow_j3" value="1.2"/>
+  <xacro:property name="stow_j4" value="0.9"/>
 
   <xacro:macro name="omx_link" params="name mass com ixx iyy izz ixy ixz iyz box box_xyz rgba">
     <link name="${name}">
