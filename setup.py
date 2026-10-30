@@ -56,6 +56,7 @@ setup(
             'runtime_sensor_manager = uavros2.runtime_sensor_manager:main',
             'drone_markers = uavros2.drone_markers:main',
             'world_surface_publisher = uavros2.world_surface_publisher:main',
+            'aerial_arm_demo = uavros2.aerial_arm_demo:main',
         ],
     },
 )
