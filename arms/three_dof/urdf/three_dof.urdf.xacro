@@ -65,7 +65,9 @@
   <joint name="j_shoulder" type="revolute">
     <parent link="base_link"/>
     <child link="shoulder_link"/>
-    <origin xyz="0 0 0.02" rpy="0 0 0"/>
+    <!-- Mount: 5 cm below base_link, flipped (roll = pi) so the chain hangs
+         down; must match models/<uav>/model.sdf and asset.yaml mount_*. -->
+    <origin xyz="0 0 -0.05" rpy="3.14159 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="${-pi}" upper="${pi}" effort="2.0" velocity="3.0"/>
     <dynamics damping="0.05" friction="0.01"/>
@@ -107,7 +109,7 @@
   <joint name="j_ee" type="fixed">
     <parent link="forearm_link"/>
     <child link="ee_link"/>
-    <origin xyz="0 0 ${link_len * 0.6 + 0.01}" rpy="0 0 0"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
   </joint>
 
   <link name="ee_link">

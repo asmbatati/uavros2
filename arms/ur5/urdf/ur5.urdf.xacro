@@ -32,7 +32,9 @@
   <joint name="shoulder_pan_joint" type="revolute">
     <parent link="base_link"/>
     <child link="ur5_link1"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <!-- Mount: 5 cm below base_link, flipped (roll = pi) so the chain hangs
+         down; must match models/<uav>/model.sdf and asset.yaml mount_*. -->
+    <origin xyz="0 0 -0.05" rpy="3.14159 0 0"/>
     <axis xyz="0 1 0"/>
     <limit lower="-3.14159" upper="3.14159" effort="2.0" velocity="3.0"/>
     <dynamics damping="0.05" friction="0.01"/>
