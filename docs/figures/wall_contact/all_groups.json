@@ -1,0 +1,192 @@
+[
+ {
+  "label": "ball, PX4 position, 5 cm",
+  "pressed": 3,
+  "fell": 0,
+  "fell_s": [],
+  "mean": "1.5",
+  "median": "1.1",
+  "iqr": "1.9",
+  "p95": "4.4",
+  "lost": "25.5",
+  "y": "8.0",
+  "z": "8.7",
+  "yaw": "8.4"
+ },
+ {
+  "label": "ball, PX4 position, 15 cm",
+  "pressed": 3,
+  "fell": 1,
+  "fell_s": [
+   17.8
+  ],
+  "mean": "2.5",
+  "median": "2.0",
+  "iqr": "3.5",
+  "p95": "6.1",
+  "lost": "29.0",
+  "y": "16.9",
+  "z": "15.0",
+  "yaw": "11.2"
+ },
+ {
+  "label": "ball, PX4 position, 30 cm",
+  "pressed": 3,
+  "fell": 3,
+  "fell_s": [
+   19.0,
+   13.7,
+   7.8
+  ],
+  "mean": "3.6",
+  "median": "3.1",
+  "iqr": "3.1",
+  "p95": "7.0",
+  "lost": "1.2",
+  "y": "19.9",
+  "z": "8.0",
+  "yaw": "25.7"
+ },
+ {
+  "label": "ball, outer+FF, 5 cm",
+  "pressed": 3,
+  "fell": 0,
+  "fell_s": [],
+  "mean": "1.4",
+  "median": "1.2",
+  "iqr": "0.7",
+  "p95": "2.9",
+  "lost": "11.5",
+  "y": "8.7",
+  "z": "5.7",
+  "yaw": "5.3"
+ },
+ {
+  "label": "ball, PX4+patch, 5 cm",
+  "pressed": 3,
+  "fell": 0,
+  "fell_s": [],
+  "mean": "0.9",
+  "median": "0.9",
+  "iqr": "1.2",
+  "p95": "2.3",
+  "lost": "41.9",
+  "y": "7.6",
+  "z": "2.9",
+  "yaw": "7.1"
+ },
+ {
+  "label": "ball, PX4 + admittance 3 N",
+  "pressed": 3,
+  "fell": 1,
+  "fell_s": [
+   14.9
+  ],
+  "mean": "1.9",
+  "median": "1.5",
+  "iqr": "2.1",
+  "p95": "4.8",
+  "lost": "24.1",
+  "y": "12.8",
+  "z": "12.1",
+  "yaw": "15.3"
+ },
+ {
+  "label": "ball, hybrid 3 N",
+  "pressed": 4,
+  "fell": 3,
+  "fell_s": [
+   7.0,
+   7.4,
+   13.7
+  ],
+  "mean": "3.0",
+  "median": "2.9",
+  "iqr": "3.7",
+  "p95": "6.7",
+  "lost": "7.5",
+  "y": "20.5",
+  "z": "9.2",
+  "yaw": "23.3"
+ },
+ {
+  "label": "ball, hybrid 6 N",
+  "pressed": 3,
+  "fell": 3,
+  "fell_s": [
+   4.3,
+   6.4,
+   4.7
+  ],
+  "mean": "6.0",
+  "median": "6.2",
+  "iqr": "5.3",
+  "p95": "11.7",
+  "lost": "4.8",
+  "y": "53.9",
+  "z": "14.9",
+  "yaw": "69.0"
+ },
+ {
+  "label": "head, PX4 position, 5 cm",
+  "pressed": 3,
+  "fell": 0,
+  "fell_s": [],
+  "mean": "2.2",
+  "median": "2.3",
+  "iqr": "2.6",
+  "p95": "4.8",
+  "lost": "25.6",
+  "y": "6.3",
+  "z": "7.0",
+  "yaw": "6.2"
+ },
+ {
+  "label": "head, PX4+patch, 5 cm",
+  "pressed": 3,
+  "fell": 0,
+  "fell_s": [],
+  "mean": "1.1",
+  "median": "0.9",
+  "iqr": "1.6",
+  "p95": "2.9",
+  "lost": "46.3",
+  "y": "3.8",
+  "z": "5.7",
+  "yaw": "2.5"
+ },
+ {
+  "label": "head, hybrid 3 N",
+  "pressed": 3,
+  "fell": 1,
+  "fell_s": [
+   15.8
+  ],
+  "mean": "2.9",
+  "median": "2.8",
+  "iqr": "2.4",
+  "p95": "5.8",
+  "lost": "2.5",
+  "y": "10.9",
+  "z": "5.9",
+  "yaw": "13.8"
+ },
+ {
+  "label": "head, hybrid 6 N",
+  "pressed": 3,
+  "fell": 3,
+  "fell_s": [
+   6.0,
+   1.7,
+   18.7
+  ],
+  "mean": "6.3",
+  "median": "6.3",
+  "iqr": "5.4",
+  "p95": "11.2",
+  "lost": "7.2",
+  "y": "10.7",
+  "z": "11.6",
+  "yaw": "10.2"
+ }
+]

@@ -97,7 +97,8 @@ def main():
     groups = {}
     for spec in sys.argv[2:]:
         label, pattern = spec.split("=", 1)
-        groups[label] = [load_run(p) for p in sorted(glob.glob(pattern))]
+        runs = [load_run(p) for p in sorted(glob.glob(pattern))]
+        groups[label] = [r for r in runs if r["contact"].get("contact_reached")]
     rows = [summarize(label, runs) for label, runs in groups.items()]
     plot(groups, out_dir)
     with open(os.path.join(out_dir, "summary.json"), "w") as f:

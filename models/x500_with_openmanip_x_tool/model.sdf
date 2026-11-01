@@ -248,10 +248,12 @@
       <child>end_effector_link</child>
     </joint>
 
-    <!-- Contact tool: a 0.40 m rigid rod ending in a 1.5 cm ball, standing in
-         for a roller, brush or probe. Only the ball collides, and only with surfaces
+    <!-- Contact tool: a 0.40 m rigid rod ending in a 0.20 m wide head, standing in
+         for a roller or brush. The head touches at two balls: a single point lets
+         the rod buckle in yaw when pushed (docs/AERIAL_ARM.md). Only they collide,
+         and only with surfaces
          that set bit 0x02 (the wall world's wall): the arm spawns unfolded and
-         the ball would hit the ground before the controller folds it. The fixed joint
+         the head would hit the ground before the controller folds it. The fixed joint
          carries a force/torque sensor (needs the world's ForceTorque system). -->
     <link name='tool_link'>
       <pose relative_to='end_effector_link'>0 0 0 0 0 0</pose>
@@ -268,13 +270,21 @@
         <geometry><cylinder><radius>0.006</radius><length>0.4</length></cylinder></geometry>
         <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
       </visual>
-      <visual name='tool_tip_visual'>
-        <pose>0.4 0 0 0 0 0</pose>
-        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+      <visual name='tool_head_visual'>
+        <pose>0.4 0 0 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.015</radius><length>0.2</length></cylinder></geometry>
         <material><ambient>1 0.3 0 1</ambient><diffuse>1 0.3 0 1</diffuse></material>
       </visual>
-      <collision name='tool_tip_collision'>
-        <pose>0.4 0 0 0 0 0</pose>
+      <collision name='tool_head_left_collision'>
+        <pose>0.4 0.1 0 0 0 0</pose>
+        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+        <surface>
+          <contact><collide_bitmask>0x02</collide_bitmask></contact>
+          <friction><ode><mu>0.5</mu><mu2>0.5</mu2></ode></friction>
+        </surface>
+      </collision>
+      <collision name='tool_head_right_collision'>
+        <pose>0.4 -0.1 0 0 0 0</pose>
         <geometry><sphere><radius>0.015</radius></sphere></geometry>
         <surface>
           <contact><collide_bitmask>0x02</collide_bitmask></contact>
