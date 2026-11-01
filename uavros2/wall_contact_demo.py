@@ -11,9 +11,14 @@ position control:
 4. move the position setpoint ``press_depth`` past the contact point and hold;
 5. retract, stow the arm, fly back and land.
 
-Nothing here regulates force: it measures what plain position control does
-against a surface. Logs drone, tool tip and force columns to the same CSV as
-``aerial_arm_demo`` and writes ``<arm>_contact.json``.
+By default nothing regulates force: it measures what plain position control does
+against a surface. ``force_target`` > 0 holds that force instead: with the outer
+loop, directly in attitude and thrust (hybrid: force along the wall normal,
+position along the wall); with PX4 position control, by moving the setpoint
+(admittance). ``controller`` picks the flight controller as in
+``aerial_arm_demo``; the feed-forward ones also cancel the measured contact
+force's moment. Logs drone, tool tip and force columns to the
+same CSV as ``aerial_arm_demo`` and writes ``<arm>_contact.json``.
 
     UAV=x500_with_openmanip_x_tool WORLD=wall DEMO=wall_contact_demo \\
         aerial_arm_experiment.sh openmanip_x 4 results/contact -p press_depth:=0.05
@@ -26,10 +31,11 @@ import statistics
 import time
 
 from geometry_msgs.msg import Wrench
-from mavros_msgs.srv import SetMode
+import numpy as np
 from rclpy.qos import qos_profile_sensor_data
 
 from .aerial_arm_demo import AerialArmDemo, _quat_rotate, main as demo_main
+from .arm_aware_control import WallForceControl
 from .arm_kinematics import OMX_TOOL_CONTACT_POSE as CONTACT_POSE
 from .arm_kinematics import OMX_TOOL_STOW_POSE as STOW_POSE
 from .arm_kinematics import OMX_TOOL_TIP_IN_BASE as TIP_IN_BASE
@@ -39,6 +45,13 @@ TIP_RADIUS = 0.015
 CONTACT_FORCE_N = 0.5
 CONTACT_LOST_N = 0.2
 FALL_M = 0.4
+ADMITTANCE_M_PER_S_PER_N = 0.03
+ADMITTANCE_MAX_M_PER_S = 0.10
+
+
+def contact_torque(force):
+    """Torque on the body, FLU, when the wall pushes the tip back: r x (-F, 0, 0)."""
+    return np.array([0.0, -TIP_IN_BASE[2] * force, TIP_IN_BASE[1] * force])
 
 
 def contact_metrics(rows, tare, press_settle_s=3.0):
@@ -80,6 +93,7 @@ class WallContactDemo(AerialArmDemo):
         self.declare_parameter("press_depth", 0.05)
         self.declare_parameter("press_s", 20.0)
         self.declare_parameter("arm_move_s", 5.0)
+        self.declare_parameter("force_target", 0.0)
         ns = self.get_parameter("namespace").value.strip("/")
         self.wrench = None
         self.tare = 0.0
@@ -87,6 +101,18 @@ class WallContactDemo(AerialArmDemo):
         self.fell_after_s = None
         self.create_subscription(Wrench, f"/{ns}/tool/wrench", self._on_wrench,
                                  qos_profile_sensor_data)
+
+    def _urdf_mappings(self):
+        return {"sim_mode": "mock", "tool": "rod"}
+
+    def _arm_mass(self):
+        feed_forward = self._feed_forward()
+        return feed_forward.model.mass if feed_forward is not None else 0.714
+
+    def _feed_forward(self):
+        if self.outer is not None:
+            return self.outer.feed_forward
+        return getattr(self, "arm_ff", None)
 
     def _on_wrench(self, msg):
         self.wrench = msg
@@ -123,7 +149,7 @@ class WallContactDemo(AerialArmDemo):
         settle_s = float(self.get_parameter("hover_settle_s").value)
 
         self._wait(lambda: self.state is not None and self.state.connected, 60.0, "FCU")
-        self._wait(lambda: self.pose is not None, 60.0, "local position")
+        self._wait(lambda: self.pose is not None, 180.0, "local position")
         self._wait(lambda: self.ctrl is not None, 60.0, "controller_state")
         self._wait(lambda: self.wrench is not None, 60.0, "tool force sensor")
         joints = list(self.ctrl.joint_names)
@@ -134,7 +160,8 @@ class WallContactDemo(AerialArmDemo):
         self.phase = "takeoff"
         self._offboard_and_arm()
         self._wait(lambda: abs(self.pose.pose.position.z - self.setpoint[2]) < 0.15,
-                   60.0, "hover altitude")
+                   120.0, "hover altitude")
+        self._start_outer_loop()
         self.phase = "hover"
         time.sleep(settle_s)
 
@@ -175,12 +202,41 @@ class WallContactDemo(AerialArmDemo):
         self.phase = "press_ramp"
         self._go((contact_drone_x + depth, y, z), 0.05)
         self.phase = "press"
+        target = float(self.get_parameter("force_target").value)
+        if self.outer is not None:
+            self.outer.freeze[0] = True
+        feed_forward = self._feed_forward()
+        force_control = None
+        if target > 0.0 and self.outer is not None:
+            force_control = WallForceControl(
+                float(self.get_parameter("body_mass").value) + self._arm_mass(), target)
+            self.outer.force_control = force_control
+        force = 0.0
         t0 = time.monotonic()
         while time.monotonic() - t0 < press_s:
             if self.pose.pose.position.z < z - FALL_M:
                 self.fell_after_s = time.monotonic() - t0
                 raise RuntimeError(f"drone fell {self.fell_after_s:.1f} s into the press")
+            recent = self._recent_fx(0.1)
+            if recent:
+                force = abs(statistics.fmean(recent) - self.tare)
+            if feed_forward is not None:
+                feed_forward.external_torque = contact_torque(force)
+            if force_control is not None:
+                force_control.measured = force
+            elif target > 0.0:
+                rate = ADMITTANCE_M_PER_S_PER_N * (target - force)
+                rate = max(-ADMITTANCE_MAX_M_PER_S, min(ADMITTANCE_MAX_M_PER_S, rate))
+                x = min(self.setpoint[0] + rate * 0.02, contact_drone_x + 0.20)
+                self.setpoint = (x, y, z)
             time.sleep(0.02)
+        if feed_forward is not None:
+            feed_forward.external_torque = np.zeros(3)
+        if self.outer is not None:
+            self.outer.force_control = None
+            self.outer.integral[0] = 0.0
+            self.setpoint = (self.pose.pose.position.x, y, z)
+            self.outer.freeze[0] = False
 
         self.phase = "retract"
         self._go((contact_x - standoff, y, z), 0.15)
@@ -193,8 +249,7 @@ class WallContactDemo(AerialArmDemo):
         time.sleep(3.0)
 
         self.phase = "land"
-        self._call(self.set_mode, SetMode.Request(custom_mode="AUTO.LAND"))
-        self._wait(lambda: not self.state.armed, 90.0, "landing and disarm")
+        self._land()
         self.phase = "done"
         return joints, codes
 
@@ -204,6 +259,8 @@ class WallContactDemo(AerialArmDemo):
             rows = list(self.rows)
         contact = contact_metrics(rows, self.tare)
         contact.update({
+            "controller": self.controller,
+            "force_target_n": float(self.get_parameter("force_target").value),
             "press_depth_m": float(self.get_parameter("press_depth").value),
             "tare_n": self.tare,
             "contact_setpoint_x_m": self.contact_setpoint_x,

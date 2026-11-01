@@ -1,0 +1,97 @@
+From 97c576cb8f42a2df81adb110ced0afc71a174c37 Mon Sep 17 00:00:00 2001
+From: asmbatati <asmalbatati@hotmail.com>
+Date: Sun, 1 Nov 2026 18:03:41 +0300
+Subject: [PATCH] mc_rate_control: payload feed-forward torque from DEBUG_VECT
+ ARMFF
+
+Local patch for uavros2's aerial arm; not for upstream.
+---
+ .../mc_rate_control/MulticopterRateControl.cpp    | 14 +++++++++++++-
+ .../mc_rate_control/MulticopterRateControl.hpp    |  7 +++++++
+ .../mc_rate_control/mc_rate_control_params.c      | 15 +++++++++++++++
+ 3 files changed, 35 insertions(+), 1 deletion(-)
+
+diff --git a/src/modules/mc_rate_control/MulticopterRateControl.cpp b/src/modules/mc_rate_control/MulticopterRateControl.cpp
+index e8a371d1e2..60da7d7618 100644
+--- a/src/modules/mc_rate_control/MulticopterRateControl.cpp
++++ b/src/modules/mc_rate_control/MulticopterRateControl.cpp
+@@ -214,7 +214,19 @@ MulticopterRateControl::Run()
+ 			}
+ 
+ 			// run rate controller
+-			const Vector3f att_control = _rate_control.update(rates, _rates_setpoint, angular_accel, dt, _maybe_landed || _landed);
++			Vector3f att_control = _rate_control.update(rates, _rates_setpoint, angular_accel, dt, _maybe_landed || _landed);
++
++			// add the payload's feed-forward torque while it keeps arriving
++			debug_vect_s debug_vect;
++
++			if (_debug_vect_sub.update(&debug_vect) && strncmp(debug_vect.name, "ARMFF", sizeof(debug_vect.name)) == 0) {
++				_arm_ff_torque = Vector3f(debug_vect.x, debug_vect.y, debug_vect.z);
++				_arm_ff_time = now;
++			}
++
++			if (!_maybe_landed && !_landed && (now - _arm_ff_time) < 500_ms) {
++				att_control += _param_mc_arm_ff_gain.get() * _arm_ff_torque;
++			}
+ 
+ 			// publish rate controller status
+ 			rate_ctrl_status_s rate_ctrl_status{};
+diff --git a/src/modules/mc_rate_control/MulticopterRateControl.hpp b/src/modules/mc_rate_control/MulticopterRateControl.hpp
+index 0f402c12c3..645a8afc19 100644
+--- a/src/modules/mc_rate_control/MulticopterRateControl.hpp
++++ b/src/modules/mc_rate_control/MulticopterRateControl.hpp
+@@ -49,6 +49,7 @@
+ #include <uORB/topics/actuator_controls_status.h>
+ #include <uORB/topics/battery_status.h>
+ #include <uORB/topics/control_allocator_status.h>
++#include <uORB/topics/debug_vect.h>
+ #include <uORB/topics/manual_control_setpoint.h>
+ #include <uORB/topics/parameter_update.h>
+ #include <uORB/topics/rate_ctrl_status.h>
+@@ -93,6 +94,7 @@ private:
+ 
+ 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
+ 	uORB::Subscription _control_allocator_status_sub{ORB_ID(control_allocator_status)};
++	uORB::Subscription _debug_vect_sub{ORB_ID(debug_vect)};
+ 	uORB::Subscription _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
+ 	uORB::Subscription _vehicle_control_mode_sub{ORB_ID(vehicle_control_mode)};
+ 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
+@@ -129,7 +131,12 @@ private:
+ 	float _energy_integration_time{0.0f};
+ 	float _control_energy[4] {};
+ 
++	// Payload feed-forward torque, normalized, FRD (DEBUG_VECT named "ARMFF")
++	matrix::Vector3f _arm_ff_torque{};
++	hrt_abstime _arm_ff_time{0};
++
+ 	DEFINE_PARAMETERS(
++		(ParamFloat<px4::params::MC_ARM_FF_GAIN>) _param_mc_arm_ff_gain,
+ 		(ParamFloat<px4::params::MC_ROLLRATE_P>) _param_mc_rollrate_p,
+ 		(ParamFloat<px4::params::MC_ROLLRATE_I>) _param_mc_rollrate_i,
+ 		(ParamFloat<px4::params::MC_RR_INT_LIM>) _param_mc_rr_int_lim,
+diff --git a/src/modules/mc_rate_control/mc_rate_control_params.c b/src/modules/mc_rate_control/mc_rate_control_params.c
+index 2571a70c1f..377d388817 100644
+--- a/src/modules/mc_rate_control/mc_rate_control_params.c
++++ b/src/modules/mc_rate_control/mc_rate_control_params.c
+@@ -292,3 +292,18 @@ PARAM_DEFINE_FLOAT(MC_YAWRATE_K, 1.0f);
+  * @group Multicopter Rate Control
+  */
+ PARAM_DEFINE_INT32(MC_BAT_SCALE_EN, 0);
++
++/**
++ * Gain on the payload feed-forward torque
++ *
++ * A companion computer that knows how its payload loads the vehicle (e.g. an arm's
++ * centre of mass) sends normalized FRD torque as MAVLink DEBUG_VECT named "ARMFF".
++ * It is added to the rate controller's output. 0 disables it; the torque is
++ * dropped 0.5 s after the last message.
++ *
++ * @min 0.0
++ * @max 2.0
++ * @decimal 2
++ * @group Multicopter Rate Control
++ */
++PARAM_DEFINE_FLOAT(MC_ARM_FF_GAIN, 1.0f);
+-- 
+2.43.0
+

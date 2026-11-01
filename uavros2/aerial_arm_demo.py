@@ -26,6 +26,7 @@ import os
 import threading
 import time
 
+import numpy as np
 import rclpy
 from rclpy.action import ActionClient
 from rclpy.executors import MultiThreadedExecutor
@@ -36,8 +37,8 @@ from rclpy.time import Time
 from builtin_interfaces.msg import Duration
 from control_msgs.action import FollowJointTrajectory
 from control_msgs.msg import JointTrajectoryControllerState
-from geometry_msgs.msg import PoseStamped
-from mavros_msgs.msg import State
+from geometry_msgs.msg import PoseStamped, TwistStamped
+from mavros_msgs.msg import AttitudeTarget, DebugValue, State
 from mavros_msgs.srv import CommandBool, SetMode
 from tf2_ros import Buffer, TransformListener
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -156,6 +157,14 @@ class AerialArmDemo(Node):
         self.declare_parameter("move_s", 2.0)
         self.declare_parameter("hold_s", 5.0)
         self.declare_parameter("output_dir", os.path.expanduser("~/uavros2_results"))
+        # px4: PX4 position control. outer / outer_ff: arm_aware_control's outer
+        # loop sending attitude + thrust, without / with arm feed-forward.
+        # px4_ff: PX4 position control plus feed-forward torque into PX4's rate
+        # controller (needs the patch in config/px4/patches).
+        self.declare_parameter("controller", "px4")
+        self.declare_parameter("hover_thrust", 0.85)
+        self.declare_parameter("body_mass", 2.064)
+        self.declare_parameter("nm_per_normalized", 4.67)
 
         ns = self.get_parameter("namespace").value.strip("/")
         self.arm = self.get_parameter("arm").value
@@ -191,8 +200,73 @@ class AerialArmDemo(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
+        self.controller = self.get_parameter("controller").value
+        self.outer = None
+        self.outer_active = False
+        self.velocity = None
+        self.last_outer = None
+        self.last_ff_torque = None
+        self._last_tick = None
+        if self.controller == "px4_ff":
+            self.arm_ff = self._make_feed_forward()
+            self.debug_pub = self.create_publisher(
+                DebugValue, f"/{ns}/mavros/debug_value/send", 10)
+            self.create_timer(0.02, self._px4_ff_tick)   # 50 Hz
+        elif self.controller != "px4":
+            self.outer = self._make_outer_loop()
+            self.attitude_pub = self.create_publisher(
+                AttitudeTarget, f"/{ns}/mavros/setpoint_raw/attitude", 10)
+            self.create_subscription(
+                TwistStamped, f"/{ns}/mavros/local_position/velocity_local",
+                self._on_velocity, qos_profile_sensor_data)
+            self.create_timer(0.02, self._outer_tick)    # 50 Hz
+
         self.create_timer(0.05, self._stream_setpoint)   # 20 Hz, PX4 needs > 2 Hz
         self.create_timer(0.02, self._log)               # 50 Hz
+
+    def _make_feed_forward(self):
+        import xacro
+        from ament_index_python import get_package_share_directory
+        from .arm_aware_control import ArmFeedForward, ArmModel
+
+        path = os.path.join(get_package_share_directory("uavros2"), "arms", self.arm,
+                            "urdf", f"{self.arm}.urdf.xacro")
+        urdf = xacro.process_file(path, mappings=self._urdf_mappings()).toxml()
+        return ArmFeedForward(ArmModel(urdf), float(self.get_parameter("body_mass").value),
+                              float(self.get_parameter("nm_per_normalized").value))
+
+    def _make_outer_loop(self):
+        from .arm_aware_control import OuterLoop
+
+        if self.controller not in ("outer", "outer_ff"):
+            raise ValueError(f"unknown controller {self.controller!r}")
+        feed_forward = self._make_feed_forward() if self.controller == "outer_ff" else None
+        return OuterLoop(float(self.get_parameter("hover_thrust").value), feed_forward)
+
+    def _arm_reference(self):
+        ctrl = self.ctrl
+        q, qd = {}, {}
+        if ctrl is not None and ctrl.reference.positions:
+            q = dict(zip(ctrl.joint_names, ctrl.reference.positions))
+            if ctrl.reference.velocities:
+                qd = dict(zip(ctrl.joint_names, ctrl.reference.velocities))
+        return q, qd
+
+    def _px4_ff_tick(self):
+        q, qd = self._arm_reference()
+        if not q:
+            return
+        torque = self.arm_ff.px4_torque(q, qd, 0.02)
+        msg = DebugValue()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.type = DebugValue.TYPE_DEBUG_VECT
+        msg.name = "ARMFF"
+        msg.data = [float(v) for v in torque]
+        self.debug_pub.publish(msg)
+        self.last_ff_torque = torque
+
+    def _urdf_mappings(self):
+        return {"sim_mode": "mock"}
 
     # ---------------------------------------------------------------- inputs
     def _on_state(self, msg):
@@ -204,8 +278,49 @@ class AerialArmDemo(Node):
     def _on_ctrl(self, msg):
         self.ctrl = msg
 
+    def _on_velocity(self, msg):
+        self.velocity = msg
+
+    def _outer_tick(self):
+        if not self.outer_active or self.velocity is None:
+            self._last_tick = None
+            return
+        now = time.monotonic()
+        dt = now - self._last_tick if self._last_tick is not None else 0.02
+        self._last_tick = now
+        if dt <= 0.0:
+            return
+        p = self.pose.pose.position
+        v = self.velocity.twist.linear
+        q, qd = self._arm_reference()
+        quat, thrust, bias, body_acc = self.outer.update(
+            self.setpoint, 0.0, np.array([p.x, p.y, p.z]), np.array([v.x, v.y, v.z]),
+            q, qd, dt)
+        msg = AttitudeTarget()
+        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.frame_id = "map"
+        msg.type_mask = (AttitudeTarget.IGNORE_ROLL_RATE | AttitudeTarget.IGNORE_PITCH_RATE
+                         | AttitudeTarget.IGNORE_YAW_RATE)
+        msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w = quat
+        msg.thrust = thrust
+        self.attitude_pub.publish(msg)
+        self.last_outer = (thrust, bias, body_acc)
+
+    def _start_outer_loop(self):
+        """Hand over from PX4 position control once hovering."""
+        if self.outer is None:
+            return
+        self._wait(lambda: self.velocity is not None, 10.0, "velocity")
+        self.outer_active = True
+        time.sleep(3.0)
+
+    def _land(self):
+        self._call(self.set_mode, SetMode.Request(custom_mode="AUTO.LAND"))
+        self.outer_active = False
+        self._wait(lambda: not self.state.armed, 90.0, "landing and disarm")
+
     def _stream_setpoint(self):
-        if self.setpoint is None:
+        if self.setpoint is None or self.outer_active:
             return
         msg = PoseStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -250,6 +365,13 @@ class AerialArmDemo(Node):
         ee = self._ee_in_map()
         if ee is not None:
             row["ee_x"], row["ee_y"], row["ee_z"] = ee
+        if self.last_outer is not None:
+            thrust, bias, body_acc = self.last_outer
+            row["thrust_cmd"] = thrust
+            row["bias_x"], row["bias_y"], row["bias_z"] = bias
+            row["ff_ax"], row["ff_ay"], row["ff_az"] = body_acc
+        if self.last_ff_torque is not None:
+            row["ff_tx"], row["ff_ty"], row["ff_tz"] = self.last_ff_torque
         self._add_fields(row)
         with self.lock:
             self.rows.append(row)
@@ -308,7 +430,7 @@ class AerialArmDemo(Node):
 
         self.get_logger().info("waiting for MAVROS connection, pose and arm controller")
         self._wait(lambda: self.state is not None and self.state.connected, 60.0, "FCU")
-        self._wait(lambda: self.pose is not None, 60.0, "local position")
+        self._wait(lambda: self.pose is not None, 180.0, "local position")
         joints = []
         if self.arm != "none":
             self._wait(lambda: self.ctrl is not None, 60.0, "controller_state")
@@ -321,8 +443,9 @@ class AerialArmDemo(Node):
         self._offboard_and_arm()
         self.get_logger().info(f"OFFBOARD + armed; climbing to {self.hover_z} m")
         self._wait(lambda: abs(self.pose.pose.position.z - self.setpoint[2]) < 0.15,
-                   60.0, "hover altitude")
+                   120.0, "hover altitude")
 
+        self._start_outer_loop()
         self.phase = "hover"
         time.sleep(settle_s)
 
@@ -341,8 +464,7 @@ class AerialArmDemo(Node):
             time.sleep(hold_s)
 
         self.phase = "land"
-        self._call(self.set_mode, SetMode.Request(custom_mode="AUTO.LAND"))
-        self._wait(lambda: not self.state.armed, 90.0, "landing and disarm")
+        self._land()
         self.phase = "done"
         return joints, codes
 
@@ -361,6 +483,7 @@ class AerialArmDemo(Node):
         flying = [r for r in rows if r["phase"] not in ("preflight", "takeoff", "land", "done")]
         summary = {
             "arm": self.arm,
+            "controller": self.controller,
             "joints": joints,
             "hover_z_m": self.hover_z,
             "trajectory_error_codes": codes,

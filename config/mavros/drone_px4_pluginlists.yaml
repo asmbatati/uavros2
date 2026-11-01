@@ -30,7 +30,6 @@
       - px4flow
       - esc_status
       - gps_input
-      - debug_value
       - geofence
       - nav_controller_output
       - wind
