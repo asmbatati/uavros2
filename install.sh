@@ -702,14 +702,14 @@ print_section "Installing Dependencies"
 # Initialize rosdep only if not already initialized
 if [ ! -f "/etc/ros/rosdep/sources.list.d/20-default.list" ]; then
     print_info "Initializing rosdep..."
-    cd $ROS2_WS && rosdep init
+    sudo rosdep init
     print_status "rosdep initialized"
 else
     print_status "rosdep already initialized"
 fi
 
 print_info "Updating and installing ROS dependencies..."
-cd $ROS2_WS && sudo apt update && rosdep update && rosdep install --from-paths src --ignore-src -r -y
+cd $ROS2_WS && sudo apt update && rosdep update --rosdistro jazzy && rosdep install --rosdistro jazzy --from-paths src --ignore-src -r -y
 print_status "ROS dependencies installed"
 
 # Install RMW Zenoh for ROS2 communication
