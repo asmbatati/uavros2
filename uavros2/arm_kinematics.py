@@ -13,16 +13,15 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-# OpenManipulator-X with the 0.40 m contact tool. Contact pose: rod level,
-# pointing forward, its tip 0.20 m past the propeller tips, arm folded close in:
-# 0.022 kg m of forward moment about base_link. (A 0.20 m rod needs the arm at
-# full reach, 0.122 kg m: the front rotors then sit at 99 % in free hover and
-# the drone falls on first contact.) Stow pose: rod backwards under the body,
-# no static moment.
-OMX_TOOL_LENGTH = 0.40
-OMX_TOOL_CONTACT_POSE = [0.0, -1.4, 0.6, 0.8]
+# OpenManipulator-X with the 0.50 m contact tool. Contact pose: rod level, pointing
+# forward, its tip 0.21 m past the propeller tips; the arm folded so the rod's yaw
+# pivot sits on the body's yaw axis and the arm and rod balance about it (almost no
+# static moment, no yaw lever for the contact force). Stow pose: rod backwards under
+# the body.
+OMX_TOOL_LENGTH = 0.50
+OMX_TOOL_CONTACT_POSE = [0.0, -1.4, -0.2, 1.6]
 OMX_TOOL_STOW_POSE = [0.0, 0.9, 1.1, 1.3]
-OMX_TOOL_TIP_IN_BASE = (0.502, 0.0, -0.244)
+OMX_TOOL_TIP_IN_BASE = (0.512, 0.0, -0.279)
 
 
 def _rot(axis, angle):

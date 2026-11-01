@@ -98,12 +98,12 @@ def test_px4_torque_counters_forward_reach(model):
 
 
 def test_contact_force_below_the_body_is_a_nose_down_torque():
-    # r x F with the tip 0.244 m below and the wall pushing back, +y in FLU.
-    r = np.array([0.502, 0.0, -0.244])
-    expected = np.cross(r, [-2.0, 0.0, 0.0])
-    assert expected[1] == pytest.approx(0.488)
+    # r x F with the tip below the body and the wall pushing back, +y in FLU.
     pytest.importorskip("geometry_msgs")  # wall_contact_demo needs ROS
+    from uavros2.arm_kinematics import OMX_TOOL_TIP_IN_BASE
     from uavros2.wall_contact_demo import contact_torque
+    expected = np.cross(OMX_TOOL_TIP_IN_BASE, [-2.0, 0.0, 0.0])
+    assert expected[1] > 0.3
     assert np.allclose(contact_torque(2.0), expected, atol=1e-3)
 
 
@@ -174,7 +174,7 @@ def _tool_model():
 def test_yaw_servo_keeps_the_tool_along_world_x():
     model = _tool_model()
     yaw = 0.3
-    q = dict(zip(JOINTS, [yaw_servo_angle(yaw), -1.4, 0.6, 0.8]))
+    q = dict(zip(JOINTS, [yaw_servo_angle(yaw), -1.4, -0.2, 1.6]))
     tip = model.position(q, "tool_tip") - model.position(q, "tool_link")
     # Rod direction in the body, then rotated by the body's yaw into the world.
     world_y = math.sin(yaw) * tip[0] + math.cos(yaw) * tip[1]
@@ -191,7 +191,7 @@ def test_contact_yaw_moment_is_destabilising_without_servo_and_gone_with_it():
 
 def test_tool_correction_reaches_a_nearby_target():
     model = _tool_model()
-    nominal = dict(zip(JOINTS, [0.0, -1.4, 0.6, 0.8]))
+    nominal = dict(zip(JOINTS, [0.0, -1.2, -0.5, 1.7]))
     target = model.position(nominal, "tool_tip") + np.array([-0.03, 0.04, 0.02])
     dq = tool_correction(model, nominal, JOINTS, "tool_tip", target)
     moved = {j: nominal[j] + d for j, d in zip(JOINTS, dq)}

@@ -28,7 +28,7 @@
   <xacro:arg name="tool" default="none"/>
   <xacro:property name="has_tool" value="${'$(arg tool)' == 'rod'}"/>
   <xacro:property name="stow_j1" value="0.0"/>
-  <!-- With the 0.40 m contact tool that pose puts the rod through the frame;
+  <!-- With the 0.50 m contact tool that pose puts the rod through the frame;
        this one points the rod backwards under the body, above the gear feet,
        with no static pitch moment. -->
   <xacro:property name="stow_j2" value="${0.9 if has_tool else -1.1}"/>
@@ -134,24 +134,24 @@
     <!-- Contact tool, as in models/x500_with_openmanip_x_tool/model.sdf. -->
     <link name="tool_link">
       <inertial>
-        <origin xyz="0.2 0 0"/>
-        <mass value="0.12"/>
-        <inertia ixx="2e-6" iyy="1.6e-3" izz="1.6e-3" ixy="0" ixz="0" iyz="0"/>
+        <origin xyz="0.26 0 0"/>
+        <mass value="0.14"/>
+        <inertia ixx="2e-6" iyy="2.9e-3" izz="2.9e-3" ixy="0" ixz="0" iyz="0"/>
       </inertial>
       <visual>
-        <origin xyz="0.2 0 0" rpy="0 1.5708 0"/>
-        <geometry><cylinder radius="0.006" length="0.4"/></geometry>
+        <origin xyz="0.25 0 0" rpy="0 1.5708 0"/>
+        <geometry><cylinder radius="0.006" length="0.5"/></geometry>
       </visual>
       <visual>
-        <origin xyz="0.4 0 0" rpy="1.5708 0 0"/>
+        <origin xyz="0.5 0 0" rpy="1.5708 0 0"/>
         <geometry><cylinder radius="0.015" length="0.2"/></geometry>
       </visual>
       <collision>
-        <origin xyz="0.4 0.1 0"/>
+        <origin xyz="0.5 0.1 0"/>
         <geometry><sphere radius="0.015"/></geometry>
       </collision>
       <collision>
-        <origin xyz="0.4 -0.1 0"/>
+        <origin xyz="0.5 -0.1 0"/>
         <geometry><sphere radius="0.015"/></geometry>
       </collision>
     </link>
@@ -163,7 +163,7 @@
     <joint name="j_tool_tip" type="fixed">
       <parent link="tool_link"/>
       <child link="tool_tip"/>
-      <origin xyz="0.4 0 0"/>
+      <origin xyz="0.5 0 0"/>
     </joint>
   </xacro:if>
 

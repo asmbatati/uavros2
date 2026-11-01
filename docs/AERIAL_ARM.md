@@ -13,8 +13,8 @@ Two experiments, both PX4 v1.15.4 SITL in Gazebo Harmonic:
   controllers that cancel most of it.
 - [Contact](#contact-experiment) (1 Nov 2026): pressing a tool against a wall,
   under position control and under force control.
-- [Holding the tool in the air](#holding-the-tool-at-a-point) (2 Nov 2026): the arm
-  cancelling the drone's error.
+- [Holding the tool in the air](#holding-the-tool-at-a-point) (2 Nov 2026): RTK, and
+  the arm cancelling the drone's error.
 
 # Free-flight experiment
 
@@ -185,8 +185,9 @@ scripts/aerial_arm_experiment.sh openmanip_x 4 ~/results/ff -p controller:=px4_f
 Same protocol, model and world as the free-flight experiment, re-flown on 1 Nov
 2026 with GPS height on the arm airframes (`EKF2_HGT_REF 1`, the owner's decision;
 the earlier barometer flights gave the same horizontal picture). Other sessions'
-simulations were running (load 30-60 on 32 cores), and starts where the EKF never
-got GPS were re-flown.
+simulations were running (load 30-60 on 32 cores), and starts that failed to arm were
+re-flown. Controls at load 9-17 gave the same numbers within the spread (PX4 position
+peaks 23 / 34 / 49 / 26 cm, outer loop 13 / 14 / 14 / 10 cm), so load did not bias them.
 
 All these numbers are errors against the **EKF's estimate**, what the controllers
 see. The contact flights below measured the truth too, and the estimate itself is
@@ -242,15 +243,15 @@ error and a real link's latency will reduce this gain; neither was tested.
 # Contact experiment
 
 `wall_contact_demo` (`uavros2/wall_contact_demo.py`) flies
-`x500_with_openmanip_x_tool` in the `wall` world. The tool is a 0.40 m rigid rod
-(0.12 kg) with a force/torque sensor at its base (`/<ns>/tool/wrench`), standing in
+`x500_with_openmanip_x_tool` in the `wall` world. The tool is a 0.50 m rod
+(0.14 kg) with a force/torque sensor at its base (`/<ns>/tool/wrench`), standing in
 for a roller or brush. Its head is 0.20 m wide and touches at two points; a passive
 yaw pivot at the rod's base and a spring along the rod make it compliant. Those came
 from the failures below: the first version was one rigid ball. The drone model has
 13 N motors; **these are a modelling assumption, not a real part.**
 
-1. Take off, hover, and move the arm to the contact pose: rod level, tip 0.50 m
-   ahead of `base_link`, 0.20 m past the propeller tips.
+1. Take off, hover, and move the arm to the contact pose: rod level, tip 0.51 m
+   ahead of `base_link`, 0.21 m past the propeller tips.
 2. Fly to 0.20 m from the wall and hold 8 s; the hold tares the sensor.
 3. Creep forward at 5 cm/s until the sensor reads 0.5 N.
 4. Press for 20 s. Under plain position control, move the setpoint `press_depth`
@@ -262,8 +263,11 @@ from the failures below: the first version was one rigid ball. The drone model h
 
 ```bash
 export GZ_PARTITION=uavsim ROS_DOMAIN_ID=24 PYTHONNOUSERSITE=1
+export UAVROS2_RTK=1   # needs the PX4 patches in config/px4/patches
 UAV=x500_with_openmanip_x_tool WORLD=wall DEMO=wall_contact_demo \
-  scripts/aerial_arm_experiment.sh openmanip_x 4 ~/results/contact -p press_depth:=0.05
+  scripts/aerial_arm_experiment.sh openmanip_x 4 ~/results/contact \
+  -p controller:=outer_torque -p nm_per_normalized:=5.88 -p hover_thrust:=0.67 \
+  -p press_depth:=0.02 -p force_target:=3.0 -p press_s:=60.0
 scripts/plot_wall_contact.py docs/figures/wall_contact "13 N, press 5 cm=$HOME/results/contact*"
 ```
 
@@ -329,56 +333,86 @@ Three fixes, tried in this order:
 3. **A passive yaw pivot at the rod's base.** A pin cannot carry a moment, so the
    force reaches the arm only 0.10 m ahead of the body, not 0.50 m: about 0.3 N
    m/rad, inside the yaw authority. No fall at 3 N in 20 s runs (6 of 6), yaw SD 1.4-5
-   deg. That is the tool now, with a spring at the head (300 N/m, damped).
+   deg.
+4. **The pivot on the body's yaw axis.** Folding the arm and lengthening the rod to
+   0.50 m puts the pivot over the mount, so the force has no yaw lever, and the arm and
+   rod balance. With a softer, longer spring at the head (80 N/m, +-8 cm: the first,
+   300 N/m, turned small position wobbles into force swings), that is the tool now.
 
-## Results: passive tool and hybrid force control, measured against truth
+## Position source: RTK through PX4's EKF
+
+Measuring against Gazebo's truth showed the EKF's height off by 6-16 cm (SD) while it
+reports itself steady. The cause is the simulated receiver: PX4's `sensor_gps_sim` adds
+0.2 m horizontal and 0.5 m vertical white noise to every sample. No controller holds 2
+cm on that.
+
+`UAVROS2_RTK=1` (airframe 4429, local PX4 patch 0002) switches the simulated receiver to
+RTK-grade noise (1.5 cm, 2 cm, fix type 6, 5 Hz) and tells the EKF. PX4's EKF and every
+controller run unchanged, so latency and filtering are real. The estimate's error falls
+to about 1 cm against truth. **It is a noise model, not a full RTK receiver**: no
+multipath or lost fix near a wall, which a real one would have.
+
+## Results: passive tool and hybrid force control, against truth
 
 Gazebo's true head position is logged for measuring only. Controller `outer_torque`
-(outer loop with the PX4 torque patch), 3 N target. "1 cm position" flies on Gazebo's
-truth plus 1 cm noise, standing in for RTK or a visual marker: it shows what a better
-sensor would give, and **is not a real sensor**. Per-run numbers:
+(outer loop with the PX4 torque patch), 3 N target, load 2-20, real-time factor 0.94-1.0.
+Per-run numbers, including earlier tool versions:
 [pivot_runs.txt](figures/wall_contact/pivot_runs.txt).
 
 | Position source, press | Runs | Fell | Force median (N) | Force IQR (N) | Contact lost (%) | Tool SD y / z (cm) | Within 2 cm (% of time) |
 |---|---|---|---|---|---|---|---|
-| EKF, 20 s | 3 | 0 | 1.6-2.0 | 2.3-2.9 | 19-32 | 8-14 / 7-12 | 0-1 |
-| 1 cm, 20 s | 3 | 0 | 2.6-3.0 | 0.5-1.6 | 0-22 | 0.1-6 / 2-6 | 0-75 |
-| EKF, 60 s | 5 | 1 | 1.2-2.3 | 2.4-2.8 | 15-42 | 6-19 / 6-27 | 0-1 |
-| 1 cm, 60 s | 5 | 1 | 1.2-3.1 | 0.5-2.9 | 4-36 | 2-7 / 3-9 | 0-73 |
+| EKF on plain GPS, 60 s | 3 | 0 | 1.9-2.2 | 1.8-2.4 | 13-20 | 5-12 / 13-26 | 0 |
+| RTK, 20 s | 3 | 0 | 2.1-2.9 | 0.6-1.5 | 0-13 | 0.1-2 / 0.4-3 | 12-100 |
+| **RTK, 60 s** | 10 | 1 | 1.3-2.7 | 0.8-2.5 | 0-31 | 0.2-22 / 2-6 | 3-84 |
 
-At a 6 N target on the 1 cm position (20 s, n=3): one fall after 14.9 s, force median
-0.7-4.3 N, yaw SD up to 43 deg. 6 N is not held.
+In the RTK 60 s group, the fall came at 46.6 s (its truth log is missing, so 9 runs
+give the other columns). Seven of those 9 have a force median of 2.2-2.7 N and tool SD
+of 4.5 cm or less; one had a yaw excursion (SD 21 deg) and drifted 22 cm.
 
 ![Force against time, 60 s press, 3 N target](figures/wall_contact/contact_force.png)
 
-- **Yaw buckling is solved at 3 N** by the passive pivot; at 6 N it is not.
-- **The sensor is now the main limit.** The tool's true height wanders 6-27 cm on the
-  EKF and 3-9 cm on 1 cm position. The EKF's height is off from truth by 6-16 cm (SD)
-  while it reports itself steady. A real job needs better than GPS-plus-baro near the
-  wall: RTK, or a marker or the surface itself seen by a camera.
-- **The target (a set force for 60 s, 10 of 10 runs, tool within 2 cm) is not met.**
-  The best flights hold about 3 N with an IQR of 0.5 N and stay within 2 cm for about
-  73 % of the time; others slip, lose contact and drift. One flight in five still falls.
-- This simulator's slips may be pessimistic: friction is one number (0.5, high for a
-  roller), and short force spikes (40-110 N, single samples) come from contact between
-  rigid balls and a rigid wall.
+- **The target (a set force for 60 s, 10 of 10 runs, tool within 2 cm) is not met,** but
+  it is close at the best: 2.85 N, IQR 0.6 N, tool SD 0.1 / 0.4 cm, 100 % within 2 cm
+  over 20 s; 2.72 N, 84 % within 2 cm, over 60 s. Other runs slip and resettle.
+- **The position source was the main limit, as suspected.** Tool height SD: 13-26 cm on
+  plain GPS, 2-6 cm on RTK, with the same controller and tool.
+- **Force settles a little under target** (2.2-2.9 N for 3 N). Short loss of contact pulls
+  the median down.
+- **6 N is not held**: 2 of 3 fell (9-10 s) even with the centred pivot, by pitching over.
+  The force acts 0.28 m below the centre of mass, so near 9 N its moment approaches the
+  13 N motors' pitch limit, and pushing tilts the drone further forward. Going higher
+  needs the tool line closer to the centre of mass, or more thrust margin.
+- Contact is still a rigid ball on a rigid wall with one friction value (0.5, high for a
+  roller): short force spikes (20-110 N, single samples) are partly that.
 
 ## Holding the tool at a point
 
 `tool_hold_demo`: 25 s hover with the arm still, then 25 s with the arm correcting the
 drone's error in the air (damped least squares on the tool position, from the estimated
-pose). Truth-measured scatter about the mean, RMS (cm), `outer_torque`, n=3:
+pose, smoothed over 0.5 s). Truth-measured scatter about the mean, RMS (cm), n=3:
 
-| Position source | Arm still | Arm correcting | Within 2 cm, correcting |
+| Position source | Arm still | Arm correcting | Within 2 cm, still / correcting |
 |---|---|---|---|
-| EKF | 12.8-15.8 | 8.5-12.7 | 0 % |
-| 1 cm (not a real sensor) | 2.7-4.7 | 3.4-5.6 | 26-33 % |
+| EKF on plain GPS | 13-24 | 10-16 | 0-1 / 0 % |
+| RTK | 2.0-2.7 | 3.4-3.8 | 25-61 / 13-24 % |
 
-The arm helps a little when the error is large (about 14 to 11 cm) and gains nothing
-clear when it is already small. Most of the 14 cm is the estimate's own error, which
-no correction based on that estimate can remove. Moving to a better position sensor is
-worth far more than the arm correction. The contact pose also has joint 2 close to its
-limit, which restricts corrections.
+The target (tool within 2 cm) is not reached. **On RTK the correction makes the tool
+worse**: the arm's own motion pushes the drone, and that costs more than it corrects. On
+plain GPS it helps, because the error is large and slow; most of that error is the
+estimate's own, which no correction based on it can remove. A better position source is
+worth far more than correcting with the arm. Without smoothing the RTK figure was
+4.2-5.3 cm.
+
+## Failed starts
+
+About half of the starts failed to arm for a while (`could not enter OFFBOARD + arm`, or
+no local position), and it looked like lack of GPS. Checked: 18 of 18 starts at load 3-20
+were fine (6 with PX4's GPS checks passing at 50 s; 12 armed in the real demo), and the
+failures only came at load 30-68, with other simulations on the machine. So it is
+machine load, not GPS. The exact mechanism was not isolated, since it did not reproduce.
+Failed starts leave no flight data, and controls at low load match the earlier numbers.
+Flight summaries now record the real-time factor and load, and a start that fails is
+re-flown by the batch script.
 
 ## Why the drone fell, and the design changes it forced
 
@@ -420,8 +454,8 @@ no rotor wash near the wall (ground and wall effects are not simulated).
 
 ## What would come next
 
-- A real sensor model for the 1 cm position: RTK in the EKF, or a marker seen by a camera.
-- Fewer slips: lower friction on the head, softer contact, force-loop tuning; then 6 N.
-- A contact pose further from joint limits, so the arm can correct.
+- Fewer slips at 3 N: the remaining ones, then the 10 of 10 target.
+- A tool line closer to the centre of mass, for higher force.
+- A camera on a marker or the wall as the position source, and a fuller RTK model.
 - Trajectory shaping: minimum-jerk arm trajectories under a hover-error budget.
 - Gripper and a pick task from hover.

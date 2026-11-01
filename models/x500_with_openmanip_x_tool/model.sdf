@@ -249,7 +249,7 @@
       <child>end_effector_link</child>
     </joint>
 
-    <!-- Contact tool, standing in for a roller or brush: a 0.40 m rod ending in a
+    <!-- Contact tool, standing in for a roller or brush: a 0.50 m rod ending in a
          0.20 m wide head. A force/torque sensor sits at its base. Two passive
          joints: a yaw pivot at the base, so the rod cannot put a yaw moment on the
          drone (a rigid rod pushed on a wall buckles, docs/AERIAL_ARM.md), and a
@@ -281,16 +281,16 @@
     <link name='tool_rod_link'>
       <pose relative_to='tool_link'>0 0 0 0 0 0</pose>
       <inertial>
-        <mass>0.09</mass>
-        <pose>0.2 0 0 0 0 0</pose>
+        <mass>0.11</mass>
+        <pose>0.25 0 0 0 0 0</pose>
         <inertia>
-          <ixx>2e-6</ixx><iyy>1.2e-3</iyy><izz>1.2e-3</izz>
+          <ixx>2e-6</ixx><iyy>2.3e-3</iyy><izz>2.3e-3</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
       <visual name='tool_rod_visual'>
-        <pose>0.2 0 0 0 1.5708 0</pose>
-        <geometry><cylinder><radius>0.006</radius><length>0.4</length></cylinder></geometry>
+        <pose>0.25 0 0 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.006</radius><length>0.5</length></cylinder></geometry>
         <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
       </visual>
     </link>
@@ -304,7 +304,7 @@
       </axis>
     </joint>
     <link name='tool_head_link'>
-      <pose relative_to='tool_rod_link'>0.4 0 0 0 0 0</pose>
+      <pose relative_to='tool_rod_link'>0.5 0 0 0 0 0</pose>
       <inertial>
         <mass>0.02</mass>
         <inertia>

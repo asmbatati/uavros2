@@ -1,32 +1,41 @@
 [
   {
-    "group": "EKF position, 60 s",
-    "runs": 5,
-    "fell": 1,
-    "fell_after_s": [
-      21.278065395075828
-    ],
-    "force_mean_n": "2.07 \u00b1 0.28",
-    "force_sd_n": "4.16 \u00b1 0.79",
-    "force_first_half_n": "1.93 \u00b1 0.74",
-    "force_second_half_n": "2.21 \u00b1 0.24",
-    "contact_lost_pct": "31.2 \u00b1 8.1",
-    "tip_y_sd_cm": "7.7 \u00b1 1.9",
-    "tip_z_sd_cm": "21.1 \u00b1 5.7"
+    "group": "EKF, 60 s",
+    "runs": 3,
+    "fell": 0,
+    "fell_after_s": [],
+    "force_mean_n": "2.41 \u00b1 0.20",
+    "force_sd_n": "4.56 \u00b1 0.08",
+    "force_first_half_n": "2.45 \u00b1 0.26",
+    "force_second_half_n": "2.38 \u00b1 0.17",
+    "contact_lost_pct": "17.5 \u00b1 3.9",
+    "tip_y_sd_cm": "8.9 \u00b1 3.5",
+    "tip_z_sd_cm": "18.5 \u00b1 6.3"
   },
   {
-    "group": "1 cm position, 60 s",
+    "group": "RTK, 60 s (first 5 of 10)",
     "runs": 5,
-    "fell": 1,
-    "fell_after_s": [
-      15.008633414981887
-    ],
-    "force_mean_n": "2.67 \u00b1 0.33",
-    "force_sd_n": "2.17 \u00b1 1.28",
-    "force_first_half_n": "2.82 \u00b1 0.36",
-    "force_second_half_n": "2.52 \u00b1 0.33",
-    "contact_lost_pct": "11.4 \u00b1 10.9",
-    "tip_y_sd_cm": "4.1 \u00b1 2.1",
-    "tip_z_sd_cm": "3.6 \u00b1 0.3"
+    "fell": 0,
+    "fell_after_s": [],
+    "force_mean_n": "2.54 \u00b1 0.30",
+    "force_sd_n": "3.64 \u00b1 1.29",
+    "force_first_half_n": "2.47 \u00b1 0.36",
+    "force_second_half_n": "2.60 \u00b1 0.35",
+    "contact_lost_pct": "13.6 \u00b1 10.5",
+    "tip_y_sd_cm": "7.2 \u00b1 8.5",
+    "tip_z_sd_cm": "3.6 \u00b1 1.7"
+  },
+  {
+    "group": "RTK, 60 s (last 4 of 10)",
+    "runs": 3,
+    "fell": 0,
+    "fell_after_s": [],
+    "force_mean_n": "2.70 \u00b1 0.30",
+    "force_sd_n": "3.04 \u00b1 1.23",
+    "force_first_half_n": "2.55 \u00b1 0.34",
+    "force_second_half_n": "2.85 \u00b1 0.29",
+    "contact_lost_pct": "8.2 \u00b1 7.7",
+    "tip_y_sd_cm": "2.8 \u00b1 0.4",
+    "tip_z_sd_cm": "2.6 \u00b1 0.8"
   }
 ]
