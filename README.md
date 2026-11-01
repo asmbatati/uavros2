@@ -125,16 +125,16 @@ measurably. Protocol, numbers and figures:
 | UAV | PX4 airframe | Sensors / payload |
 |---|---|---|
 | `x500` | 4001 (stock) | none |
-| `x500_d435` | 4020 | RealSense D435 |
-| `x3_uav` | 4021 | IMU, baro, magnetometer, GPS (the iHunter interceptor airframe) |
-| `x500_mono_cam_3d_lidar` | 4022 | mono camera, 3D lidar |
-| `x500_stereo_cam_3d_lidar` | 4023 | stereo camera, 3D lidar |
-| `x500_twin_stereo_twin_velodyne` | 4024 | two stereo pairs, two Velodynes |
-| `x500_with_three_dof_arm` | 4025 | 3-DOF scaffold arm |
-| `x500_with_openmanip_x` | 4026 | OpenManipulator-X (real kinematics and masses) |
-| `x500_with_panda` | 4027 | Panda-named 7-DOF scaffold |
-| `x500_with_ur5` | 4028 | UR5-named 6-DOF scaffold |
-| `standard_vtol_with_cam`, `fixed_wing_basic_with_cam` | 4050, 4051 | camera (asset generator examples) |
+| `x500_d435` | 4420 | RealSense D435 |
+| `x3_uav` | 4421 | IMU, baro, magnetometer, GPS (the iHunter interceptor airframe) |
+| `x500_mono_cam_3d_lidar` | 4422 | mono camera, 3D lidar |
+| `x500_stereo_cam_3d_lidar` | 4423 | stereo camera, 3D lidar |
+| `x500_twin_stereo_twin_velodyne` | 4424 | two stereo pairs, two Velodynes |
+| `x500_with_three_dof_arm` | 4425 | 3-DOF scaffold arm |
+| `x500_with_openmanip_x` | 4426 | OpenManipulator-X (real kinematics and masses) |
+| `x500_with_panda` | 4427 | Panda-named 7-DOF scaffold |
+| `x500_with_ur5` | 4428 | UR5-named 6-DOF scaffold |
+| `standard_vtol_with_cam`, `fixed_wing_basic_with_cam` | 4450, 4451 | camera (asset generator examples) |
 
 UAVs are described in `assets/uavs/*.yaml`; `uavros2-asset build <uav>`
 generates the Gazebo model and PX4 airframe ([docs/ASSETS.md](docs/ASSETS.md)).

@@ -13,6 +13,6 @@ sensors:
     mount: nose_payload
     pose: [0, 0, 0, 0, 0, 0]
 px4:
-  airframe_id: 4051
+  airframe_id: 4451
   spawn_pose_m: [0.0, 0.0, 0.5, 0, 0, 0]
   hover_thrust: 0.40

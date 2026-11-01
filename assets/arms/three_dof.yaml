@@ -11,4 +11,4 @@ default_controller: joint_trajectory_controller
 moveit: true
 controllers_yaml: arms/three_dof/config/controllers.yaml
 urdf_xacro: arms/three_dof/urdf/three_dof.urdf.xacro
-px4_airframe_id_default: 4025
+px4_airframe_id_default: 4425

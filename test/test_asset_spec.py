@@ -53,7 +53,7 @@ def test_x500_chassis_shape(catalog):
 def test_uav_resolves_chassis_and_sensors(catalog):
     uav = catalog.uavs["x500_stereo_cam_3d_lidar"]
     assert uav.chassis.ref == "x500"
-    assert uav.px4.airframe_id == 4023
+    assert uav.px4.airframe_id == 4423
     sensor_names = {s.name for s in uav.sensors}
     # canonical names must be unique
     assert len(sensor_names) == len(uav.sensors)
@@ -89,7 +89,7 @@ def test_airframe_id_collision_caught(tmp_path, catalog):
     bad.write_text(
         "version: 1\nkind: uav\nname: twin_uav\n"
         "chassis: { ref: x500 }\n"
-        "px4: { airframe_id: 4023 }\n"   # collides with x500_stereo_cam_3d_lidar
+        "px4: { airframe_id: 4423 }\n"   # collides with x500_stereo_cam_3d_lidar
     )
     twin = load_any(bad)
     catalog.uavs[twin.name] = twin

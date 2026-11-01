@@ -5,10 +5,10 @@ by `gz_ros2_control` in Gazebo while PX4 flies the drone.
 
 | Arm | DOF | Model | Arm mass | PX4 airframe | Status (Gazebo + PX4 v1.15.4) |
 |---|---|---|---|---|---|
-| `openmanip_x` | 4 | **Real ROBOTIS OpenManipulator-X**: upstream kinematics, masses, inertias, joint limits; box geometry | 0.594 kg | 4026 | Flies the full experiment; MoveIt config |
-| `three_dof` | 3 | Cylinder-chain scaffold (planar pitch chain) | 0.12 kg | 4025 | Flies the full experiment; MoveIt config |
-| `panda` | 7 | Scaffold with Franka Panda joint names (planar pitch chain) | 0.20 kg | 4027 | Flies the full experiment; MoveIt config |
-| `ur5` | 6 | Scaffold with UR5 joint names (planar pitch chain) | 0.20 kg | 4028 | Flies the full experiment; MoveIt config |
+| `openmanip_x` | 4 | **Real ROBOTIS OpenManipulator-X**: upstream kinematics, masses, inertias, joint limits; box geometry | 0.594 kg | 4426 | Flies the full experiment; MoveIt config |
+| `three_dof` | 3 | Cylinder-chain scaffold (planar pitch chain) | 0.12 kg | 4425 | Flies the full experiment; MoveIt config |
+| `panda` | 7 | Scaffold with Franka Panda joint names (planar pitch chain) | 0.20 kg | 4427 | Flies the full experiment; MoveIt config |
+| `ur5` | 6 | Scaffold with UR5 joint names (planar pitch chain) | 0.20 kg | 4428 | Flies the full experiment; MoveIt config |
 
 The three scaffolds are light placeholders that fit under the landing gear in
 any pose: good for controller-stack and MoveIt testing, too light to disturb
@@ -139,7 +139,7 @@ This is how the OpenManipulator-X was upgraded:
 4. Optionally ship `config/moveit/`; `arm_control.launch.py` auto-detects it.
 5. Author `models/x500_with_<name>/model.sdf` with the arm links and the
    `gz_ros2_control` plugin block.
-6. Add `assets/uavs/x500_with_<name>.yaml` (next free airframe ID is 4029),
+6. Add `assets/uavs/x500_with_<name>.yaml` (next free airframe ID is 4429),
    `asset build`, register the UAV in `UAV_AIRFRAME` in
    `launch/simulators/gazebo.launch.py`, the arm in `SUPPORTED_ARMS`
    (`launch/sim.launch.py`) and `arms/manifest.yaml`, and the arm's poses in

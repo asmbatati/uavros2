@@ -11,4 +11,4 @@ default_controller: joint_trajectory_controller
 moveit: true
 controllers_yaml: arms/ur5/config/controllers.yaml
 urdf_xacro: arms/ur5/urdf/ur5.urdf.xacro
-px4_airframe_id_default: 4028
+px4_airframe_id_default: 4428

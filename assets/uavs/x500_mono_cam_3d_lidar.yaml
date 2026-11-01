@@ -21,6 +21,6 @@ sensors:
     mount: base_link
     pose: [0.0, 0.0, 0.12, 0, 1.57079633, 0]
 px4:
-  airframe_id: 4022
+  airframe_id: 4422
   spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
   hover_thrust: 0.60

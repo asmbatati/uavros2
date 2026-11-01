@@ -13,6 +13,8 @@ Two experiments, both PX4 v1.15.4 SITL in Gazebo Harmonic:
   controllers that cancel most of it.
 - [Contact](#contact-experiment) (1 Nov 2026): pressing a tool against a wall,
   under position control and under force control.
+- [Holding the tool in the air](#holding-the-tool-at-a-point) (2 Nov 2026): the arm
+  cancelling the drone's error.
 
 # Free-flight experiment
 
@@ -137,10 +139,10 @@ three_dof / Panda / UR5 scaffolds and the x500_d435 control).
 
 ### Height reference note
 
-The generated airframes (4020-4028) use the barometer as EKF2 height reference
-(`EKF2_HGT_REF 0`, PX4's simulated baro); stock x500 (4001) uses GPS height.
-Flying x500_d435 (4020, no arm) against x500 (4001) showed the same ±10 cm
-height wander for both, so it is not caused by the arm or by that setting.
+On 30 Oct the generated airframes used the barometer as EKF2 height reference
+(`EKF2_HGT_REF 0`); stock x500 (4001) uses GPS height. Flying x500_d435 (no arm)
+against x500 (4001) showed the same ±10 cm height wander for both, so it is not caused
+by the arm or by that setting. Since 1 Nov the arm airframes (4425-4429) use GPS height.
 
 ### Earlier pose set
 
@@ -180,9 +182,15 @@ scripts/aerial_arm_experiment.sh openmanip_x 4 ~/results/ff -p controller:=px4_f
 
 ## Results
 
-Same protocol, model and world as the free-flight experiment; PX4 position
-numbers are from that table. Other sessions' simulations were running (load 30-60
-on 32 cores), and some starts failed before take-off and were re-flown.
+Same protocol, model and world as the free-flight experiment, re-flown on 1 Nov
+2026 with GPS height on the arm airframes (`EKF2_HGT_REF 1`, the owner's decision;
+the earlier barometer flights gave the same horizontal picture). Other sessions'
+simulations were running (load 30-60 on 32 cores), and starts where the EKF never
+got GPS were re-flown.
+
+All these numbers are errors against the **EKF's estimate**, what the controllers
+see. The contact flights below measured the truth too, and the estimate itself is
+3-16 cm off.
 
 ![Peak hover error per arm phase](figures/compensation/compensation.png)
 
@@ -190,37 +198,43 @@ Horizontal error, RMS / peak (cm):
 
 | Motions | Controller | n | hover | forward | side | back | stow |
 |---|---|---|---|---|---|---|---|
-| 2 s | PX4 position | 4 | 6.5 / 10.9 | 10.6 / 21.5 | 17.7 / 34.3 | 24.8 / 50.3 | 13.5 / 27.0 |
-| 2 s | Outer loop, no feed-forward | 4 | 6.4 / 10.1 | 11.7 / 21.9 | 22.5 / 43.0 | 27.7 / 58.6 | 15.7 / 30.4 |
-| 2 s | **Outer loop + feed-forward** | 4 | 5.6 / 10.7 | 8.0 / 12.9 | 9.7 / 17.3 | 9.4 / 18.8 | 7.3 / 13.1 |
-| 2 s | **PX4 + torque patch** | 4 | 5.9 / 11.0 | 4.8 / 8.7 | 6.7 / 11.4 | 7.3 / 12.6 | 6.0 / 9.4 |
-| 6 s | PX4 position | 3 | 5.4 / 9.2 | 6.0 / 10.5 | 10.1 / 15.9 | 17.4 / 29.3 | 8.5 / 14.8 |
-| 6 s | Outer loop, no feed-forward | 3 | 6.8 / 12.9 | 6.2 / 11.2 | 11.6 / 19.4 | 20.8 / 33.7 | 10.4 / 18.4 |
-| 6 s | **Outer loop + feed-forward** | 3 | 6.0 / 9.2 | 6.3 / 12.6 | 6.2 / 9.6 | 8.7 / 16.7 | 6.4 / 11.2 |
-| 6 s | **PX4 + torque patch** | 3 | 6.0 / 9.6 | 5.2 / 8.8 | 5.9 / 10.6 | 6.5 / 12.4 | 6.5 / 11.4 |
+| 2 s | PX4 position | 4 | 5.8 / 9.6 | 8.6 / 16.7 | 21.8 / 40.2 | 26.9 / 51.8 | 16.2 / 30.3 |
+| 2 s | **Outer loop + feed-forward** | 4 | 5.7 / 10.1 | 6.8 / 11.2 | 7.7 / 13.4 | 7.8 / 15.0 | 7.9 / 12.8 |
+| 2 s | **PX4 + torque patch** | 4 | 5.6 / 9.4 | 5.3 / 8.5 | 6.5 / 10.3 | 7.2 / 13.2 | 5.9 / 10.5 |
+| 6 s | PX4 position | 3 | 6.2 / 10.7 | 6.3 / 11.1 | 12.1 / 19.9 | 18.1 / 29.9 | 7.8 / 14.2 |
+| 6 s | **Outer loop + feed-forward** | 3 | 6.9 / 12.2 | 6.3 / 11.2 | 6.4 / 11.6 | 8.7 / 14.3 | 6.3 / 10.3 |
+| 6 s | **PX4 + torque patch** | 3 | 5.1 / 9.0 | 6.2 / 10.1 | 5.8 / 10.3 | 6.9 / 11.5 | 6.5 / 11.6 |
 | - | No arm, PX4 position | 4 | 5.1 / 8.8 | 5.5 / 9.2 | 5.1 / 9.0 | 5.0 / 9.2 | 5.8 / 10.0 |
 | - | No arm, outer loop | 3 | 5.5 / 9.7 | 5.9 / 10.3 | 5.6 / 9.8 | 5.3 / 8.8 | 5.8 / 11.1 |
+
+The outer loop alone, without feed-forward, matches PX4 position control
+(barometer flights, 2 s: peaks 22 / 43 / 59 / 30 cm).
+
+**One crash, not in the table.** One 2 s PX4-patch flight of 16 patch flights fell
+during the side swing: front motor at 1.00, thrust setpoint at its limit, 1.4 m
+lost in about 1.5 s. It is the same thrust-margin failure as in contact, on the
+stock 8.5 N motors (loaded thrust-to-weight 1.26). None of 15 outer-loop flights
+and none of the PX4 position flights fell, but the sample is too small to say the
+patch is the cause.
 
 Spread and height in [summary.md](figures/compensation/summary.md).
 
 ## What it shows
 
 - **Most of the disturbance is the predictable moment, and both controllers
-  remove most of it.** At 2 s the worst peak falls from 50 cm to 19 cm (outer loop)
-  or 13 cm (patch), against a no-arm floor of about 10 cm. The arm can now move
-  three times faster for the same error: the patch at 2 s beats PX4 position at 6 s.
-- **The PX4 patch is better horizontally.** It gives a true torque immediately,
-  and PX4's pitch integrator barely moves (within +-0.04, where the moment alone
-  would need about 0.16). The outer loop can only approximate that through an
-  attitude bias, which lags.
-- **The outer loop is better in height**: 3-4 cm RMS, against 4-12 cm for the
-  patch and 10-14 cm for PX4 position control. So the +-10-15 cm height wander
-  reported above comes from PX4's height control, at least in part, and not from the
-  simulator.
-- **End-effector error** at 2 s: from 15-30 cm RMS (PX4 position) to 9-11 cm (outer
-  loop) or 7-14 cm (patch; its worst phases are limited by height, so the two
-  could be combined).
-- **The arm-less outer loop matches PX4**, so the comparison is fair.
+  remove most of it.** At 2 s the worst peak falls from 52 cm to 15 cm (outer loop)
+  or 13 cm (patch), against a no-arm floor of about 10 cm. The patch at 2 s beats PX4
+  position at 6 s.
+- **The PX4 patch is a little better horizontally.** It gives a true torque
+  immediately, and PX4's pitch integrator barely moves (within +-0.04, where the
+  moment alone would need about 0.16).
+- **The outer loop holds height much better**: 2-4 cm RMS, against 7-20 cm for
+  PX4's own height control, with or without the patch. So the +-10-15 cm wander
+  reported above comes from PX4's height control, at least in part.
+- **GPS height did not help height hold** under PX4's own control (7-20 cm, about
+  the same as the barometer's).
+- **End-effector error** at 2 s: from 11-28 cm RMS (PX4 position) to 7-9 cm (outer
+  loop) or 10-13 cm (patch).
 
 The arm's reference joints and mass are known exactly here. A real arm's model
 error and a real link's latency will reduce this gain; neither was tested.
@@ -230,8 +244,10 @@ error and a real link's latency will reduce this gain; neither was tested.
 `wall_contact_demo` (`uavros2/wall_contact_demo.py`) flies
 `x500_with_openmanip_x_tool` in the `wall` world. The tool is a 0.40 m rigid rod
 (0.12 kg) with a force/torque sensor at its base (`/<ns>/tool/wrench`), standing in
-for a roller or brush. Its head is 0.20 m wide and touches at two points; the first
-version had a single ball (see "Why a wide head").
+for a roller or brush. Its head is 0.20 m wide and touches at two points; a passive
+yaw pivot at the rod's base and a spring along the rod make it compliant. Those came
+from the failures below: the first version was one rigid ball. The drone model has
+13 N motors; **these are a modelling assumption, not a real part.**
 
 1. Take off, hover, and move the arm to the contact pose: rod level, tip 0.50 m
    ahead of `base_link`, 0.20 m past the propeller tips.
@@ -251,7 +267,7 @@ UAV=x500_with_openmanip_x_tool WORLD=wall DEMO=wall_contact_demo \
 scripts/plot_wall_contact.py docs/figures/wall_contact "13 N, press 5 cm=$HOME/results/contact*"
 ```
 
-## Results
+## First results: rigid tool
 
 All on the 13 N motors. Statistics are over the last 17 s of the press, for every
 run that reached contact, including the part before any fall. "Tool SD" is the
@@ -278,14 +294,8 @@ Stock 8.5 N motors, ball, 5 cm: one of two runs fell, median under 1 N (commit
 a45c348). Falls happened after 1.7-19 s. Three runs per group is few, so read
 this as rough.
 
-![Force against time during the press, wide head](figures/wall_contact/contact_force.png)
+What the rigid tool showed:
 
-## What it shows
-
-- **Holding a surface steadily is not solved.** Hybrid control at 3 N with the
-  wide head is the best so far, and it still fell in 1 of 3 runs, shows short force
-  spikes, and moves the tool 6-11 cm along the wall. That is not yet good enough for
-  logos or precision maintenance.
 - **Force control does what position control cannot.** Hybrid control reaches its
   target (median 2.8-2.9 N at 3 N, 6.2-6.3 N at 6 N) and stays in contact 92-97 % of
   the time, against about 74 %. Under position control the force is whatever the
@@ -297,7 +307,7 @@ this as rough.
   though its tool wanders least.
 - **The limit at higher force is yaw.** See below.
 
-## Why a wide head
+## Why the head is wide and the rod pivots
 
 Every hybrid fall with the single ball was preceded by yaw running away (-19, -35,
 -22 deg). A rigid rod pushed against a wall buckles sideways like a pushed stick: at
@@ -307,11 +317,68 @@ quadrotor's yaw authority here is only about 0.4 N m (rotor drag torque), so con
 goes at about 15 deg, as seen. This estimate comes from the logs and the geometry;
 no separate yaw experiment was run.
 
-Two contact points 0.20 m apart give a restoring moment for yaw within about +-11
-deg, which is also what a real roller has. That moved 3 N from 3 falls in 4 to 1 in
-3 and cut the yaw spread from 23 to 14 deg, but 6 N still falls: the bigger the force, the more
-small yaw errors matter. A shorter lever, a wider head, or the arm's yaw joint
-keeping the tool square to the wall are the next things to try.
+Three fixes, tried in this order:
+
+1. **Two contact points** 0.20 m apart give a restoring moment within about +-11
+   deg, which is also what a real roller has. 3 N went from 3 falls in 4 to 1 in 3,
+   and yaw spread from 23 to 14 deg, but 6 N still fell.
+2. **Arm's yaw joint keeping the tool square to the wall: worse.** With the tip
+   gripped by friction, a stiff joint turns any sideways drift into yaw torque on the
+   body (-36 to -65 deg in the one flight, then stopped). This is still in the demo
+   as `yaw_servo`.
+3. **A passive yaw pivot at the rod's base.** A pin cannot carry a moment, so the
+   force reaches the arm only 0.10 m ahead of the body, not 0.50 m: about 0.3 N
+   m/rad, inside the yaw authority. No fall at 3 N in 20 s runs (6 of 6), yaw SD 1.4-5
+   deg. That is the tool now, with a spring at the head (300 N/m, damped).
+
+## Results: passive tool and hybrid force control, measured against truth
+
+Gazebo's true head position is logged for measuring only. Controller `outer_torque`
+(outer loop with the PX4 torque patch), 3 N target. "1 cm position" flies on Gazebo's
+truth plus 1 cm noise, standing in for RTK or a visual marker: it shows what a better
+sensor would give, and **is not a real sensor**. Per-run numbers:
+[pivot_runs.txt](figures/wall_contact/pivot_runs.txt).
+
+| Position source, press | Runs | Fell | Force median (N) | Force IQR (N) | Contact lost (%) | Tool SD y / z (cm) | Within 2 cm (% of time) |
+|---|---|---|---|---|---|---|---|
+| EKF, 20 s | 3 | 0 | 1.6-2.0 | 2.3-2.9 | 19-32 | 8-14 / 7-12 | 0-1 |
+| 1 cm, 20 s | 3 | 0 | 2.6-3.0 | 0.5-1.6 | 0-22 | 0.1-6 / 2-6 | 0-75 |
+| EKF, 60 s | 5 | 1 | 1.2-2.3 | 2.4-2.8 | 15-42 | 6-19 / 6-27 | 0-1 |
+| 1 cm, 60 s | 5 | 1 | 1.2-3.1 | 0.5-2.9 | 4-36 | 2-7 / 3-9 | 0-73 |
+
+At a 6 N target on the 1 cm position (20 s, n=3): one fall after 14.9 s, force median
+0.7-4.3 N, yaw SD up to 43 deg. 6 N is not held.
+
+![Force against time, 60 s press, 3 N target](figures/wall_contact/contact_force.png)
+
+- **Yaw buckling is solved at 3 N** by the passive pivot; at 6 N it is not.
+- **The sensor is now the main limit.** The tool's true height wanders 6-27 cm on the
+  EKF and 3-9 cm on 1 cm position. The EKF's height is off from truth by 6-16 cm (SD)
+  while it reports itself steady. A real job needs better than GPS-plus-baro near the
+  wall: RTK, or a marker or the surface itself seen by a camera.
+- **The target (a set force for 60 s, 10 of 10 runs, tool within 2 cm) is not met.**
+  The best flights hold about 3 N with an IQR of 0.5 N and stay within 2 cm for about
+  73 % of the time; others slip, lose contact and drift. One flight in five still falls.
+- This simulator's slips may be pessimistic: friction is one number (0.5, high for a
+  roller), and short force spikes (40-110 N, single samples) come from contact between
+  rigid balls and a rigid wall.
+
+## Holding the tool at a point
+
+`tool_hold_demo`: 25 s hover with the arm still, then 25 s with the arm correcting the
+drone's error in the air (damped least squares on the tool position, from the estimated
+pose). Truth-measured scatter about the mean, RMS (cm), `outer_torque`, n=3:
+
+| Position source | Arm still | Arm correcting | Within 2 cm, correcting |
+|---|---|---|---|
+| EKF | 12.8-15.8 | 8.5-12.7 | 0 % |
+| 1 cm (not a real sensor) | 2.7-4.7 | 3.4-5.6 | 26-33 % |
+
+The arm helps a little when the error is large (about 14 to 11 cm) and gains nothing
+clear when it is already small. Most of the 14 cm is the estimate's own error, which
+no correction based on that estimate can remove. Moving to a better position sensor is
+worth far more than the arm correction. The contact pose also has joint 2 close to its
+limit, which restricts corrections.
 
 ## Why the drone fell, and the design changes it forced
 
@@ -353,10 +420,8 @@ no rotor wash near the wall (ground and wall effects are not simulated).
 
 ## What would come next
 
-- Yaw in contact: let the arm's yaw joint keep the tool square to the wall, and send
-  the contact force's yaw moment as torque (hybrid force control with the PX4 patch).
-- Tool accuracy: the arm cancels the drone's error so the tip holds a world point.
-- A sprung tool, since the spikes come partly from the rigid model.
-- Combine the two feed-forwards' strengths (the patch's torque, the outer loop's height).
+- A real sensor model for the 1 cm position: RTK in the EKF, or a marker seen by a camera.
+- Fewer slips: lower friction on the head, softer contact, force-loop tuning; then 6 N.
+- A contact pose further from joint limits, so the arm can correct.
 - Trajectory shaping: minimum-jerk arm trajectories under a hover-error budget.
 - Gripper and a pick task from hover.

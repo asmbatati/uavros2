@@ -54,6 +54,7 @@ class ArmModel:
         for joint in robot.findall("joint"):
             by_parent.setdefault(joint.find("parent").get("link"), []).append(joint)
         self.links = []
+        self.chains = {}
         self.mass = 0.0
         links = {link.get("name"): link for link in robot.findall("link")}
 
@@ -67,6 +68,7 @@ class ArmModel:
                 step = (joint.get("name"), joint.get("type"), transform(xyz, rpy),
                         _floats(axis.get("xyz") if axis is not None else "1 0 0", 3))
                 sub = chain + [step]
+                self.chains[child] = sub
                 inertial = links[child].find("inertial")
                 if inertial is not None:
                     o = inertial.find("origin")
@@ -82,17 +84,37 @@ class ArmModel:
 
         walk(root, [])
 
+    @staticmethod
+    def _chain_transform(chain, q):
+        T = np.eye(4)
+        for name, jtype, fixed, axis in chain:
+            T = T @ fixed
+            if name in q:
+                T = T @ _joint_motion(jtype, axis, q[name])
+        return T
+
     def _poses(self, q):
         """(rotation, centre of mass) of every link in the root frame."""
         out = []
         for chain, _m, com, _i in self.links:
-            T = np.eye(4)
-            for name, jtype, fixed, axis in chain:
-                T = T @ fixed
-                if name in q:
-                    T = T @ _joint_motion(jtype, axis, q[name])
+            T = self._chain_transform(chain, q)
             out.append((T[:3, :3], T[:3, :3] @ com + T[:3, 3]))
         return out
+
+    def position(self, q, link):
+        """Origin of ``link`` in the root frame."""
+        return self._chain_transform(self.chains[link], q)[:3, 3]
+
+    def position_jacobian(self, q, link, joints):
+        """d(position of ``link``)/d(joints), by finite differences."""
+        eps = 1e-4
+        base = self.position(q, link)
+        columns = []
+        for joint in joints:
+            moved = dict(q)
+            moved[joint] = q[joint] + eps
+            columns.append((self.position(moved, link) - base) / eps)
+        return np.column_stack(columns)
 
     def state(self, q, qd):
         """Arm mass moment m*r (kg m), momentum m*v and angular momentum L."""
@@ -191,13 +213,39 @@ class ArmFeedForward:
         return -self.rad_per_nm * torque, -self._reaction_f / self.total_mass
 
 
+def tool_correction(model, q_nominal, joints, tip_link, target_in_base, damping=0.005, limit=0.5):
+    """Joint offsets that move the tool from its nominal place to a target.
+
+    Damped least squares around the nominal pose: small corrections, position
+    only (the arm has one joint to spare). ``target_in_base`` is in the drone's
+    body frame.
+    """
+    q = dict(q_nominal)
+    for _ in range(3):
+        J = model.position_jacobian(q, tip_link, joints)
+        error = np.asarray(target_in_base) - model.position(q, tip_link)
+        dq = J.T @ np.linalg.solve(J @ J.T + damping * np.eye(3), error)
+        for joint, step in zip(joints, dq):
+            q[joint] += step
+    return np.clip([q[j] - q_nominal[j] for j in joints], -limit, limit)
+
+
+def yaw_servo_angle(body_yaw, limit=0.6):
+    """Joint 1 angle that keeps the tool pointing along world +x whatever the body's yaw.
+
+    The arm hangs upside down, so joint 1 turns it about the body's -z.
+    """
+    return float(np.clip(body_yaw, -limit, limit))
+
+
 class WallForceControl:
     """Acceleration along a wall's normal that holds a contact force.
 
     Commands the force directly (the wall stops the drone, so force = thrust
     component along the normal), PI on the measured force, damping on velocity.
-    Without contact it creeps forward, so regaining contact does not become an
-    impact.
+    A brief loss of contact changes nothing, so the drone does not back away from
+    the wall; after ``LOST_S`` it creeps forward, so that regaining contact does not
+    become an impact.
     """
 
     KP = 0.5
@@ -205,21 +253,30 @@ class WallForceControl:
     I_LIMIT_N = 4.0
     KD = 1.8
     CONTACT_N = 0.2
-    CREEP_M_S = 0.05
+    CREEP_M_S = 0.10
+    LOST_S = 1.0
+    RAMP_N_S = 1.0
+    MAX_SPEED_M_S = 0.15
 
     def __init__(self, total_mass, target_n):
         self.mass = total_mass
         self.target = target_n
+        self.ramped = 0.0
         self.measured = 0.0
         self.integral = 0.0
+        self.lost_s = 0.0
 
     def acceleration(self, velocity, dt):
-        if self.measured < self.CONTACT_N:
+        self.lost_s = self.lost_s + dt if self.measured < self.CONTACT_N else 0.0
+        if self.lost_s > self.LOST_S:
             return self.KD * (self.CREEP_M_S - velocity)
-        err = self.target - self.measured
+        if velocity > self.MAX_SPEED_M_S:
+            return self.KD * (self.MAX_SPEED_M_S - velocity)
+        self.ramped = min(self.target, self.ramped + self.RAMP_N_S * dt)
+        err = self.ramped - self.measured if self.lost_s == 0.0 else 0.0
         self.integral = float(np.clip(self.integral + self.KI * err * dt,
                                       -self.I_LIMIT_N, self.I_LIMIT_N))
-        force = self.target + self.KP * err + self.integral
+        force = self.ramped + self.KP * err + self.integral
         return force / self.mass - self.KD * velocity
 
 

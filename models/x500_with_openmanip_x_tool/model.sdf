@@ -249,49 +249,22 @@
       <child>end_effector_link</child>
     </joint>
 
-    <!-- Contact tool: a 0.40 m rigid rod ending in a 0.20 m wide head, standing in
-         for a roller or brush. The head touches at two balls: a single point lets
-         the rod buckle in yaw when pushed (docs/AERIAL_ARM.md). Only they collide,
-         and only with surfaces
-         that set bit 0x02 (the wall world's wall): the arm spawns unfolded and
-         the head would hit the ground before the controller folds it. The fixed joint
-         carries a force/torque sensor (needs the world's ForceTorque system). -->
+    <!-- Contact tool, standing in for a roller or brush: a 0.40 m rod ending in a
+         0.20 m wide head. A force/torque sensor sits at its base. Two passive
+         joints: a yaw pivot at the base, so the rod cannot put a yaw moment on the
+         drone (a rigid rod pushed on a wall buckles, docs/AERIAL_ARM.md), and a
+         spring along the rod at the head. The head touches at two balls, only on
+         surfaces that set bit 0x02 (the wall world's wall): the arm spawns
+         unfolded and the head would hit the ground otherwise. -->
     <link name='tool_link'>
       <pose relative_to='end_effector_link'>0 0 0 0 0 0</pose>
       <inertial>
-        <mass>0.12</mass>
-        <pose>0.2 0 0 0 0 0</pose>
+        <mass>0.01</mass>
         <inertia>
-          <ixx>2e-6</ixx><iyy>1.6e-3</iyy><izz>1.6e-3</izz>
+          <ixx>1e-6</ixx><iyy>1e-6</iyy><izz>1e-6</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
-      <visual name='tool_rod_visual'>
-        <pose>0.2 0 0 0 1.5708 0</pose>
-        <geometry><cylinder><radius>0.006</radius><length>0.4</length></cylinder></geometry>
-        <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
-      </visual>
-      <visual name='tool_head_visual'>
-        <pose>0.4 0 0 1.5708 0 0</pose>
-        <geometry><cylinder><radius>0.015</radius><length>0.2</length></cylinder></geometry>
-        <material><ambient>1 0.3 0 1</ambient><diffuse>1 0.3 0 1</diffuse></material>
-      </visual>
-      <collision name='tool_head_left_collision'>
-        <pose>0.4 0.1 0 0 0 0</pose>
-        <geometry><sphere><radius>0.015</radius></sphere></geometry>
-        <surface>
-          <contact><collide_bitmask>0x02</collide_bitmask></contact>
-          <friction><ode><mu>0.5</mu><mu2>0.5</mu2></ode></friction>
-        </surface>
-      </collision>
-      <collision name='tool_head_right_collision'>
-        <pose>0.4 -0.1 0 0 0 0</pose>
-        <geometry><sphere><radius>0.015</radius></sphere></geometry>
-        <surface>
-          <contact><collide_bitmask>0x02</collide_bitmask></contact>
-          <friction><ode><mu>0.5</mu><mu2>0.5</mu2></ode></friction>
-        </surface>
-      </collision>
     </link>
     <joint name='j_tool' type='fixed'>
       <parent>end_effector_link</parent>
@@ -305,6 +278,79 @@
         </force_torque>
       </sensor>
     </joint>
+    <link name='tool_rod_link'>
+      <pose relative_to='tool_link'>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.09</mass>
+        <pose>0.2 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>2e-6</ixx><iyy>1.2e-3</iyy><izz>1.2e-3</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='tool_rod_visual'>
+        <pose>0.2 0 0 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.006</radius><length>0.4</length></cylinder></geometry>
+        <material><ambient>0.8 0.8 0.8 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material>
+      </visual>
+    </link>
+    <joint name='j_tool_pivot' type='revolute'>
+      <parent>tool_link</parent>
+      <child>tool_rod_link</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-0.7</lower><upper>0.7</upper></limit>
+        <dynamics><damping>0.1</damping><spring_stiffness>0.5</spring_stiffness><spring_reference>0</spring_reference></dynamics>
+      </axis>
+    </joint>
+    <link name='tool_head_link'>
+      <pose relative_to='tool_rod_link'>0.4 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.02</mass>
+        <inertia>
+          <ixx>7e-5</ixx><iyy>7e-6</iyy><izz>7e-5</izz>
+          <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+        </inertia>
+      </inertial>
+      <visual name='tool_head_visual'>
+        <pose>0 0 0 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.015</radius><length>0.2</length></cylinder></geometry>
+        <material><ambient>1 0.3 0 1</ambient><diffuse>1 0.3 0 1</diffuse></material>
+      </visual>
+      <collision name='tool_head_left_collision'>
+        <pose>0 0.1 0 0 0 0</pose>
+        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+        <surface>
+          <contact><collide_bitmask>0x02</collide_bitmask></contact>
+          <friction><ode><mu>0.5</mu><mu2>0.5</mu2></ode></friction>
+        </surface>
+      </collision>
+      <collision name='tool_head_right_collision'>
+        <pose>0 -0.1 0 0 0 0</pose>
+        <geometry><sphere><radius>0.015</radius></sphere></geometry>
+        <surface>
+          <contact><collide_bitmask>0x02</collide_bitmask></contact>
+          <friction><ode><mu>0.5</mu><mu2>0.5</mu2></ode></friction>
+        </surface>
+      </collision>
+    </link>
+    <joint name='j_tool_spring' type='prismatic'>
+      <parent>tool_rod_link</parent>
+      <child>tool_head_link</child>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit><lower>-0.03</lower><upper>0.03</upper></limit>
+        <dynamics><damping>10</damping><spring_stiffness>300</spring_stiffness><spring_reference>0</spring_reference></dynamics>
+      </axis>
+    </joint>
+
+    <!-- Ground truth for measuring the tool, never for control: /model/<name>/pose. -->
+    <plugin filename='gz-sim-pose-publisher-system' name='gz::sim::systems::PosePublisher'>
+      <publish_link_pose>true</publish_link_pose>
+      <publish_nested_model_pose>true</publish_nested_model_pose>
+      <use_pose_vector_msg>true</use_pose_vector_msg>
+      <update_frequency>100</update_frequency>
+    </plugin>
 
     <plugin filename='libgz_ros2_control-system.so'
             name='gz_ros2_control::GazeboSimROS2ControlPlugin'>

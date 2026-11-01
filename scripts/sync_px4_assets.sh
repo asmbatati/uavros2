@@ -147,14 +147,14 @@ fi
 # the ROMFS tarball at build time. Copying files alone is not enough — they
 # must also appear in that list. Strip any prior entries that match our
 # airframe FILENAMES exactly (so stock PX4 IDs like 4010_gz_x500_mono_cam
-# are preserved), then re-inject the current list after the
+# are preserved) and any whose file no longer exists, then re-inject the current list after the
 # "# [22000, 22999] Reserve for custom models" marker.
 print_info "Registering airframes in PX4 CMakeLists.txt"
 CMAKE_AIRFRAMES="${PX4_DIR}/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt"
 UAV_AIRFRAMES=$(ls "${UAVROS2_DIR}/config/px4" | grep -E '^[0-9]+_gz_' | sort)
 if [ -f "$CMAKE_AIRFRAMES" ] && [ -n "$UAV_AIRFRAMES" ]; then
     python3 - "$CMAKE_AIRFRAMES" <<PY
-import sys, re
+import os, sys, re
 path = sys.argv[1]
 ours = """${UAV_AIRFRAMES}""".strip().splitlines()
 src = open(path).read()
@@ -162,6 +162,11 @@ src = open(path).read()
 # (some prior install runs left one behind). Stock PX4 entries are untouched.
 for name in ours:
     src = re.sub(r'(?m)^[ \t]*' + re.escape(name) + r'[ \t]*\n', '', src)
+# Also drop entries whose file is gone (an airframe that was renamed or removed),
+# or CMake fails on them. Stock PX4 airframes have files, so they stay.
+airframes_dir = os.path.dirname(path)
+src = re.sub(r'(?m)^[ \t]*(\d+_gz_\S+)[ \t]*\n',
+             lambda m: m.group(0) if os.path.exists(os.path.join(airframes_dir, m.group(1))) else '', src)
 src = re.sub(r'(?m)^[ \t]*COLCON_IGNORE[ \t]*\n', '', src)
 new_block = '\n'.join(ours) + '\n'
 marker = '# [22000, 22999] Reserve for custom models\n'

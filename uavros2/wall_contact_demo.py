@@ -33,10 +33,12 @@ import time
 from geometry_msgs.msg import Wrench
 import numpy as np
 from rclpy.qos import qos_profile_sensor_data
+from tf2_msgs.msg import TFMessage
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from .aerial_arm_demo import _quat_rotate, AerialArmDemo
 from .aerial_arm_demo import main as demo_main
-from .arm_aware_control import WallForceControl
+from .arm_aware_control import WallForceControl, yaw_servo_angle
 from .arm_kinematics import OMX_TOOL_CONTACT_POSE as CONTACT_POSE
 from .arm_kinematics import OMX_TOOL_STOW_POSE as STOW_POSE
 from .arm_kinematics import OMX_TOOL_TIP_IN_BASE as TIP_IN_BASE
@@ -45,13 +47,23 @@ TIP_RADIUS = 0.015
 CONTACT_FORCE_N = 0.5
 CONTACT_LOST_N = 0.2
 FALL_M = 0.4
+JOINT1_X = 0.012
+TOOL_BOX_M = 0.02
 ADMITTANCE_M_PER_S_PER_N = 0.03
 ADMITTANCE_MAX_M_PER_S = 0.10
 
 
-def contact_torque(force):
-    """Torque on the body, FLU, when the wall pushes the tip back: r x (-F, 0, 0)."""
-    return np.array([0.0, -TIP_IN_BASE[2] * force, TIP_IN_BASE[1] * force])
+def tip_in_base(q1=0.0):
+    """Tool tip in base_link: joint 1 turns the arm about the body's -z at the mount."""
+    c, s = math.cos(-q1), math.sin(-q1)
+    x, y, z = TIP_IN_BASE[0] - JOINT1_X, TIP_IN_BASE[1], TIP_IN_BASE[2]
+    return (JOINT1_X + c * x - s * y, s * x + c * y, z)
+
+
+def contact_torque(force, q1=0.0, yaw=0.0):
+    """Torque on the body, FLU, when the wall (normal along world x) pushes the tip back."""
+    pushed = np.array([-force * math.cos(yaw), force * math.sin(yaw), 0.0])  # in the body frame
+    return np.cross(tip_in_base(q1), pushed)
 
 
 def contact_metrics(rows, tare, press_settle_s=3.0):
@@ -62,8 +74,13 @@ def contact_metrics(rows, tare, press_settle_s=3.0):
     t0 = press[0]["t"]
     steady = [r for r in press if r["t"] - t0 >= press_settle_s] or press
     force = [abs(r["fx"] - tare) for r in steady if r.get("fx") is not None]
-    tip_y = [r["tip_y"] for r in steady]
-    tip_z = [r["tip_z"] for r in steady]
+    true = all(r.get("true_tip_y") is not None for r in steady)
+    tip_y = [r["true_tip_y" if true else "tip_y"] for r in steady]
+    tip_z = [r["true_tip_z" if true else "tip_z"] for r in steady]
+    within = None
+    if true:
+        cy, cz = statistics.fmean(tip_y), statistics.fmean(tip_z)
+        within = sum(math.hypot(a - cy, b - cz) < TOOL_BOX_M for a, b in zip(tip_y, tip_z)) / len(tip_y)
     half = len(force) // 2
     return {
         "contact_reached": True,
@@ -74,6 +91,8 @@ def contact_metrics(rows, tare, press_settle_s=3.0):
         "force_first_half_n": statistics.fmean(force[:half]),
         "force_second_half_n": statistics.fmean(force[half:]),
         "contact_lost_fraction": sum(f < CONTACT_LOST_N for f in force) / len(force),
+        "tool_position_is_true": true,
+        "tool_within_2cm_fraction": within,
         "tip_y_sd_m": statistics.pstdev(tip_y),
         "tip_z_sd_m": statistics.pstdev(tip_z),
         "tip_y_range_m": max(tip_y) - min(tip_y),
@@ -94,11 +113,24 @@ class WallContactDemo(AerialArmDemo):
         self.declare_parameter("press_s", 20.0)
         self.declare_parameter("arm_move_s", 5.0)
         self.declare_parameter("force_target", 0.0)
+        # Keep the tool square to the wall with the arm's yaw joint.
+        self.declare_parameter("yaw_servo", False)
         ns = self.get_parameter("namespace").value.strip("/")
         self.wrench = None
         self.tare = 0.0
         self.contact_setpoint_x = None
         self.fell_after_s = None
+        self.truth = None
+        self.truth_head = None
+        self.truth_offset = None
+        self.rng = np.random.default_rng()
+        self.yaw_servo_on = False
+        self.joints = []
+        self.joint_pub = self.create_publisher(
+            JointTrajectory, f"/{ns}/joint_trajectory_controller/joint_trajectory", 10)
+        self.create_subscription(TFMessage, f"/{ns}/tool/truth", self._on_truth,
+                                 qos_profile_sensor_data)
+        self.create_timer(0.02, self._yaw_servo_tick)
         self.create_subscription(Wrench, f"/{ns}/tool/wrench", self._on_wrench,
                                  qos_profile_sensor_data)
 
@@ -110,17 +142,70 @@ class WallContactDemo(AerialArmDemo):
         return feed_forward.model.mass if feed_forward is not None else 0.714
 
     def _feed_forward(self):
-        if self.outer is not None:
-            return self.outer.feed_forward
-        return getattr(self, "arm_ff", None)
+        arm_ff = getattr(self, "arm_ff", None)
+        if arm_ff is not None:
+            return arm_ff
+        return self.outer.feed_forward if self.outer is not None else None
 
     def _on_wrench(self, msg):
         self.wrench = msg
 
+    def _on_truth(self, msg):
+        for tf in msg.transforms:
+            if tf.child_frame_id.endswith("/tool_head_link"):
+                self.truth_head = tf.transform
+            elif "/" not in tf.child_frame_id:  # the model itself, relative to the world
+                self.truth = tf.transform
+
+    def _control_position(self):
+        if self.get_parameter("position_source").value != "truth_1cm" or self.truth is None:
+            return super()._control_position()
+        t = self.truth.translation
+        true = np.array([t.x, t.y, t.z])
+        if self.truth_offset is None:
+            p = self.pose.pose.position
+            self.truth_offset = np.array([p.x, p.y, p.z]) - true
+        return true + self.truth_offset + self.rng.normal(0.0, 0.01, 3)
+
+    def _body_yaw(self):
+        o = self.pose.pose.orientation
+        return math.atan2(2.0 * (o.w * o.z + o.x * o.y), 1.0 - 2.0 * (o.y * o.y + o.z * o.z))
+
+    def _command_joints(self, positions):
+        msg = JointTrajectory()
+        msg.joint_names = self.joints
+        point = JointTrajectoryPoint()
+        point.positions = [float(v) for v in positions]
+        point.time_from_start.nanosec = 60_000_000
+        msg.points = [point]
+        self.joint_pub.publish(msg)
+
+    def _yaw_servo_tick(self):
+        if self.yaw_servo_on:
+            self._command_joints([yaw_servo_angle(self._body_yaw()), *CONTACT_POSE[1:]])
+
+    def _joint1(self):
+        ctrl = self.ctrl
+        if ctrl is not None and ctrl.feedback.positions and "joint1" in ctrl.joint_names:
+            return ctrl.feedback.positions[ctrl.joint_names.index("joint1")]
+        return 0.0
+
     def _add_fields(self, row):
         o = self.pose.pose.orientation
-        rx, ry, rz = _quat_rotate((o.x, o.y, o.z, o.w), TIP_IN_BASE)
+        tip = tip_in_base(self._joint1())
+        rx, ry, rz = _quat_rotate((o.x, o.y, o.z, o.w), tip)
         row["tip_x"], row["tip_y"], row["tip_z"] = row["x"] + rx, row["y"] + ry, row["z"] + rz
+        t = self.truth
+        if t is not None:
+            o = t.rotation
+            # The head's place in the model frame, with the tool's passive joints.
+            h = self.truth_head
+            tip = (h.translation.x, h.translation.y, h.translation.z) if h is not None else tip
+            rx, ry, rz = _quat_rotate((o.x, o.y, o.z, o.w), tip)
+            row["true_x"], row["true_y"], row["true_z"] = t.translation.x, t.translation.y, t.translation.z
+            row["true_tip_x"] = t.translation.x + rx
+            row["true_tip_y"] = t.translation.y + ry
+            row["true_tip_z"] = t.translation.z + rz
         w = self.wrench
         row["fx"], row["fy"], row["fz"] = (
             (w.force.x, w.force.y, w.force.z) if w is not None else (None, None, None))
@@ -153,6 +238,7 @@ class WallContactDemo(AerialArmDemo):
         self._wait(lambda: self.ctrl is not None, 60.0, "controller_state")
         self._wait(lambda: self.wrench is not None, 60.0, "tool force sensor")
         joints = list(self.ctrl.joint_names)
+        self.joints = joints
 
         home = self.pose.pose.position
         self.setpoint = (home.x, home.y, home.z + self.hover_z)
@@ -170,6 +256,7 @@ class WallContactDemo(AerialArmDemo):
         codes["arm_out"] = self._move_arm(joints, CONTACT_POSE, arm_move_s)
         time.sleep(settle_s)
 
+        self.yaw_servo_on = bool(self.get_parameter("yaw_servo").value)
         self.phase = "to_wall"
         # The drone spawns at the world origin but its local origin is off by
         # up to ~0.2 m (EKF, GPS noise), so measure from where it took off.
@@ -214,14 +301,14 @@ class WallContactDemo(AerialArmDemo):
         force = 0.0
         t0 = time.monotonic()
         while time.monotonic() - t0 < press_s:
-            if self.pose.pose.position.z < z - FALL_M:
+            if self._control_position()[2] < z - FALL_M:
                 self.fell_after_s = time.monotonic() - t0
                 raise RuntimeError(f"drone fell {self.fell_after_s:.1f} s into the press")
             recent = self._recent_fx(0.1)
             if recent:
                 force = abs(statistics.fmean(recent) - self.tare)
             if feed_forward is not None:
-                feed_forward.external_torque = contact_torque(force)
+                feed_forward.external_torque = contact_torque(force, self._joint1(), self._body_yaw())
             if force_control is not None:
                 force_control.measured = force
             elif target > 0.0:
@@ -241,6 +328,8 @@ class WallContactDemo(AerialArmDemo):
         self.phase = "retract"
         self._go((contact_x - standoff, y, z), 0.15)
         time.sleep(3.0)
+        self.yaw_servo_on = False
+        time.sleep(0.1)
         self.phase = "arm_stow"
         codes["arm_stow"] = self._move_arm(joints, STOW_POSE, arm_move_s)
         time.sleep(3.0)
@@ -261,6 +350,7 @@ class WallContactDemo(AerialArmDemo):
         contact.update({
             "controller": self.controller,
             "force_target_n": float(self.get_parameter("force_target").value),
+            "position_source": self.get_parameter("position_source").value,
             "press_depth_m": float(self.get_parameter("press_depth").value),
             "tare_n": self.tare,
             "contact_setpoint_x_m": self.contact_setpoint_x,

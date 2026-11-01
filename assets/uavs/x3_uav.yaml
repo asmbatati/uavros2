@@ -10,7 +10,7 @@ sensors:
   - { name: gps,  ref: gps_default,       mount: base_link }
   - { name: baro, ref: barometer_default, mount: base_link }
 px4:
-  airframe_id: 4021
+  airframe_id: 4421
   spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
   hover_thrust: 0.60
 overlays:

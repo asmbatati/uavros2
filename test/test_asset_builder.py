@@ -47,7 +47,7 @@ def test_gazebo_build_matches_committed(catalog, tmp_path):
 def test_px4_build_matches_committed(catalog, tmp_path):
     uav = catalog.uavs["x500_stereo_cam_3d_lidar"]
     build_px4(uav, catalog, tmp_path)
-    rel = "config/px4/4023_gz_x500_stereo_cam_3d_lidar"
+    rel = "config/px4/4423_gz_x500_stereo_cam_3d_lidar"
     committed = (REPO / rel).read_text()
     built = (tmp_path / rel).read_text()
     assert committed == built, (
@@ -60,7 +60,7 @@ def test_px4_rotor_order_matches_convention(catalog, tmp_path):
     """ROTOR0..3 PX/PY must follow PX4's expected (fl, rr, fr, rl) order."""
     uav = catalog.uavs["x500_stereo_cam_3d_lidar"]
     build_px4(uav, catalog, tmp_path)
-    text = (tmp_path / "config/px4/4023_gz_x500_stereo_cam_3d_lidar").read_text()
+    text = (tmp_path / "config/px4/4423_gz_x500_stereo_cam_3d_lidar").read_text()
     # Front-left ccw: ROTOR0 at (+0.13, +0.22), km positive
     assert "param set-default CA_ROTOR0_PX 0.13" in text
     assert "param set-default CA_ROTOR0_PY 0.22" in text
@@ -78,6 +78,6 @@ def test_px4_rotor_order_matches_convention(catalog, tmp_path):
 def test_arm_airframes_use_gps_height():
     """Decision of 1 Nov 2026: GPS height with an arm, barometer otherwise."""
     px4 = pathlib.Path(__file__).resolve().parent.parent / "config" / "px4"
-    assert "EKF2_HGT_REF 1" in next(px4.glob("4026_*")).read_text()
-    assert "EKF2_HGT_REF 1" in next(px4.glob("4029_*")).read_text()
-    assert "EKF2_HGT_REF 0" in next(px4.glob("4020_*")).read_text()
+    assert "EKF2_HGT_REF 1" in next(px4.glob("4426_*")).read_text()
+    assert "EKF2_HGT_REF 1" in next(px4.glob("4429_*")).read_text()
+    assert "EKF2_HGT_REF 0" in next(px4.glob("4420_*")).read_text()

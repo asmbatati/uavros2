@@ -15,7 +15,9 @@ from uavros2.arm_aware_control import (
     matrix_to_quaternion,
     OuterLoop,
     rotation_vector_to_matrix,
+    tool_correction,
     WallForceControl,
+    yaw_servo_angle,
 )
 
 REPO = Path(__file__).resolve().parent.parent
@@ -102,17 +104,30 @@ def test_contact_force_below_the_body_is_a_nose_down_torque():
     assert expected[1] == pytest.approx(0.488)
     pytest.importorskip("geometry_msgs")  # wall_contact_demo needs ROS
     from uavros2.wall_contact_demo import contact_torque
-    assert np.allclose(contact_torque(2.0), expected)
+    assert np.allclose(contact_torque(2.0), expected, atol=1e-3)
+
+
+def _ramped(target=3.0):
+    fc = WallForceControl(total_mass=2.0, target_n=target)
+    fc.ramped = target
+    return fc
+
+
+def test_force_control_ramps_to_the_target():
+    fc = WallForceControl(total_mass=2.0, target_n=3.0)
+    fc.measured = 0.3
+    fc.acceleration(0.0, 1.0)
+    assert fc.ramped == pytest.approx(1.0)
 
 
 def test_force_control_holds_target_when_at_target():
-    fc = WallForceControl(total_mass=2.0, target_n=3.0)
+    fc = _ramped()
     fc.measured = 3.0
     assert fc.acceleration(0.0, 0.02) == pytest.approx(1.5)
 
 
 def test_force_control_pushes_harder_when_force_is_low_and_integrates():
-    fc = WallForceControl(total_mass=2.0, target_n=3.0)
+    fc = _ramped()
     fc.measured = 1.0
     first = fc.acceleration(0.0, 0.02)
     assert first > 1.5
@@ -121,18 +136,63 @@ def test_force_control_pushes_harder_when_force_is_low_and_integrates():
     assert last > first
 
 
-def test_force_control_creeps_without_contact():
-    fc = WallForceControl(total_mass=2.0, target_n=3.0)
-    fc.measured = 0.0
-    assert fc.acceleration(0.05, 0.02) == pytest.approx(0.0)
+def test_force_control_limits_approach_speed():
+    fc = _ramped()
+    fc.measured = 1.0
     assert fc.acceleration(0.5, 0.02) < 0.0
+
+
+def test_force_control_keeps_pushing_through_a_brief_loss_then_creeps():
+    fc = _ramped()
+    fc.measured = 0.0
+    assert fc.acceleration(0.0, 0.02) == pytest.approx(1.5)
+    for _ in range(60):
+        fc.acceleration(0.0, 0.02)
+    assert fc.acceleration(fc.CREEP_M_S, 0.02) == pytest.approx(0.0)
 
 
 def test_outer_loop_uses_force_control_along_x_only():
     loop = OuterLoop(0.8)
-    loop.force_control = WallForceControl(2.0, 3.0)
+    loop.force_control = _ramped()
     loop.force_control.measured = 3.0
     # A big x position error must not matter; force control owns that axis.
     q, _, _, _ = loop.update([5.0, 0.0, 0.0], 0.0, np.zeros(3), np.zeros(3), {}, {}, 0.02)
     tilt_small = q[1]
     assert 0.0 < tilt_small < math.sin(math.atan(1.5 / 9.81) / 2) * 1.2
+
+
+def _tool_model():
+    xacro = shutil.which("xacro")
+    if xacro is None:
+        pytest.skip("xacro not on PATH (source /opt/ros/jazzy/setup.bash)")
+    urdf = subprocess.check_output(
+        [xacro, str(REPO / "arms/openmanip_x/urdf/openmanip_x.urdf.xacro"), "sim_mode:=mock", "tool:=rod"],
+        stderr=subprocess.DEVNULL).decode()
+    return ArmModel(urdf)
+
+
+def test_yaw_servo_keeps_the_tool_along_world_x():
+    model = _tool_model()
+    yaw = 0.3
+    q = dict(zip(JOINTS, [yaw_servo_angle(yaw), -1.4, 0.6, 0.8]))
+    tip = model.position(q, "tool_tip") - model.position(q, "tool_link")
+    # Rod direction in the body, then rotated by the body's yaw into the world.
+    world_y = math.sin(yaw) * tip[0] + math.cos(yaw) * tip[1]
+    assert abs(world_y) < 1e-3
+    assert tip[0] > 0.3
+
+
+def test_contact_yaw_moment_is_destabilising_without_servo_and_gone_with_it():
+    pytest.importorskip("geometry_msgs")  # wall_contact_demo needs ROS
+    from uavros2.wall_contact_demo import contact_torque
+    assert contact_torque(3.0, 0.0, 0.2)[2] > 0.25    # grows with +yaw
+    assert abs(contact_torque(3.0, 0.2, 0.2)[2]) < 0.01
+
+
+def test_tool_correction_reaches_a_nearby_target():
+    model = _tool_model()
+    nominal = dict(zip(JOINTS, [0.0, -1.4, 0.6, 0.8]))
+    target = model.position(nominal, "tool_tip") + np.array([-0.03, 0.04, 0.02])
+    dq = tool_correction(model, nominal, JOINTS, "tool_tip", target)
+    moved = {j: nominal[j] + d for j, d in zip(JOINTS, dq)}
+    assert np.linalg.norm(model.position(moved, "tool_tip") - target) < 0.005

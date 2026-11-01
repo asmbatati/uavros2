@@ -14,7 +14,7 @@ arm:
   pose: [0, 0, 0, 3.14159265, 0, 0]
   namespace: drone
 px4:
-  airframe_id: 4027
+  airframe_id: 4427
   spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
   hover_thrust: 0.68
 overlays:

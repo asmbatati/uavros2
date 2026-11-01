@@ -158,11 +158,16 @@ class AerialArmDemo(Node):
         # px4: PX4 position control. outer / outer_ff: arm_aware_control's outer
         # loop sending attitude + thrust, without / with arm feed-forward.
         # px4_ff: PX4 position control plus feed-forward torque into PX4's rate
-        # controller (needs the patch in config/px4/patches).
+        # controller (needs the patch in config/px4/patches). outer_torque: the
+        # outer loop with that torque instead of the attitude bias.
         self.declare_parameter("controller", "px4")
         self.declare_parameter("hover_thrust", 0.85)
         self.declare_parameter("body_mass", 2.064)
         self.declare_parameter("nm_per_normalized", 4.67)
+        # Position the outer loop flies on: ekf, or truth_1cm: Gazebo's truth plus
+        # 1 cm noise, standing in for RTK or a visual marker (needs a model that
+        # publishes truth). What a better sensor would give, not a real sensor.
+        self.declare_parameter("position_source", "ekf")
 
         ns = self.get_parameter("namespace").value.strip("/")
         self.arm = self.get_parameter("arm").value
@@ -205,12 +210,12 @@ class AerialArmDemo(Node):
         self.last_outer = None
         self.last_ff_torque = None
         self._last_tick = None
-        if self.controller == "px4_ff":
+        if self.controller in ("px4_ff", "outer_torque"):
             self.arm_ff = self._make_feed_forward()
             self.debug_pub = self.create_publisher(
                 DebugValue, f"/{ns}/mavros/debug_value/send", 10)
             self.create_timer(0.02, self._px4_ff_tick)   # 50 Hz
-        elif self.controller != "px4":
+        if self.controller not in ("px4", "px4_ff"):
             self.outer = self._make_outer_loop()
             self.attitude_pub = self.create_publisher(
                 AttitudeTarget, f"/{ns}/mavros/setpoint_raw/attitude", 10)
@@ -237,7 +242,7 @@ class AerialArmDemo(Node):
     def _make_outer_loop(self):
         from .arm_aware_control import OuterLoop
 
-        if self.controller not in ("outer", "outer_ff"):
+        if self.controller not in ("outer", "outer_ff", "outer_torque"):
             raise ValueError(f"unknown controller {self.controller!r}")
         feed_forward = self._make_feed_forward() if self.controller == "outer_ff" else None
         return OuterLoop(float(self.get_parameter("hover_thrust").value), feed_forward)
@@ -280,6 +285,11 @@ class AerialArmDemo(Node):
     def _on_velocity(self, msg):
         self.velocity = msg
 
+    def _control_position(self):
+        """Position the outer loop flies on, in the EKF's frame so setpoints stay valid."""
+        p = self.pose.pose.position
+        return np.array([p.x, p.y, p.z])
+
     def _outer_tick(self):
         if not self.outer_active or self.velocity is None:
             self._last_tick = None
@@ -289,11 +299,10 @@ class AerialArmDemo(Node):
         self._last_tick = now
         if dt <= 0.0:
             return
-        p = self.pose.pose.position
         v = self.velocity.twist.linear
         q, qd = self._arm_reference()
         quat, thrust, bias, body_acc = self.outer.update(
-            self.setpoint, 0.0, np.array([p.x, p.y, p.z]), np.array([v.x, v.y, v.z]),
+            self.setpoint, 0.0, self._control_position(), np.array([v.x, v.y, v.z]),
             q, qd, dt)
         msg = AttitudeTarget()
         msg.header.stamp = self.get_clock().now().to_msg()
@@ -392,7 +401,7 @@ class AerialArmDemo(Node):
         return fut.result()
 
     def _offboard_and_arm(self):
-        for _ in range(30):
+        for _ in range(60):  # on some starts the EKF never gets GPS; the runner retries
             st = self.state
             if st.mode != "OFFBOARD":
                 self._call(self.set_mode, SetMode.Request(custom_mode="OFFBOARD"))

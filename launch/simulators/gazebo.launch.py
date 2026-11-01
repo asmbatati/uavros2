@@ -85,16 +85,16 @@ def _materialize_live_models(pkg_share: str, namespace: str) -> str:
 # PX4 airframe to autostart.
 UAV_AIRFRAME = {
     "x500": "4001",
-    "x500_d435": "4020",
-    "x3_uav": "4021",
-    "x500_mono_cam_3d_lidar": "4022",
-    "x500_stereo_cam_3d_lidar": "4023",
-    "x500_twin_stereo_twin_velodyne": "4024",
-    "x500_with_three_dof_arm": "4025",
-    "x500_with_openmanip_x": "4026",
-    "x500_with_openmanip_x_tool": "4029",
-    "x500_with_panda": "4027",
-    "x500_with_ur5": "4028",
+    "x500_d435": "4420",
+    "x3_uav": "4421",
+    "x500_mono_cam_3d_lidar": "4422",
+    "x500_stereo_cam_3d_lidar": "4423",
+    "x500_twin_stereo_twin_velodyne": "4424",
+    "x500_with_three_dof_arm": "4425",
+    "x500_with_openmanip_x": "4426",
+    "x500_with_openmanip_x_tool": "4429",
+    "x500_with_panda": "4427",
+    "x500_with_ur5": "4428",
 }
 
 
@@ -127,13 +127,15 @@ def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0):
         )
 
     tool_ft = f"/world/{world}/model/{m}/joint/j_tool/sensor/tool_ft/forcetorque"
+    tool_truth = f"/model/{m}/pose"
     if uav.endswith("_tool"):
         args.append(f"{tool_ft}@geometry_msgs/msg/Wrench[ignition.msgs.Wrench")
+        args.append(f"{tool_truth}@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V")
 
     # Remappings to canonical names
     args += ["--ros-args"]
     if uav.endswith("_tool"):
-        args += ["-r", f"{tool_ft}:=/{ns}/tool/wrench"]
+        args += ["-r", f"{tool_ft}:=/{ns}/tool/wrench", "-r", f"{tool_truth}:=/{ns}/tool/truth"]
     args += [
         "-r", f"/world/{world}/model/{m}/link/base_link/sensor/imu_sensor/imu:=/{ns}/imu",
         "-r", f"/world/{world}/model/{m}/link/base_link/sensor/air_pressure_sensor/air_pressure:=/{ns}/air_pressure",

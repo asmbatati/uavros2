@@ -60,6 +60,7 @@ setup(
             "world_surface_publisher = uavros2.world_surface_publisher:main",
             "aerial_arm_demo = uavros2.aerial_arm_demo:main",
             "wall_contact_demo = uavros2.wall_contact_demo:main",
+            "tool_hold_demo = uavros2.tool_hold_demo:main",
         ],
     },
 )

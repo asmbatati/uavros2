@@ -11,4 +11,4 @@ default_controller: joint_trajectory_controller
 moveit: true
 controllers_yaml: arms/openmanip_x/config/controllers.yaml
 urdf_xacro: arms/openmanip_x/urdf/openmanip_x.urdf.xacro
-px4_airframe_id_default: 4026
+px4_airframe_id_default: 4426
