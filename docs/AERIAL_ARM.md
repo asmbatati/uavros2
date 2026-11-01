@@ -212,7 +212,7 @@ The outer loop alone, without feed-forward, matches PX4 position control
 
 **One crash, not in the table.** One 2 s PX4-patch flight of 16 patch flights fell
 during the side swing: front motor at 1.00, thrust setpoint at its limit, 1.4 m
-lost in about 1.5 s. It is the same thrust-margin failure as in contact, on the
+lost in about 2 s. It is the same thrust-margin failure as in contact, on the
 stock 8.5 N motors (loaded thrust-to-weight 1.26). None of 15 outer-loop flights
 and none of the PX4 position flights fell, but the sample is too small to say the
 patch is the cause.
