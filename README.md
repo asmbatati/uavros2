@@ -42,14 +42,14 @@ canonical topics, whichever simulator runs.
 `install.sh` expects the workspace layout `$DEV_DIR/{PX4-Autopilot,ros2_ws}`
 (default `DEV_DIR=~/drone_arm_ws`). It installs ROS 2 Jazzy, Gazebo Harmonic
 and the PX4 toolchain if missing (sudo), clones PX4 **v1.15.4** (override with
-`PX4_REF`), mavlink, mavros and `uavros2_msgs`, copies this package's models,
+`PX4_REF`) and `uavros2_msgs`, installs MAVROS from apt, copies this package's models,
 worlds and airframes into PX4, builds PX4 SITL and the workspace, and adds
 `source $DEV_DIR/bash.sh` to `~/.bashrc`.
 
 ```bash
 mkdir -p ~/drone_arm_ws/ros2_ws/src && cd ~/drone_arm_ws/ros2_ws/src
 git clone --recursive https://github.com/asmbatati/uavros2.git
-cd uavros2 && ./install.sh --minimal     # --minimal: skip YOLOv8, QGC, GeographicLib downloads
+cd uavros2 && ./install.sh --minimal     # --minimal: skip YOLOv8 and QGC downloads
 ```
 
 The models are stored with git-lfs; run `git lfs pull` if the terrain meshes

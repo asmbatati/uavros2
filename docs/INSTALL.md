@@ -18,7 +18,7 @@ workspace sibling of `uavros2`. `colcon` builds both packages when you
 run `colcon build --packages-up-to uavros2` because `uavros2` declares
 `<depend>uavros2_msgs</depend>`.
 
-This installs ROS 2 Jazzy, Gazebo Harmonic, PX4 SITL, MAVROS (custom fork), YOLOv8 ROS, RMW Zenoh, GeographicLib, and QGroundControl. After completion:
+This installs ROS 2 Jazzy, Gazebo Harmonic, PX4 SITL, MAVROS (apt), YOLOv8 ROS, RMW Zenoh, GeographicLib, and QGroundControl. After completion:
 
 ```bash
 source ~/drone_arm_ws/ros2_ws/install/setup.bash
@@ -28,7 +28,7 @@ ros2 launch uavros2 sim.launch.py                    # in another
 
 ## Minimal install (CI / headless)
 
-Skip YOLOv8, GeographicLib, QGroundControl downloads:
+Skip YOLOv8 and QGroundControl downloads:
 
 ```bash
 ./install.sh --minimal

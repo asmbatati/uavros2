@@ -4,7 +4,7 @@
 # uavros2 install.sh
 #
 # Flags:
-#   --minimal              Skip YOLOv8 + GeographicLib + QGC downloads (CI/headless).
+#   --minimal              Skip YOLOv8 + QGC downloads (CI/headless).
 #   --simulators=LIST      Comma-separated subset of:
 #                          gazebo,webots,mujoco,isaac,pybullet,genesis
 #                          Default: gazebo (only PX4-coupled sim by default).
@@ -665,37 +665,13 @@ fi  # end --minimal yolov8 block
 
 print_section "Setting up MAVROS and Dependencies"
 
-# these mavlink and mavros versions are working for ros2 jazzy
-# Sept 17, 2023
-print_info "Cloning mavlink package..."
-if [ ! -d "$ROS2_SRC/mavlink" ]; then
-    cd $ROS2_SRC
-    git clone  https://github.com/ros2-gbp/mavlink-gbp-release.git mavlink
-    cd $ROS2_SRC/mavlink && git checkout release/jazzy/mavlink
-    print_status "mavlink cloned and checked out to jazzy release"
-else
-    print_status "mavlink already exists"
-fi
-
-# Custom mavros pkg is required to handle TF issues in multi-vehicle simulation
-print_info "Cloning custom mavros package..."
-if [ ! -d "$ROS2_SRC/mavros" ]; then
-    cd $ROS2_SRC
-    git clone  https://github.com/mavlink/mavros.git
-    print_status "mavros cloned successfully"
-else
-    print_status "mavros already exists"
-fi
-
-# Clone eigen_stl_containers dependency for mavros
-print_info "Cloning eigen_stl_containers dependency..."
-if [ ! -d "$ROS2_SRC/eigen_stl_containers" ]; then
-    cd $ROS2_SRC
-    git clone https://github.com/ros/eigen_stl_containers.git
-    print_status "eigen_stl_containers cloned successfully"
-else
-    print_status "eigen_stl_containers already exists"
-fi
+# MAVROS from the Jazzy binaries, the build the Docker image flies with. Not a
+# clone of mavlink/mavros: its HEAD reports the same version (2.16.0) but puts
+# topics elsewhere (uavros2/mavros_layout.py), and building it takes 30 minutes.
+print_info "Installing MAVROS..."
+sudo apt-get update -qq
+sudo apt-get install -y ros-jazzy-mavros ros-jazzy-mavros-extras ros-jazzy-mavros-msgs
+print_status "MAVROS installed"
 
 print_section "Installing Dependencies"
 
@@ -747,16 +723,12 @@ else
     fi
 fi
 
-# Install GeographicLib datasets for MAVROS
-if [ "$MINIMAL" = "1" ]; then
-    print_info "Skipping GeographicLib datasets (--minimal)"
-else
-    print_info "Installing GeographicLib datasets..."
-    sudo apt-get update
-    sudo apt-get install -y geographiclib-tools
-    sudo geographiclib-get-geoids egm96-5
-    print_status "GeographicLib datasets installed"
-fi
+# GeographicLib geoid for MAVROS: required, it aborts at startup without it.
+print_info "Installing GeographicLib datasets..."
+sudo apt-get update
+sudo apt-get install -y geographiclib-tools
+sudo geographiclib-get-geoids egm96-5
+print_status "GeographicLib datasets installed"
 
 # Per-simulator dependency installation
 install_simulator_deps() {
@@ -841,20 +813,24 @@ build_with_retry() {
 # Ensure ROS2 environment is sourced before building
 source /opt/ros/jazzy/setup.bash
 
-# Build mavros (Step 1/3)
-if ! build_with_retry "source /opt/ros/jazzy/setup.bash && MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros --executor sequential" "Building mavros (Step 1/3)"; then
-    print_error "Failed to build mavros. Exiting."
-    exit 1
+# A workspace that carries MAVROS in source builds it first, one job at a time
+# (parallel builds run out of memory).
+if [ -d "$ROS2_SRC/mavros" ]; then
+    # Build mavros (Step 1/3)
+    if ! build_with_retry "source /opt/ros/jazzy/setup.bash && MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros --executor sequential" "Building mavros (Step 1/3)"; then
+        print_error "Failed to build mavros. Exiting."
+        exit 1
+    fi
+
+    # Build mavros_extras (Step 2/3)
+    if ! build_with_retry "source /opt/ros/jazzy/setup.bash && MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros_extras --executor sequential" "Building mavros_extras (Step 2/3)"; then
+        print_error "Failed to build mavros_extras. Exiting."
+        exit 1
+    fi
 fi
 
-# Build mavros_extras (Step 2/3)
-if ! build_with_retry "source /opt/ros/jazzy/setup.bash && MAKEFLAGS='j1 -l1' colcon build --packages-up-to mavros_extras --executor sequential" "Building mavros_extras (Step 2/3)"; then
-    print_error "Failed to build mavros_extras. Exiting."
-    exit 1
-fi
-
-# Build all remaining packages (Step 3/3)
-if ! build_with_retry "source /opt/ros/jazzy/setup.bash && colcon build" "Building all remaining packages (Step 3/3)"; then
+# Build all remaining packages
+if ! build_with_retry "source /opt/ros/jazzy/setup.bash && colcon build" "Building all remaining packages"; then
     print_error "Failed to build all packages. Exiting."
     exit 1
 fi

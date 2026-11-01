@@ -18,7 +18,7 @@ Default and most complete. Requires:
 - Gazebo Harmonic (`gz-harmonic`)
 - `ros-jazzy-ros-gz` + `ros-jazzy-ros-gz-bridge`
 - PX4 SITL (built by `install.sh`)
-- MAVROS (custom fork, built by `install.sh`)
+- MAVROS (apt, installed by `install.sh`)
 
 Launch:
 ```bash
