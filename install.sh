@@ -171,7 +171,7 @@ check_ros2_jazzy() {
     
     # Install ROS2 Jazzy
     sudo apt update
-    sudo apt install -y ros-jazzy-desktop
+    sudo apt install -y ros-jazzy-desktop ros-dev-tools
     
     # Add to bashrc if not already there
     if ! grep -q "source /opt/ros/jazzy/setup.bash" ~/.bashrc; then
@@ -180,6 +180,14 @@ check_ros2_jazzy() {
     
     print_status "ROS2 Jazzy installed"
     return 0
+}
+
+# rosdep and colcon are not part of ros-jazzy-desktop
+check_ros_dev_tools() {
+    if ! command -v rosdep &> /dev/null || ! command -v colcon &> /dev/null; then
+        print_info "Installing ros-dev-tools (rosdep, colcon)..."
+        sudo apt-get install -y ros-dev-tools
+    fi
 }
 
 # Function to check and install Gazebo Harmonic
@@ -282,6 +290,7 @@ check_host_dependencies() {
     if ! check_ros2_jazzy; then
         deps_ok=false
     fi
+    check_ros_dev_tools
     
     # Check Gazebo Harmonic
     if ! check_gazebo_harmonic; then
