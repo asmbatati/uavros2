@@ -28,8 +28,7 @@ from geometry_msgs.msg import Point
 from mavros_msgs.msg import State, VfrHud
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import (DurabilityPolicy, HistoryPolicy, QoSProfile,
-                       ReliabilityPolicy, qos_profile_sensor_data)
+from rclpy.qos import DurabilityPolicy, HistoryPolicy, qos_profile_sensor_data, QoSProfile, ReliabilityPolicy
 from visualization_msgs.msg import Marker, MarkerArray
 
 
@@ -67,7 +66,7 @@ def _qrot(q, v):
 
 def _parse_pose(text):
     """SDF '<pose>' text -> (position 3-tuple, quaternion (x,y,z,w))."""
-    vals = [float(x) for x in (text or '').split()]
+    vals = [float(x) for x in (text or "").split()]
     while len(vals) < 6:
         vals.append(0.0)
     return (vals[0], vals[1], vals[2]), _quat_from_rpy(vals[3], vals[4], vals[5])
@@ -77,43 +76,43 @@ class DroneMarkers(Node):
     """Publish a quadcopter MarkerArray on the drone's base_link frame."""
 
     def __init__(self):
-        super().__init__('drone_markers')
-        self.declare_parameter('frame_id', 'base_link')
-        self.declare_parameter('marker_ns', 'drone')
-        self.declare_parameter('color', [0.1, 0.4, 1.0])   # RGB 0..1 (geom modes)
-        self.declare_parameter('arm_length', 0.25)
-        self.declare_parameter('rate', 10.0)
+        super().__init__("drone_markers")
+        self.declare_parameter("frame_id", "base_link")
+        self.declare_parameter("marker_ns", "drone")
+        self.declare_parameter("color", [0.1, 0.4, 1.0])   # RGB 0..1 (geom modes)
+        self.declare_parameter("arm_length", 0.25)
+        self.declare_parameter("rate", 10.0)
         # Full-model mode: render every visual of this model SDF.
-        self.declare_parameter('model_sdf', '')             # path to model.sdf
-        self.declare_parameter('model_dir', '')             # base for model:// URIs
+        self.declare_parameter("model_sdf", "")             # path to model.sdf
+        self.declare_parameter("model_dir", "")             # base for model:// URIs
         # Single-mesh / geometric fallbacks.
-        self.declare_parameter('mesh_resource', '')         # file://... single body mesh
-        self.declare_parameter('mesh_scale', 1.0)
+        self.declare_parameter("mesh_resource", "")         # file://... single body mesh
+        self.declare_parameter("mesh_scale", 1.0)
         # Propeller animation driven by the real PX4 throttle (VFR_HUD).
-        self.declare_parameter('max_spin_rate', 80.0)       # rad/s at full throttle
-        self.declare_parameter('idle_spin_rate', 12.0)      # rad/s when armed, ~0 throttle
-        self.declare_parameter('show_props', True)          # geometric/single-mesh modes
-        self.declare_parameter('prop_z', 0.10)
-        self.declare_parameter('prop_len', 0.22)
+        self.declare_parameter("max_spin_rate", 80.0)       # rad/s at full throttle
+        self.declare_parameter("idle_spin_rate", 12.0)      # rad/s when armed, ~0 throttle
+        self.declare_parameter("show_props", True)          # geometric/single-mesh modes
+        self.declare_parameter("prop_z", 0.10)
+        self.declare_parameter("prop_len", 0.22)
 
-        self.frame_id = self.get_parameter('frame_id').value
-        self.ns = self.get_parameter('marker_ns').value
-        self.color = list(self.get_parameter('color').value)
-        self.arm = self.get_parameter('arm_length').value
-        self.mesh = self.get_parameter('mesh_resource').value
-        self.mesh_scale = self.get_parameter('mesh_scale').value
-        self.max_spin = self.get_parameter('max_spin_rate').value
-        self.idle_spin = self.get_parameter('idle_spin_rate').value
-        self.show_props = self.get_parameter('show_props').value
-        self.prop_z = self.get_parameter('prop_z').value
-        self.prop_len = self.get_parameter('prop_len').value
+        self.frame_id = self.get_parameter("frame_id").value
+        self.ns = self.get_parameter("marker_ns").value
+        self.color = list(self.get_parameter("color").value)
+        self.arm = self.get_parameter("arm_length").value
+        self.mesh = self.get_parameter("mesh_resource").value
+        self.mesh_scale = self.get_parameter("mesh_scale").value
+        self.max_spin = self.get_parameter("max_spin_rate").value
+        self.idle_spin = self.get_parameter("idle_spin_rate").value
+        self.show_props = self.get_parameter("show_props").value
+        self.prop_z = self.get_parameter("prop_z").value
+        self.prop_len = self.get_parameter("prop_len").value
 
-        model_sdf = self.get_parameter('model_sdf').value
-        model_dir = self.get_parameter('model_dir').value
+        model_sdf = self.get_parameter("model_sdf").value
+        model_dir = self.get_parameter("model_dir").value
         self.visuals = self._parse_sdf(model_sdf, model_dir) if model_sdf else []
         if model_sdf and not self.visuals:
             self.get_logger().warn(
-                f'no visuals parsed from {model_sdf}; falling back to geometry')
+                f"no visuals parsed from {model_sdf}; falling back to geometry")
 
         # Real flight state for the propeller spin.
         self.armed = False
@@ -123,24 +122,24 @@ class DroneMarkers(Node):
         state_qos = QoSProfile(reliability=ReliabilityPolicy.BEST_EFFORT,
                                durability=DurabilityPolicy.VOLATILE,
                                history=HistoryPolicy.KEEP_LAST, depth=5)
-        self.create_subscription(State, 'mavros/state', self._state_cb, state_qos)
-        self.create_subscription(VfrHud, 'mavros/vfr_hud', self._vfr_cb,
+        self.create_subscription(State, "mavros/state", self._state_cb, state_qos)
+        self.create_subscription(VfrHud, "mavros/vfr_hud", self._vfr_cb,
                                  qos_profile_sensor_data)
 
-        self.pub = self.create_publisher(MarkerArray, 'markers', 1)
-        period = 1.0 / max(self.get_parameter('rate').value, 1e-3)
+        self.pub = self.create_publisher(MarkerArray, "markers", 1)
+        period = 1.0 / max(self.get_parameter("rate").value, 1e-3)
         self.create_timer(period, self._publish)
 
     # ---- SDF parsing -------------------------------------------------------
 
     def _resolve_uri(self, uri, model_dir, sdf_dir):
-        if uri.startswith('model://'):
-            return 'file://' + os.path.join(model_dir, uri[len('model://'):])
-        if uri.startswith(('file://', 'package://')):
+        if uri.startswith("model://"):
+            return "file://" + os.path.join(model_dir, uri[len("model://"):])
+        if uri.startswith(("file://", "package://")):
             return uri
-        if uri.startswith('/'):
-            return 'file://' + uri
-        return 'file://' + os.path.join(sdf_dir, uri)
+        if uri.startswith("/"):
+            return "file://" + uri
+        return "file://" + os.path.join(sdf_dir, uri)
 
     def _parse_sdf(self, sdf_path, model_dir):
         """Return a list of visual specs in the base_link frame.
@@ -163,9 +162,9 @@ class DroneMarkers(Node):
         try:
             root = ET.parse(sdf_path).getroot()
         except (OSError, ET.ParseError) as exc:
-            self.get_logger().warn(f'cannot parse {sdf_path}: {exc}')
+            self.get_logger().warn(f"cannot parse {sdf_path}: {exc}")
             return
-        model = root.find('model') if root.tag != 'model' else root
+        model = root.find("model") if root.tag != "model" else root
         if model is None:
             return
         sdf_dir = os.path.dirname(sdf_path)
@@ -174,34 +173,34 @@ class DroneMarkers(Node):
 
         # base_link link pose in the model frame (markers are in the base_link frame)
         base_pos, base_quat = (0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0)
-        for link in model.findall('link'):
-            if link.get('name') == 'base_link':
-                pe = link.find('pose')
+        for link in model.findall("link"):
+            if link.get("name") == "base_link":
+                pe = link.find("pose")
                 if pe is not None:
                     base_pos, base_quat = _parse_pose(pe.text)
         bq_inv = _qconj(base_quat)
 
         # Follow <include> references (depth-first).
-        for inc in model.findall('include'):
-            ue = inc.find('uri')
+        for inc in model.findall("include"):
+            ue = inc.find("uri")
             if ue is None or not ue.text:
                 continue
             uri = ue.text.strip()
-            if uri.startswith('model://'):
-                inc_path = os.path.join(model_dir, uri[len('model://'):], 'model.sdf')
-            elif uri.startswith('file://'):
-                inc_path = uri[len('file://'):]
+            if uri.startswith("model://"):
+                inc_path = os.path.join(model_dir, uri[len("model://"):], "model.sdf")
+            elif uri.startswith("file://"):
+                inc_path = uri[len("file://"):]
                 if os.path.isdir(inc_path):
-                    inc_path = os.path.join(inc_path, 'model.sdf')
-            elif uri.startswith('/'):
+                    inc_path = os.path.join(inc_path, "model.sdf")
+            elif uri.startswith("/"):
                 inc_path = uri
                 if os.path.isdir(inc_path):
-                    inc_path = os.path.join(inc_path, 'model.sdf')
+                    inc_path = os.path.join(inc_path, "model.sdf")
             else:
-                inc_path = os.path.join(sdf_dir, uri, 'model.sdf')
+                inc_path = os.path.join(sdf_dir, uri, "model.sdf")
             if not os.path.isfile(inc_path):
                 continue
-            ipe = inc.find('pose')
+            ipe = inc.find("pose")
             if ipe is not None:
                 ipos, iquat = _parse_pose(ipe.text)
             else:
@@ -212,9 +211,9 @@ class DroneMarkers(Node):
             self._sdf_walk(inc_path, model_dir, out, child_p, child_q)
 
         # Now walk this SDF's own links.
-        for link in model.findall('link'):
-            lname = (link.get('name') or '').lower()
-            pe = link.find('pose')
+        for link in model.findall("link"):
+            lname = (link.get("name") or "").lower()
+            pe = link.find("pose")
             lpos, lquat = _parse_pose(pe.text) if pe is not None else (
                 (0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0))
             q_link_local = _qmul(bq_inv, lquat)
@@ -225,26 +224,26 @@ class DroneMarkers(Node):
             q_link = _qmul(q_off, q_link_local)
             p_link = tuple(p_off[i] + _qrot(q_off, p_link_local)[i] for i in range(3))
             spin_dir = 0.0
-            if 'rotor' in lname:
+            if "rotor" in lname:
                 spin_dir = 1.0
-                for vis in link.findall('visual'):
-                    ue = vis.find('.//mesh/uri')
-                    fn = (ue.text or '').lower() if ue is not None else ''
-                    if 'ccw' in fn:
+                for vis in link.findall("visual"):
+                    ue = vis.find(".//mesh/uri")
+                    fn = (ue.text or "").lower() if ue is not None else ""
+                    if "ccw" in fn:
                         spin_dir = 1.0
                         break
-                    if 'cw' in fn:
+                    if "cw" in fn:
                         spin_dir = -1.0
                         break
-            for vis in link.findall('visual'):
-                mesh = vis.find('.//mesh')
+            for vis in link.findall("visual"):
+                mesh = vis.find(".//mesh")
                 if mesh is None:
                     continue   # skip plane/box decals (FMU labels etc.)
-                ue = mesh.find('uri')
+                ue = mesh.find("uri")
                 if ue is None or not ue.text:
                     continue
                 uri = self._resolve_uri(ue.text.strip(), model_dir, sdf_dir)
-                se = mesh.find('scale')
+                se = mesh.find("scale")
                 if se is not None and se.text:
                     sv = [float(x) for x in se.text.split()]
                     while len(sv) < 3:
@@ -252,7 +251,7 @@ class DroneMarkers(Node):
                     scale = (sv[0], sv[1], sv[2])
                 else:
                     scale = (1.0, 1.0, 1.0)
-                ve = vis.find('pose')
+                ve = vis.find("pose")
                 vpos, vquat = _parse_pose(ve.text) if ve is not None else (
                     (0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0))
                 out.append((p_link, q_link, vpos, vquat, scale, uri, spin_dir))
@@ -386,5 +385,5 @@ def main(args=None):
             rclpy.shutdown()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

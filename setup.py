@@ -1,13 +1,14 @@
-import os
 from glob import glob
-from setuptools import setup, find_packages
+import os
 
-package_name = 'uavros2'
+from setuptools import find_packages, setup
+
+package_name = "uavros2"
 
 
 def recursive_data_files(directory):
     return [
-        (os.path.join('share', package_name, root),
+        (os.path.join("share", package_name, root),
          [os.path.join(root, file) for file in files])
         for root, _, files in os.walk(directory) if files
     ]
@@ -15,50 +16,50 @@ def recursive_data_files(directory):
 
 setup(
     name=package_name,
-    version='0.1.0',
-    packages=find_packages(exclude=['test']),
+    version="0.1.0",
+    packages=find_packages(exclude=["test"]),
     # The asset builders load their Jinja2 templates relative to the module
     # (uavros2/asset_builder/templates), so ship them inside the package.
-    package_data={'uavros2.asset_builder': ['templates/*/*.j2']},
+    package_data={"uavros2.asset_builder": ["templates/*/*.j2"]},
     data_files=[
-        ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
-        ('share/' + package_name, ['package.xml']),
-        *recursive_data_files('config'),
-        *recursive_data_files('models'),
-        *recursive_data_files('launch'),
-        *recursive_data_files('arms'),
-        *recursive_data_files('docs'),
-        *recursive_data_files('scripts'),
-        *recursive_data_files('assets'),
-        (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz')),
-        *([(os.path.join('share', package_name, 'worlds'), glob('worlds/*'))]
-          if os.path.exists('worlds') and glob('worlds/*') else []),
+        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
+        ("share/" + package_name, ["package.xml"]),
+        *recursive_data_files("config"),
+        *recursive_data_files("models"),
+        *recursive_data_files("launch"),
+        *recursive_data_files("arms"),
+        *recursive_data_files("docs"),
+        *recursive_data_files("scripts"),
+        *recursive_data_files("assets"),
+        (os.path.join("share", package_name, "rviz"), glob("rviz/*.rviz")),
+        *([(os.path.join("share", package_name, "worlds"), glob("worlds/*"))]
+          if os.path.exists("worlds") and glob("worlds/*") else []),
     ],
-    install_requires=['setuptools', 'pydantic>=2', 'jinja2', 'typer', 'pyyaml'],
-    extras_require={'test': ['pytest']},
+    install_requires=["setuptools", "pydantic>=2", "jinja2", "typer", "pyyaml"],
+    extras_require={"test": ["pytest"]},
     zip_safe=True,
-    maintainer='Abdulrahman S. Al-Batati',
-    maintainer_email='asmalbatati@hotmail.com',
+    maintainer="Abdulrahman S. Al-Batati",
+    maintainer_email="asmalbatati@hotmail.com",
     description=(
-        'Multi-simulator UAV + floating-base manipulator simulation framework. '
-        'PX4 + Gazebo primary; Webots, MuJoCo, Isaac, PyBullet, Genesis via '
-        'dispatcher launch system.'
+        "Multi-simulator UAV + floating-base manipulator simulation framework. "
+        "PX4 + Gazebo primary; Webots, MuJoCo, Isaac, PyBullet, Genesis via "
+        "dispatcher launch system."
     ),
-    license='MIT',
+    license="MIT",
     entry_points={
-        'console_scripts': [
-            'execute_random_trajectories = uavros2.execute_random_trajectories_node:main',
-            'tf_relay = uavros2.tf_relay:main',
-            'trajectory_publisher = uavros2.gt_trajectory_publisher:main',
-            'adaptive_image_stitcher = uavros2.adaptive_image_stitcher:main',
-            'sim_control_bridge = uavros2.sim_control_bridge:main',
-            'sensor_relay = uavros2.sensor_relay:main',
-            'uavros2-asset = uavros2.asset_cli:main',
-            'runtime_sensor_manager = uavros2.runtime_sensor_manager:main',
-            'drone_markers = uavros2.drone_markers:main',
-            'world_surface_publisher = uavros2.world_surface_publisher:main',
-            'aerial_arm_demo = uavros2.aerial_arm_demo:main',
-            'wall_contact_demo = uavros2.wall_contact_demo:main',
+        "console_scripts": [
+            "execute_random_trajectories = uavros2.execute_random_trajectories_node:main",
+            "tf_relay = uavros2.tf_relay:main",
+            "trajectory_publisher = uavros2.gt_trajectory_publisher:main",
+            "adaptive_image_stitcher = uavros2.adaptive_image_stitcher:main",
+            "sim_control_bridge = uavros2.sim_control_bridge:main",
+            "sensor_relay = uavros2.sensor_relay:main",
+            "uavros2-asset = uavros2.asset_cli:main",
+            "runtime_sensor_manager = uavros2.runtime_sensor_manager:main",
+            "drone_markers = uavros2.drone_markers:main",
+            "world_surface_publisher = uavros2.world_surface_publisher:main",
+            "aerial_arm_demo = uavros2.aerial_arm_demo:main",
+            "wall_contact_demo = uavros2.wall_contact_demo:main",
         ],
     },
 )

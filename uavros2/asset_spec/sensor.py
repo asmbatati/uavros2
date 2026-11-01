@@ -15,11 +15,12 @@ from typing import Any, Dict, Literal, Optional
 
 from pydantic import Field
 
-from .common import MeshRef, _BaseModel
+from .common import _BaseModel, MeshRef
 
 
 class GazeboSensorBinding(_BaseModel):
     """How the sensor appears in Gazebo."""
+
     # Existing model dir under models/. The generator emits
     # <include><uri>model://<gz_model></uri></include>
     gz_model: str
@@ -36,6 +37,7 @@ class ROSBinding(_BaseModel):
     variables: ``{ns}`` (UAV namespace) and ``{sensor_name}`` (the
     per-instance name).
     """
+
     topic_template: str
     msg_type: str
     default_rate_hz: Optional[float] = None

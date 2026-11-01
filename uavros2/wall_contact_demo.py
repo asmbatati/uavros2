@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contact experiment: push a tool against a wall from hover, position control only.
+r"""Contact experiment: push a tool against a wall from hover, position control only.
 
 The baseline for the aerial arm's contact jobs (painting, cleaning, maintenance).
 Flies ``x500_with_openmanip_x_tool`` in the ``wall`` world under PX4 OFFBOARD
@@ -34,12 +34,12 @@ from geometry_msgs.msg import Wrench
 import numpy as np
 from rclpy.qos import qos_profile_sensor_data
 
-from .aerial_arm_demo import AerialArmDemo, _quat_rotate, main as demo_main
+from .aerial_arm_demo import _quat_rotate, AerialArmDemo
+from .aerial_arm_demo import main as demo_main
 from .arm_aware_control import WallForceControl
 from .arm_kinematics import OMX_TOOL_CONTACT_POSE as CONTACT_POSE
 from .arm_kinematics import OMX_TOOL_STOW_POSE as STOW_POSE
 from .arm_kinematics import OMX_TOOL_TIP_IN_BASE as TIP_IN_BASE
-
 
 TIP_RADIUS = 0.015
 CONTACT_FORCE_N = 0.5

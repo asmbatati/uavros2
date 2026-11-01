@@ -8,7 +8,7 @@ sufficient for headless CI smoke tests; not for real flight dynamics.
 import os
 from typing import Optional
 
-from .base import SimAdapter, register
+from .base import register, SimAdapter
 
 
 @register("pybullet")

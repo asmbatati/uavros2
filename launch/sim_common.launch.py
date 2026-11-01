@@ -12,11 +12,13 @@ Consumes canonical topics (per ``config/topics/canonical_topics.yaml``):
 
 import math
 import os
-from launch import LaunchDescription
+
+from ament_index_python import get_package_share_directory
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from ament_index_python import get_package_share_directory
+
+from launch import LaunchDescription
 
 
 def _resolve_model_sdf(uav_name: str) -> tuple[str, str]:

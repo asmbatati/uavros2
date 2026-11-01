@@ -8,11 +8,10 @@ per-simulator availability flags.
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple
 
-import yaml
 from ament_index_python.packages import get_package_share_directory
-
+import yaml
 
 _DEFAULT_SPAWN: Tuple[float, ...] = (0.0, 0.0, 0.1, 0.0, 0.0, 0.0)
 

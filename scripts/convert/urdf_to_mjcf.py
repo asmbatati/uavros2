@@ -8,8 +8,8 @@ Usage:
     urdf_to_mjcf.py INPUT.urdf OUTPUT.xml
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def main():

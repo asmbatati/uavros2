@@ -5,7 +5,7 @@ topic remapping (configured in launch/simulators/gazebo.launch.py). This
 adapter exists so sim_control_bridge can be loaded uniformly across sims.
 """
 
-from .base import SimAdapter, register
+from .base import register, SimAdapter
 
 
 @register("gazebo")

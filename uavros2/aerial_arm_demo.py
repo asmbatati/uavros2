@@ -26,6 +26,12 @@ import os
 import threading
 import time
 
+from builtin_interfaces.msg import Duration
+from control_msgs.action import FollowJointTrajectory
+from control_msgs.msg import JointTrajectoryControllerState
+from geometry_msgs.msg import PoseStamped, TwistStamped
+from mavros_msgs.msg import AttitudeTarget, DebugValue, State
+from mavros_msgs.srv import CommandBool, SetMode
 import numpy as np
 import rclpy
 from rclpy.action import ActionClient
@@ -33,16 +39,8 @@ from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
-
-from builtin_interfaces.msg import Duration
-from control_msgs.action import FollowJointTrajectory
-from control_msgs.msg import JointTrajectoryControllerState
-from geometry_msgs.msg import PoseStamped, TwistStamped
-from mavros_msgs.msg import AttitudeTarget, DebugValue, State
-from mavros_msgs.srv import CommandBool, SetMode
 from tf2_ros import Buffer, TransformListener
 from trajectory_msgs.msg import JointTrajectoryPoint
-
 
 # Joint poses per arm: (label, positions). three_dof, panda and ur5 are
 # planar pitch-chain scaffolds hanging below base_link, so a positive first
@@ -225,8 +223,9 @@ class AerialArmDemo(Node):
         self.create_timer(0.02, self._log)               # 50 Hz
 
     def _make_feed_forward(self):
-        import xacro
         from ament_index_python import get_package_share_directory
+        import xacro
+
         from .arm_aware_control import ArmFeedForward, ArmModel
 
         path = os.path.join(get_package_share_directory("uavros2"), "arms", self.arm,

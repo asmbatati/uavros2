@@ -1,9 +1,9 @@
 """Validate arms/<arm>/asset.yaml schemas and arms/manifest.yaml consistency."""
 
 import os
-import yaml
-import pytest
 
+import pytest
+import yaml
 
 PKG_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ARMS_DIR = os.path.join(PKG_ROOT, "arms")

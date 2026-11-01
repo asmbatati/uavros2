@@ -67,8 +67,11 @@ def _floats(text, n, default=0.0):
 
 
 def _chain_fk(joints, root, tip, q):
-    """Walk parent->child joints from root to tip. ``joints`` maps child ->
-    (parent, X_parent_joint, type, axis, name)."""
+    """
+    Walk parent->child joints from root to tip.
+
+    ``joints`` maps child -> (parent, X_parent_joint, type, axis, name).
+    """
     path = []
     link = tip
     while link != root:

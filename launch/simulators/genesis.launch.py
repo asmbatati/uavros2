@@ -4,8 +4,9 @@
 The Genesis API is still moving; revisit when stable.
 """
 
+from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction, Shutdown
+
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo, Shutdown
 
 
 def _setup(_context, *_args, **_kwargs):

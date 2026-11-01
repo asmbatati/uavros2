@@ -1,9 +1,9 @@
 """Validate the canonical topic contract YAML schema."""
 
 import os
-import yaml
-import pytest
 
+import pytest
+import yaml
 
 PKG_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CONTRACT_PATH = os.path.join(PKG_ROOT, "config", "topics", "canonical_topics.yaml")

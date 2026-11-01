@@ -6,14 +6,15 @@ verify the rotor mixer and attitude PID behave sanely with no ROS spinning.
 
 import math
 import os
+
 import pytest
 
 # Import from control_math (no rclpy dependency) so tests are collectable
 # without a sourced ROS environment.
 from uavros2.control_math import quad_attitude_pid, rotor_mixer
 
-
 # ----- quad_attitude_pid -----
+
 
 def test_attitude_pid_zero_error_gives_zero_torque():
     torques = quad_attitude_pid(
@@ -77,6 +78,7 @@ def test_mixer_roll_torque_asymmetric_left_right():
 def test_mujoco_adapter_hovers_and_goes_to_setpoint():
     pytest.importorskip("mujoco")
     from types import SimpleNamespace as NS
+
     from uavros2.adapters.mujoco import MujocoAdapter
 
     adapter = MujocoAdapter()

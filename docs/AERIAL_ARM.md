@@ -327,9 +327,10 @@ keeping the tool square to the wall are the next things to try.
    per front rotor. The tip sits 0.244 m below `base_link`, so pushing makes a
    nose-down moment that uses up that margin quickly.
 3. **13 N per rotor (thrust-to-weight 1.9): holds at 5 cm in 3 of 3 runs.** The
-   tool model uses this. It is a modelling assumption about the real aircraft,
-   so any real build needs at least this margin. The stock-motor runs are from
-   commit a45c348.
+   tool model uses this. **The 13 N motors are a modelling assumption, not a real
+   part**: the plugin's motor constant is simply raised. A real build should aim
+   for a thrust-to-weight of at least 2. The stock-motor runs are from commit
+   a45c348.
 
 Two more things seen here:
 

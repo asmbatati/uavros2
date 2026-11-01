@@ -4,7 +4,7 @@ PegasusSimulator's PX4 backend would publish state and sensors via the
 omni.isaac.ros2_bridge graph. Wiring is a follow-up; see docs/SIMULATORS.md.
 """
 
-from .base import SimAdapter, register
+from .base import register, SimAdapter
 
 
 @register("isaac")

@@ -30,18 +30,15 @@ Limitations (v1)
 
 from __future__ import annotations
 
-import json
+from pathlib import Path
 import shutil
 import subprocess
 import textwrap
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 
-import yaml
+from ament_index_python.packages import get_package_share_directory
 import rclpy
 from rclpy.node import Node
-from ament_index_python.packages import get_package_share_directory
-
 from uavros2_msgs.srv import AddSensor, ListSensors, RemoveSensor
 
 from uavros2.asset_spec import Catalog
@@ -175,7 +172,7 @@ class RuntimeSensorManager(Node):
         """Call /world/<world>/create with an SDF string payload."""
         # gz expects a single-quoted protobuf message; embed the SDF as the
         # `sdf:` field.
-        req_msg = f'sdf: "{sdf_text.replace(chr(34), chr(92)+chr(34))}"'
+        req_msg = f'sdf: "{sdf_text.replace(chr(34), chr(92) + chr(34))}"'
         cmd = [
             "gz", "service", "-s", f"/world/{self._world}/create",
             "--reqtype", "gz.msgs.EntityFactory",

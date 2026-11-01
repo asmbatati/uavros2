@@ -8,9 +8,9 @@ Usage:
     validate_asset.py ARM_DIR
 """
 
+from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 
 def count_urdf_links_joints(path: Path) -> tuple:

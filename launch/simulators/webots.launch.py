@@ -17,18 +17,23 @@ Notes
   webots_ros2_driver; sensor_relay can be configured later to
   remap them onto the canonical contract once we author a real
   x500 PROTO.
+
 """
 
 import os
-from launch import LaunchDescription
+
+from ament_index_python import get_package_share_directory
 from launch.actions import (
-    DeclareLaunchArgument, OpaqueFunction, LogInfo,
+    DeclareLaunchArgument,
     IncludeLaunchDescription,
+    LogInfo,
+    OpaqueFunction,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from ament_index_python import get_package_share_directory
+
+from launch import LaunchDescription
 
 
 def _check_deps():

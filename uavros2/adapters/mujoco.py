@@ -10,12 +10,11 @@ There is no PX4 here: a small position controller flies the model to
 """
 
 import os
-from typing import Dict, Optional
 
 import numpy as np
 
 from ..control_math import allocation_matrix, position_control
-from .base import SimAdapter, register
+from .base import register, SimAdapter
 
 # Real-time stepping catches up at most this many physics steps per call.
 MAX_SUBSTEPS = 50

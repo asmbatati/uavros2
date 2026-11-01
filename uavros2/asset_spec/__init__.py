@@ -13,18 +13,26 @@ Each YAML carries a top-level ``kind:`` discriminator. :func:`load_any`
 dispatches on it.
 """
 
-from .common import Pose, Vector3, Inertia, Material, Shape, MeshRef
-from .chassis import (
-    ChassisDescriptor, MultirotorChassis, VTOLStandardChassis,
-    TailsitterChassis, TiltrotorChassis, FixedWingChassis,
-    Rotor, LandingGear, ControlSurface, Wing, MountPoint,
-)
-from .sensor import SensorDescriptor
-from .mount import MountDescriptor
-from .arm import ArmDescriptor
 from .airfoil import AirfoilDescriptor
-from .uav import UAVDescriptor, UAVChassisRef, UAVSensorRef, UAVArmRef, PX4Binding, Overlays
+from .arm import ArmDescriptor
+from .chassis import (
+    ChassisDescriptor,
+    ControlSurface,
+    FixedWingChassis,
+    LandingGear,
+    MountPoint,
+    MultirotorChassis,
+    Rotor,
+    TailsitterChassis,
+    TiltrotorChassis,
+    VTOLStandardChassis,
+    Wing,
+)
+from .common import Inertia, Material, MeshRef, Pose, Shape, Vector3
 from .loader import Catalog, load_any, load_yaml_file
+from .mount import MountDescriptor
+from .sensor import SensorDescriptor
+from .uav import Overlays, PX4Binding, UAVArmRef, UAVChassisRef, UAVDescriptor, UAVSensorRef
 from .validator import validate_catalog
 
 __all__ = [

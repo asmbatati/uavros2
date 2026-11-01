@@ -16,17 +16,15 @@ from __future__ import annotations
 
 import difflib
 import pathlib
-import shutil
 import sys
 import tempfile
-from typing import List, Optional
+from typing import List
 
 import typer
 import yaml
 
 from .asset_builder import build_gazebo, build_px4
-from .asset_spec import Catalog, load_any, validate_catalog
-
+from .asset_spec import Catalog, validate_catalog
 
 app = typer.Typer(
     name="uavros2-asset",
@@ -135,7 +133,7 @@ def _do_build(
             typer.secho(f"No UAV named {name!r}; skipping.", fg="red")
             continue
         uav = catalog.uavs[name]
-        if "gazebo" in targets and not uav.overlays.gazebo.extra_xml is None:
+        if "gazebo" in targets and uav.overlays.gazebo.extra_xml is not None:
             if not uav.overlays.webots.not_supported:
                 pass  # placeholder; Webots stays unsupported on this code path
             written += build_gazebo(uav, catalog, out_dir)
@@ -182,7 +180,6 @@ def cmd_build(
 
 def _purge_stale_artefacts(catalog, root: pathlib.Path, targets: List[str]) -> None:
     """Delete generated files for UAVs that no longer have a descriptor."""
-    import re
     if "px4" in targets:
         af_dir = root / "config" / "px4"
         live = {f"{u.px4.airframe_id}_gz_{u.name}" for u in catalog.uavs.values()}

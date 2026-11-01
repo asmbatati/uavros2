@@ -3,7 +3,7 @@
 PX4 SITL (webots target) + webots_ros2_driver publish state and sensors.
 """
 
-from .base import SimAdapter, register
+from .base import register, SimAdapter
 
 
 @register("webots")

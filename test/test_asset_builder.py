@@ -11,7 +11,6 @@ import pytest
 from uavros2.asset_builder import build_gazebo, build_px4
 from uavros2.asset_spec import Catalog
 
-
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
 
@@ -74,3 +73,11 @@ def test_px4_rotor_order_matches_convention(catalog, tmp_path):
     assert "param set-default CA_ROTOR2_PX 0.13" in text
     assert "param set-default CA_ROTOR2_PY -0.22" in text
     assert "param set-default CA_ROTOR2_KM -0.05" in text
+
+
+def test_arm_airframes_use_gps_height():
+    """Decision of 1 Nov 2026: GPS height with an arm, barometer otherwise."""
+    px4 = pathlib.Path(__file__).resolve().parent.parent / "config" / "px4"
+    assert "EKF2_HGT_REF 1" in next(px4.glob("4026_*")).read_text()
+    assert "EKF2_HGT_REF 1" in next(px4.glob("4029_*")).read_text()
+    assert "EKF2_HGT_REF 0" in next(px4.glob("4020_*")).read_text()

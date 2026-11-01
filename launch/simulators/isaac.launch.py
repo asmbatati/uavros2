@@ -5,8 +5,9 @@ Not wired end-to-end. Documents the install path and exits with guidance.
 See docs/SIMULATORS.md for the PegasusSimulator-based PX4 integration.
 """
 
+from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction, Shutdown
+
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo, Shutdown
 
 
 def _setup(_context, *_args, **_kwargs):

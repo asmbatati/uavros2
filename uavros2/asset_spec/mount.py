@@ -10,7 +10,7 @@ from typing import List, Literal, Optional
 
 from pydantic import Field
 
-from .common import MeshRef, _BaseModel
+from .common import _BaseModel, MeshRef
 
 
 class GimbalAxis(_BaseModel):

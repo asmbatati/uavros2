@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
-
 # Populated by each adapter module's import-time `register(...)` call.
 ADAPTER_REGISTRY: Dict[str, type] = {}
 

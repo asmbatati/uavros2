@@ -22,7 +22,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from .arm_kinematics import _joint_motion, _floats, transform
+from .arm_kinematics import _floats, _joint_motion, transform
 
 GRAVITY = 9.81
 # PX4 v1.15 defaults for the outer loop, as acceleration gains

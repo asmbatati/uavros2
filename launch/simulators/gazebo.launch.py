@@ -14,19 +14,23 @@ Owned topics (per the canonical contract):
 """
 
 import os
-import math
 import shutil
 import tempfile
-from launch import LaunchDescription
+
+from ament_index_python import get_package_share_directory
 from launch.actions import (
-    IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction,
-    SetEnvironmentVariable, LogInfo,
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    LogInfo,
+    OpaqueFunction,
+    SetEnvironmentVariable,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from ament_index_python import get_package_share_directory
+
+from launch import LaunchDescription
 
 
 def _materialize_live_models(pkg_share: str, namespace: str) -> str:

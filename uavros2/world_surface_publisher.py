@@ -30,10 +30,7 @@ non-stdlib requirement.
 
 from __future__ import annotations
 
-import array as arr
 import os
-import struct
-from typing import List
 
 import numpy as np
 import rclpy
@@ -280,9 +277,9 @@ class WorldSurfacePublisher(Node):
         pc2.row_step = 16 * n_points
         pc2.fields = []
         for fname, foffset, ftype in [
-            ("x",   0,  PointField.FLOAT32),
-            ("y",   4,  PointField.FLOAT32),
-            ("z",   8,  PointField.FLOAT32),
+            ("x", 0, PointField.FLOAT32),
+            ("y", 4, PointField.FLOAT32),
+            ("z", 8, PointField.FLOAT32),
             ("rgb", 12, PointField.FLOAT32),
         ]:
             f = PointField()
@@ -302,7 +299,7 @@ class WorldSurfacePublisher(Node):
 
     @staticmethod
     def _jet_colormap(t: np.ndarray) -> np.ndarray:
-        """t in [0..1] → packed-RGB uint32, classic 'jet' colormap."""
+        """T in [0..1] → packed-RGB uint32, classic 'jet' colormap."""
         r = np.clip(1.5 - np.abs(4.0 * t - 3.0), 0.0, 1.0)
         g = np.clip(1.5 - np.abs(4.0 * t - 2.0), 0.0, 1.0)
         b = np.clip(1.5 - np.abs(4.0 * t - 1.0), 0.0, 1.0)

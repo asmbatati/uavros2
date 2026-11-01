@@ -11,16 +11,19 @@ from typing import Annotated, Dict, List, Literal, Optional, Union
 from pydantic import Field, model_validator
 
 from .common import (
-    Body, Inertia, Mass, MeshRef, Pose, Shape, Vector3, _BaseModel,
+    _BaseModel,
+    Body,
+    Mass,
 )
-
 
 # ---------------------------------------------------------------------------
 # Building blocks
 # ---------------------------------------------------------------------------
 
+
 class Rotor(_BaseModel):
     """A single propeller/motor. Pose is relative to the body frame."""
+
     name: str
     pose: List[float]                              # [x,y,z,r,p,y] radians
     spin: Literal["cw", "ccw"]
@@ -38,6 +41,7 @@ class LandingFoot(_BaseModel):
 
 class LandingGear(_BaseModel):
     """Landing gear footprint. Type is informational; feet[] is what gets drawn."""
+
     type: Literal["skids", "tall_skids", "fixed_wheels", "retractable_wheels",
                   "skid_landing", "sphere_feet"] = "skids"
     height_m: Optional[float] = None              # only for tall_skids variants
@@ -46,12 +50,14 @@ class LandingGear(_BaseModel):
 
 class MountPoint(_BaseModel):
     """A named frame on the chassis where sensors/arms attach."""
+
     name: str
     pose: List[float]                             # relative to body frame
 
 
 class Wing(_BaseModel):
     """Lifting surface."""
+
     airfoil: str                                   # ref to assets/airfoils/<name>.yaml
     span_m: float
     chord_m: float
@@ -95,11 +101,13 @@ class GazeboChassisBinding(_BaseModel):
     ``PX4-Autopilot/Tools/simulation/gz/models/``), so the include URI
     is overridden here.
     """
+
     include_uri: Optional[str] = None    # e.g. "model://standard_vtol"
 
 
 class _ChassisBase(_BaseModel):
     """Fields common to every chassis variant."""
+
     version: int = 1
     kind: Literal["chassis"]
     name: str

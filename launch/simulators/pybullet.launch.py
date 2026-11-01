@@ -5,10 +5,11 @@ Loads the UAV URDF and runs sim_control_bridge in placeholder-PID mode.
 Sufficient for headless CI smoke tests; not for serious flight dynamics.
 """
 
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo
+from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 
 def _check_deps():

@@ -18,13 +18,18 @@ Two processes are started:
 """
 
 import os
-from launch import LaunchDescription
+
+from ament_index_python import get_package_share_directory
 from launch.actions import (
-    DeclareLaunchArgument, OpaqueFunction, LogInfo, ExecuteProcess,
+    DeclareLaunchArgument,
+    ExecuteProcess,
+    LogInfo,
+    OpaqueFunction,
 )
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from ament_index_python import get_package_share_directory
+
+from launch import LaunchDescription
 
 
 def _check_deps():

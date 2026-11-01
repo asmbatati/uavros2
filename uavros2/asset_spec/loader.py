@@ -6,12 +6,11 @@ that can resolve ``ref:`` strings to descriptor instances.
 
 from __future__ import annotations
 
-import os
 import pathlib
 from typing import Any, Dict, Optional, Union
 
-import yaml
 from pydantic import TypeAdapter
+import yaml
 
 from .airfoil import AirfoilDescriptor
 from .arm import ArmDescriptor
@@ -19,7 +18,6 @@ from .chassis import ChassisDescriptor
 from .mount import MountDescriptor
 from .sensor import SensorDescriptor
 from .uav import UAVDescriptor
-
 
 # Single TypeAdapter that dispatches on `kind:`.
 _AnyDescriptor = Union[

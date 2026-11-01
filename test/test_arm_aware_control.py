@@ -1,16 +1,21 @@
 """Tests for the arm-aware outer loop (uavros2.arm_aware_control)."""
 
 import math
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from uavros2.arm_aware_control import (
-    ArmFeedForward, ArmModel, OuterLoop, WallForceControl, attitude_from_acceleration,
-    matrix_to_quaternion, rotation_vector_to_matrix,
+    ArmFeedForward,
+    ArmModel,
+    attitude_from_acceleration,
+    matrix_to_quaternion,
+    OuterLoop,
+    rotation_vector_to_matrix,
+    WallForceControl,
 )
 
 REPO = Path(__file__).resolve().parent.parent

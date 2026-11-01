@@ -16,15 +16,18 @@ Notes
   controller_manager itself. Spawners connect to it by name.
 * The xacro file's sim_mode arg defaults to "gz" so the URDF declares
   the GazeboSimSystem hardware plugin.
+
 """
 
 import os
-import xacro
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction, LogInfo, TimerAction
+
+from ament_index_python import get_package_share_directory
+from launch.actions import DeclareLaunchArgument, LogInfo, OpaqueFunction, TimerAction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from ament_index_python import get_package_share_directory
+import xacro
+
+from launch import LaunchDescription
 
 
 def _setup(context, *_args, **_kwargs):

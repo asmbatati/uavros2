@@ -7,8 +7,7 @@ points that don't exist on the chassis, etc.
 
 from __future__ import annotations
 
-from collections import defaultdict
-from typing import List, Tuple
+from typing import List
 
 from .chassis import MultirotorChassis
 from .loader import Catalog

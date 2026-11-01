@@ -8,12 +8,11 @@ from __future__ import annotations
 
 import math
 import pathlib
-from typing import Dict, List, Optional
+from typing import List
 
 import jinja2
 
 from ..asset_spec import Catalog, UAVDescriptor
-
 
 _TEMPLATES = jinja2.Environment(
     loader=jinja2.FileSystemLoader(

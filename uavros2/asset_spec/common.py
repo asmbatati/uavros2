@@ -12,18 +12,20 @@ Conventions
 from __future__ import annotations
 
 import math
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class _BaseModel(BaseModel):
     """Forbid unknown fields so typos surface at load time."""
+
     model_config = ConfigDict(extra="forbid")
 
 
 class Vector3(_BaseModel):
     """3D vector, metres."""
+
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
@@ -45,6 +47,7 @@ class Pose(_BaseModel):
 
     Always stored internally as radians.
     """
+
     xyz: List[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0])
     rpy: List[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0])
 
@@ -80,6 +83,7 @@ class Inertia(_BaseModel):
     ``auto: true`` tells the generator to derive ixx/iyy/izz from the
     body geometry + density. Cross-terms default to 0.
     """
+
     auto: bool = False
     density_kg_per_m3: Optional[float] = None
     ixx: Optional[float] = None
@@ -92,6 +96,7 @@ class Inertia(_BaseModel):
 
 class Shape(_BaseModel):
     """Primitive geometry. Used for visual/collision fallback when no mesh."""
+
     type: Literal["box", "cylinder", "sphere"]
     size: Optional[List[float]] = None         # box: [x, y, z]
     radius: Optional[float] = None             # cylinder / sphere
@@ -107,6 +112,7 @@ class Shape(_BaseModel):
 
 class MeshRef(_BaseModel):
     """`package://` URI to a mesh file (.dae / .stl / .obj)."""
+
     uri: str
     scale: List[float] = Field(default_factory=lambda: [1.0, 1.0, 1.0])
 

@@ -16,7 +16,8 @@
       <uri>model://x500_base</uri>
     </include>
 
-    <!-- The x500's motor plugins with 13 N per rotor (stock model: 8.5 N). Loaded
+    <!-- The x500's motor plugins with 13 N per rotor (stock model: 8.5 N), a
+         modelling assumption, not a real part. Loaded
          with this arm the stock motors leave a thrust-to-weight of 1.26, too
          little to push on anything: see docs/AERIAL_ARM.md. -->
     <plugin filename="gz-sim-multicopter-motor-model-system" name="gz::sim::systems::MulticopterMotorModel">

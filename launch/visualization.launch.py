@@ -19,14 +19,13 @@ first, then share/uavros2/models/.
 from __future__ import annotations
 
 import os
-from launch import LaunchDescription
-from launch.actions import (DeclareLaunchArgument, ExecuteProcess,
-                            OpaqueFunction)
-from launch.conditions import IfCondition
+
+from ament_index_python.packages import get_package_share_directory
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, OpaqueFunction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
-from ament_index_python.packages import get_package_share_directory
+
+from launch import LaunchDescription
 
 
 def _resolve_model_sdf(uav_name: str) -> tuple[str, str]:

@@ -7,15 +7,16 @@ Reads the ``simulator:=`` argument and includes the matching
 ``arm`` is not ``none``.
 """
 
-from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction
-from launch.conditions import IfCondition
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, OpaqueFunction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution, LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 
+from launch import LaunchDescription
 
 SUPPORTED_SIMS = {"gazebo", "webots", "mujoco", "isaac", "pybullet", "genesis"}
+# Kept in the tree but not maintained or verified (owner's decision, Nov 2026).
+UNSUPPORTED_SIMS = {"webots", "isaac", "pybullet", "genesis"}
 SUPPORTED_ARMS = {"none", "three_dof", "openmanip_x", "panda", "ur5"}
 
 
@@ -40,6 +41,10 @@ def _dispatch(context, *_args, **_kwargs):
             f"arm:={arm!r} is not supported. "
             f"Choose from: {sorted(SUPPORTED_ARMS)}"
         )
+
+    warnings = []
+    if sim in UNSUPPORTED_SIMS:
+        warnings.append(LogInfo(msg=f"[sim] WARNING: simulator:={sim} is unsupported; see docs/SIMULATORS.md"))
 
     common_args = {
         "uav": uav,
@@ -71,7 +76,7 @@ def _dispatch(context, *_args, **_kwargs):
         launch_arguments=common_args.items(),
     )
 
-    actions = [sim_launch, common_launch]
+    actions = [*warnings, sim_launch, common_launch]
 
     if arm != "none":
         arm_launch = IncludeLaunchDescription(

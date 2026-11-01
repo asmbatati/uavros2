@@ -40,12 +40,12 @@ def rotor_mixer(
     torques  body (mx, my, mz)
     """
     mx, my, mz = torques
-    l = arm_length
+    arm = arm_length
     k = k_torque
-    f1 = thrust + (my - mx) / (4 * l) - mz / (4 * k)
-    f2 = thrust + (-my - mx) / (4 * l) + mz / (4 * k)
-    f3 = thrust + (-my + mx) / (4 * l) - mz / (4 * k)
-    f4 = thrust + (my + mx) / (4 * l) + mz / (4 * k)
+    f1 = thrust + (my - mx) / (4 * arm) - mz / (4 * k)
+    f2 = thrust + (-my - mx) / (4 * arm) + mz / (4 * k)
+    f3 = thrust + (-my + mx) / (4 * arm) - mz / (4 * k)
+    f4 = thrust + (my + mx) / (4 * arm) + mz / (4 * k)
 
     def _clip(v: float) -> float:
         return max(0.0, min(1.0, v))

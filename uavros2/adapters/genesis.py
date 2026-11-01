@@ -3,7 +3,7 @@
 Genesis API is still moving; revisit when stable.
 """
 
-from .base import SimAdapter, register
+from .base import register, SimAdapter
 
 
 @register("genesis")

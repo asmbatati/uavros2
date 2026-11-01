@@ -1,5 +1,7 @@
 # Naming
 
+**Decided, Nov 2026: the name stays `uavros2`.** The candidates below are kept for the record; there is no rename planned.
+
 `uavros2` is the working name (Python package and repo). These are the brand
 candidates collected so far; renaming is an open decision for the owner.
 

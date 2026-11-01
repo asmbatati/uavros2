@@ -5,7 +5,7 @@ spawn(), step(), shutdown(), and topic_map(). The bridge picks the right
 adapter based on the ``simulator`` parameter at launch time.
 """
 
-from .base import SimAdapter, ADAPTER_REGISTRY
+from .base import ADAPTER_REGISTRY, SimAdapter
 
 __all__ = ["SimAdapter", "ADAPTER_REGISTRY", "load"]
 

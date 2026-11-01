@@ -18,16 +18,18 @@ import pathlib
 from typing import Any, Dict, List
 
 from ..asset_spec import (
-    Catalog, FixedWingChassis, MultirotorChassis, UAVDescriptor,
+    Catalog,
+    FixedWingChassis,
+    MultirotorChassis,
+    UAVDescriptor,
     VTOLStandardChassis,
 )
 from .gazebo import _TEMPLATES
 
-
 # PX4 stock conventions for rotor index → physical position name.
 _PX4_QUAD_X_ORDER = ["fl", "rr", "fr", "rl"]
-_PX4_HEX_X_ORDER  = ["fl", "rr", "fr", "rl", "f",  "r"]
-_PX4_OCT_X_ORDER  = ["fl", "rr", "fr", "rl", "fl2", "rr2", "fr2", "rl2"]
+_PX4_HEX_X_ORDER = ["fl", "rr", "fr", "rl", "f", "r"]
+_PX4_OCT_X_ORDER = ["fl", "rr", "fr", "rl", "fl2", "rr2", "fr2", "rl2"]
 _PX4_ROTOR_ORDER = {
     "quad_x": _PX4_QUAD_X_ORDER,
     "quad_plus": _PX4_QUAD_X_ORDER,
@@ -121,10 +123,12 @@ def build_px4(
             rotor_count=len(rotors),
             hover_thrust=uav.px4.hover_thrust,
             short_name=short_name,
+            # Arm airframes use GPS height (1) like stock x500; others keep the baro (0).
+            height_ref=1 if uav.arm is not None else 0,
             px4_type={
                 "quad_x": "Quadrotor", "quad_plus": "Quadrotor",
-                "hex_x": "Hexarotor",  "hex_plus": "Hexarotor",
-                "oct_x": "Octorotor",  "y6": "Hexarotor coaxial",
+                "hex_x": "Hexarotor", "hex_plus": "Hexarotor",
+                "oct_x": "Octorotor", "y6": "Hexarotor coaxial",
                 "coaxial_quad": "Quadrotor coaxial",
             }.get(chassis.layout, "Quadrotor"),
             extra_params=extra_params,

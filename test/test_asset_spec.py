@@ -9,10 +9,11 @@ import pathlib
 import pytest
 
 from uavros2.asset_spec import (
-    Catalog, MultirotorChassis, SensorDescriptor, UAVDescriptor,
-    load_any, validate_catalog,
+    Catalog,
+    load_any,
+    MultirotorChassis,
+    validate_catalog,
 )
-
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 ASSETS = REPO / "assets"

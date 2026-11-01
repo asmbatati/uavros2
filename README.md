@@ -30,8 +30,7 @@ canonical topics, whichever simulator runs.
 | Docker images | Ubuntu 24 / Jazzy dev image and a ready-to-run image ([uavros2_docker](uavros2_docker)) |
 | Contact against a wall | Tool with force sensor, wall world, baseline experiment: plain position control gives unsteady force ([results](docs/AERIAL_ARM.md#contact-experiment)) |
 | MuJoCo | x500 flies to position setpoints (no PX4); no arm |
-| Webots | Crazyflie placeholder; does not run on the development machine ([details](docs/SIMULATORS.md)) |
-| Isaac, PyBullet / Genesis | Scaffolded / stub ([docs/SIMULATORS.md](docs/SIMULATORS.md)) |
+| Webots, Isaac, PyBullet, Genesis | **Unsupported**: code kept, not maintained ([docs/SIMULATORS.md](docs/SIMULATORS.md)) |
 
 ![OpenManipulator-X moving under a hovering x500](docs/figures/aerial_arm/omx_2_s_motions_flight.png)
 
@@ -78,7 +77,7 @@ ros2 launch uavros2 sim.launch.py uav:=x500_d435 world:=urban5 headless:=1 use_r
 
 | Argument | Default | Meaning |
 |---|---|---|
-| `simulator` | `gazebo` | `gazebo`, `webots`, `mujoco`, `isaac`, `pybullet`, `genesis` |
+| `simulator` | `gazebo` | `gazebo`, `mujoco` (`webots`, `isaac`, `pybullet`, `genesis` are unsupported) |
 | `uav` | `x500_stereo_cam_3d_lidar` | model under `models/` (table below) |
 | `arm` | `none` | `three_dof`, `openmanip_x`, `panda`, `ur5`; pair with `uav:=x500_with_<arm>` |
 | `world` | `warehouse` | `warehouse`, `urban1` … `urban5` (spawn heights in `worlds/manifest.yaml`) |
@@ -169,7 +168,6 @@ quotes vs ament's single-quote rule).
 | [COMMUNICATION.md](docs/COMMUNICATION.md) | MAVROS vs uXRCE-DDS |
 | [SIMULATORS.md](docs/SIMULATORS.md) | Per-simulator status |
 | [ASSETS.md](docs/ASSETS.md), [MODELS.md](docs/MODELS.md), [WORLDS.md](docs/WORLDS.md) | Asset descriptors, models, worlds |
-| [NAMING.md](docs/NAMING.md) | Brand-name candidates (open decision) |
 
 ## Troubleshooting
 
@@ -198,4 +196,4 @@ The OpenManipulator-X parameters come from
 
 ## License
 
-MIT (as declared in `package.xml` / `setup.py`; the LICENSE file is still to be added).
+MIT, see [LICENSE](LICENSE). The OpenManipulator-X parameters in `arms/openmanip_x/` are from ROBOTIS (Apache-2.0).

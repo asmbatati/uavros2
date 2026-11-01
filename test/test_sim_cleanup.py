@@ -9,7 +9,6 @@ import os
 
 from uavros2.sim_cleanup import find_stale
 
-
 MY_PX4 = "/ws/mine/PX4-Autopilot"
 OTHER_PX4 = "/ws/other/PX4-Autopilot"
 

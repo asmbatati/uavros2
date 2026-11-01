@@ -1,15 +1,17 @@
 # Simulators
 
+**Supported: Gazebo and MuJoCo.** Webots, Isaac, PyBullet and Genesis are unsupported (owner's decision, Nov 2026): their code stays in the tree and the launch warns, but nothing here maintains or verifies them, until arm work needs them.
+
 `uavros2` dispatches to one of six simulator backends via `simulator:=<name>` on the top-level launch. Status, scope, and install steps per backend:
 
 | Simulator | Status | UAVs supported | Arms supported | Control path |
 |---|---|---|---|---|
 | **gazebo** | **Working end-to-end** (PX4 + MAVROS + gz_ros2_control + MoveIt) | all x500 variants + 4 composed arm models | three_dof, openmanip_x, panda, ur5 (all with MoveIt) | PX4 SITL + MAVROS / uXRCE-DDS |
-| **webots** | **Not verified** (upstream Crazyflie placeholder; no x500, and the Nov 2026 re-check did not get it running, see below) | (Crazyflie demo) | — | sim_control_bridge (PX4 SITL Webots target was removed upstream) |
+| **webots** | **Unsupported**, not verified (upstream Crazyflie placeholder; no x500, and the Nov 2026 re-check did not get it running, see below) | (Crazyflie demo) | — | sim_control_bridge (PX4 SITL Webots target was removed upstream) |
 | **mujoco** | **Flies** (x500 MJCF + sim_control_bridge position controller; verified headless Nov 2026) | x500 | — | sim_control_bridge (position + attitude control in the adapter) |
-| **isaac** | Scaffolded (install pointer only) | — | — | PegasusSimulator (community) |
-| **pybullet** | Scaffolded (URDF loader + placeholder PID) | x500 (kinematic) | — | sim_control_bridge placeholder |
-| **genesis** | Stub | — | — | none |
+| **isaac** | **Unsupported**. Scaffolded (install pointer only) | — | — | PegasusSimulator (community) |
+| **pybullet** | **Unsupported**. Scaffolded (URDF loader + placeholder PID) | x500 (kinematic) | — | sim_control_bridge placeholder |
+| **genesis** | **Unsupported**. Stub | — | — | none |
 
 ## gazebo
 

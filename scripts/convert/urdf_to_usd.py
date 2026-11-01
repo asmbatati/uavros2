@@ -8,8 +8,8 @@ Usage (from inside Isaac):
     ./python.sh path/to/urdf_to_usd.py INPUT.urdf OUTPUT.usd
 """
 
-import sys
 from pathlib import Path
+import sys
 
 
 def main():
@@ -21,8 +21,8 @@ def main():
     out_path = Path(sys.argv[2])
 
     try:
+        from omni.isaac.core.utils.stage import open_stage, save_stage  # noqa: F401
         from omni.isaac.urdf import _urdf as urdf
-        from omni.isaac.core.utils.stage import open_stage, save_stage
     except ImportError:
         print(
             "error: omni.isaac.urdf not available. This script must run "
