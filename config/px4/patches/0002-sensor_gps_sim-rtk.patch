@@ -1,0 +1,84 @@
+From 16dcb5df3d7c1b7019f12a8e01ce86419124ca95 Mon Sep 17 00:00:00 2001
+From: asmbatati <asmalbatati@hotmail.com>
+Date: Mon, 2 Nov 2026 00:37:34 +0300
+Subject: [PATCH] sensor_gps_sim: optional RTK noise and fix type
+
+Local patch for uavros2's aerial arm; not for upstream.
+---
+ .../simulation/sensor_gps_sim/SensorGpsSim.cpp  | 17 +++++++++++------
+ .../simulation/sensor_gps_sim/SensorGpsSim.hpp  |  3 ++-
+ .../simulation/sensor_gps_sim/parameters.c      | 11 +++++++++++
+ 3 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp
+index 5641706345..4fa16d97c0 100644
+--- a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp
++++ b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.cpp
+@@ -114,9 +114,14 @@ void SensorGpsSim::Run()
+ 		vehicle_global_position_s gpos{};
+ 		_vehicle_global_position_sub.copy(&gpos);
+ 
+-		double latitude = gpos.lat + math::degrees((double)generate_wgn() * 0.2 / CONSTANTS_RADIUS_OF_EARTH);
+-		double longitude = gpos.lon + math::degrees((double)generate_wgn() * 0.2 / CONSTANTS_RADIUS_OF_EARTH);
+-		double altitude = (double)(gpos.alt + (generate_wgn() * 0.5f));
++		// Position noise of a plain receiver, or of an RTK fix (1.5 cm, 2 cm)
++		const bool rtk = _sim_gps_rtk.get() != 0;
++		const double horizontal_noise = rtk ? 0.015 : 0.2;
++		const float vertical_noise = rtk ? 0.02f : 0.5f;
++
++		double latitude = gpos.lat + math::degrees((double)generate_wgn() * horizontal_noise / CONSTANTS_RADIUS_OF_EARTH);
++		double longitude = gpos.lon + math::degrees((double)generate_wgn() * horizontal_noise / CONSTANTS_RADIUS_OF_EARTH);
++		double altitude = (double)(gpos.alt + (generate_wgn() * vertical_noise));
+ 
+ 		Vector3f gps_vel = Vector3f{lpos.vx, lpos.vy, lpos.vz} + noiseGauss3f(0.06f, 0.077f, 0.158f);
+ 
+@@ -131,11 +136,11 @@ void SensorGpsSim::Run()
+ 
+ 		if (_sim_gps_used.get() >= 4) {
+ 			// fix
+-			sensor_gps.fix_type = 3; // 3D fix
++			sensor_gps.fix_type = rtk ? 6 : 3; // RTK fixed, or 3D fix
+ 			sensor_gps.s_variance_m_s = 0.4f;
+ 			sensor_gps.c_variance_rad = 0.1f;
+-			sensor_gps.eph = 0.9f;
+-			sensor_gps.epv = 1.78f;
++			sensor_gps.eph = rtk ? 0.02f : 0.9f;
++			sensor_gps.epv = rtk ? 0.03f : 1.78f;
+ 			sensor_gps.hdop = 0.7f;
+ 			sensor_gps.vdop = 1.1f;
+ 
+diff --git a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp
+index fac4e5201e..2a3326b966 100644
+--- a/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp
++++ b/src/modules/simulation/sensor_gps_sim/SensorGpsSim.hpp
+@@ -83,6 +83,7 @@ private:
+ 	perf_counter_t _loop_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")};
+ 
+ 	DEFINE_PARAMETERS(
+-		(ParamInt<px4::params::SIM_GPS_USED>) _sim_gps_used
++		(ParamInt<px4::params::SIM_GPS_USED>) _sim_gps_used,
++		(ParamInt<px4::params::SIM_GPS_RTK>) _sim_gps_rtk
+ 	)
+ };
+diff --git a/src/modules/simulation/sensor_gps_sim/parameters.c b/src/modules/simulation/sensor_gps_sim/parameters.c
+index c9d9c74555..e9adea225b 100644
+--- a/src/modules/simulation/sensor_gps_sim/parameters.c
++++ b/src/modules/simulation/sensor_gps_sim/parameters.c
+@@ -50,3 +50,14 @@ PARAM_DEFINE_INT32(SENS_EN_GPSSIM, 0);
+  * @group Simulator
+  */
+ PARAM_DEFINE_INT32(SIM_GPS_USED, 10);
++
++/**
++ * simulated GPS gives an RTK fix
++ *
++ * Position noise 1.5 cm horizontal, 2 cm vertical, fix type 6, instead of a plain
++ * receiver's 0.2 m and 0.5 m. Use with a matching EKF2_GPS_P_NOISE.
++ *
++ * @boolean
++ * @group Simulator
++ */
++PARAM_DEFINE_INT32(SIM_GPS_RTK, 0);
+-- 
+2.43.0
+

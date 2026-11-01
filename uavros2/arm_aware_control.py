@@ -248,8 +248,8 @@ class WallForceControl:
     become an impact.
     """
 
-    KP = 0.5
-    KI = 0.5
+    KP = 0.3
+    KI = 0.3
     I_LIMIT_N = 4.0
     KD = 1.8
     CONTACT_N = 0.2

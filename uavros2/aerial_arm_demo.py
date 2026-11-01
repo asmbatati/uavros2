@@ -358,6 +358,7 @@ class AerialArmDemo(Node):
         p, o = self.pose.pose.position, self.pose.pose.orientation
         row = {
             "t": time.monotonic() - self.t0, "phase": self.phase,
+            "stamp": self.pose.header.stamp.sec + self.pose.header.stamp.nanosec * 1e-9,
             "x": p.x, "y": p.y, "z": p.z,
             "qx": o.x, "qy": o.y, "qz": o.z, "qw": o.w,
             "sp_x": self.setpoint[0], "sp_y": self.setpoint[1], "sp_z": self.setpoint[2],
@@ -489,7 +490,12 @@ class AerialArmDemo(Node):
             w.writeheader()
             w.writerows(rows)
         flying = [r for r in rows if r["phase"] not in ("preflight", "takeoff", "land", "done")]
+        real_time_factor = None
+        if len(flying) > 100 and flying[-1]["t"] > flying[0]["t"]:
+            real_time_factor = (flying[-1]["stamp"] - flying[0]["stamp"]) / (flying[-1]["t"] - flying[0]["t"])
         summary = {
+            "real_time_factor": real_time_factor,
+            "load_average": os.getloadavg()[0],
             "arm": self.arm,
             "controller": self.controller,
             "joints": joints,

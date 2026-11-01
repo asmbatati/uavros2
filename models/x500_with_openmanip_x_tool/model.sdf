@@ -339,8 +339,8 @@
       <child>tool_head_link</child>
       <axis>
         <xyz>1 0 0</xyz>
-        <limit><lower>-0.03</lower><upper>0.03</upper></limit>
-        <dynamics><damping>10</damping><spring_stiffness>300</spring_stiffness><spring_reference>0</spring_reference></dynamics>
+        <limit><lower>-0.08</lower><upper>0.08</upper></limit>
+        <dynamics><damping>6</damping><spring_stiffness>80</spring_stiffness><spring_reference>0</spring_reference></dynamics>
       </axis>
     </joint>
 

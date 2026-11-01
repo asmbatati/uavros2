@@ -48,3 +48,11 @@ param set-default SIM_GZ_EC_MAX3 1000
 param set-default SIM_GZ_EC_MAX4 1000
 
 param set-default MPC_THR_HOVER 0.67
+
+# Simulated RTK for contact experiments: UAVROS2_RTK=1 in the environment (needs
+# the local patch in config/px4/patches). Off by default.
+param set-default SIM_GPS_RTK ${UAVROS2_RTK:=0}
+if [ "$UAVROS2_RTK" = "1" ]; then
+	param set-default EKF2_GPS_P_NOISE 0.02
+	param set-default EKF2_REQ_EPH 0.5
+fi

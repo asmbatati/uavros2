@@ -56,6 +56,8 @@ class ToolHoldDemo(WallContactDemo):
         super().__init__()
         self.declare_parameter("tool_hold_s", 30.0)
         self.declare_parameter("hold_x", 1.0)
+        self.declare_parameter("correction_tau_s", 0.5)
+        self._err = None
         self.hold_target = None
         self.correcting = False
         self.model = None
@@ -67,7 +69,12 @@ class ToolHoldDemo(WallContactDemo):
         o = self.pose.pose.orientation
         q = (o.x, o.y, o.z, o.w)
         # Target in the body frame: inverse rotation of (target - position).
-        err = np.array(self.hold_target) - self._control_position()
+        # Smoothed: the arm's own motion pushes the drone, and chasing position noise
+        # with 0.6 kg of arm makes the tool worse (measured, docs/AERIAL_ARM.md).
+        raw = np.array(self.hold_target) - self._control_position()
+        tau = float(self.get_parameter("correction_tau_s").value)
+        self._err = raw if self._err is None else self._err + (raw - self._err) * min(1.0, 0.02 / tau)
+        err = self._err
         x, y, z, w = q
         rot = np.array([
             [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
