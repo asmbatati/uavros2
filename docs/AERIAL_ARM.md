@@ -1,8 +1,18 @@
-# Aerial-arm flight experiment
+# Aerial-arm flight experiments
 
-How much does a manipulator moving under a hovering x500 disturb it, and how
-far off does that put the end effector? This page describes the experiment
-that measures it and the results from PX4 v1.15.4 SITL (30 Oct 2026).
+The arm is for jobs that need a manipulator in the air: painting a wall or an
+aircraft's body, cleaning nests from high buildings, precision maintenance on
+a tower. These are contact jobs, so what matters is end-effector accuracy and
+steady force against a surface.
+
+Two experiments, both PX4 v1.15.4 SITL in Gazebo Harmonic:
+
+- [Free flight](#free-flight-experiment) (30 Oct 2026): how much a moving arm
+  disturbs a hovering x500 and how far off that puts the end effector.
+- [Contact](#contact-experiment) (1 Nov 2026): what plain PX4 position control
+  does when the tool is pressed against a wall.
+
+# Free-flight experiment
 
 ## Protocol
 
@@ -137,11 +147,106 @@ self-colliding and a compact fold instead of the backward reach (raw data
 in `results/aerial_arm/omx_v1/`). Its forward/side-reach numbers agree with
 the table above (13-20 cm RMS at 2 s, 6.5-11 cm at 6 s).
 
+# Contact experiment
+
+`wall_contact_demo` (`uavros2/wall_contact_demo.py`) flies
+`x500_with_openmanip_x_tool` in the `wall` world. The tool is a 0.40 m rigid rod
+(0.12 kg) ending in a 1.5 cm ball, with a force/torque sensor at its base
+(`/<ns>/tool/wrench`), standing in for a roller or brush.
+
+1. Take off, hover, and move the arm to the contact pose: rod level, tip 0.50 m
+   ahead of `base_link`, 0.20 m past the propeller tips.
+2. Fly to 0.20 m from the wall and hold 8 s; the hold tares the sensor.
+3. Creep forward at 5 cm/s until the sensor reads 0.5 N.
+4. Move the position setpoint `press_depth` past where the drone is, hold 20 s.
+5. Retract, stow, fly back, land.
+
+Nothing regulates force. This is the baseline any force controller has to beat.
+
+```bash
+export GZ_PARTITION=uavsim ROS_DOMAIN_ID=24 PYTHONNOUSERSITE=1
+UAV=x500_with_openmanip_x_tool WORLD=wall DEMO=wall_contact_demo \
+  scripts/aerial_arm_experiment.sh openmanip_x 4 ~/results/contact -p press_depth:=0.05
+scripts/plot_wall_contact.py docs/figures/wall_contact "13 N, press 5 cm=$HOME/results/contact*"
+```
+
+## Results
+
+Statistics are over the last 17 s of the press, from runs that did not fall.
+"Force SD" is the spread within one run. "Tip SD" is the estimated tool
+position along the wall (y sideways, z up). Raw logs:
+`~/drone_arm_ws/results/contact/`.
+
+| Motors, press depth | Runs | Fell | Force mean (N) | Force SD (N) | First half (N) | Second half (N) | Contact lost (%) | Tip y SD (cm) | Tip z SD (cm) |
+|---|---|---|---|---|---|---|---|---|---|
+| Stock 8.5 N, 5 cm | 2 | 1 | 0.47 | 0.37 | 0.26 | 0.68 | 32 | 3.3 | 3.2 |
+| 13 N, 5 cm | 3 | 0 | 1.46 ± 0.31 | 1.50 ± 0.46 | 1.18 ± 0.66 | 1.74 ± 0.23 | 26 ± 7 | 8.0 ± 2.9 | 8.7 ± 3.7 |
+| 13 N, 15 cm | 3 | 1 | 2.86 ± 0.78 | 2.73 ± 0.54 | 1.50 ± 0.13 | 4.22 ± 1.42 | 26 ± 18 | 11.0 ± 7.6 | 18.7 ± 0.1 |
+| 13 N, 30 cm | 3 | 3 | - | - | - | - | - | - | - |
+
+The stock row's statistics come from its one surviving run. The ± values are
+over two or three runs, so read them as rough. The 30 cm runs fell after 7.8,
+13.7 and 19.0 s; the 15 cm run after 17.8 s; the stock run after 9.0 s.
+
+![Force against time during the press](figures/wall_contact/contact_force.png)
+
+## What it shows
+
+- **Position control does not give steady force.** The force's spread within a
+  run is about as large as its mean, the tool leaves the wall for about a
+  quarter of the time, and short spikes reach 15-70 N. A roller or brush would
+  skip and strike.
+- **Force creeps up while pressing** (second half above first half at 5 and
+  15 cm). The most likely cause is PX4's velocity integrator working against a
+  position error that the wall will not let it close. The longer and deeper the
+  press, the worse it gets, ending in a fall at 30 cm. This was inferred from
+  the force traces and PX4's control structure, and was not isolated.
+- **The tool does not hold its place on the wall.** It moves 8-19 cm (SD) along
+  the wall, with ranges up to 0.9 m in height. That is far too loose for logos
+  or precision maintenance.
+- **Thrust margin decides whether the drone can touch anything at all.** See
+  below.
+
+## Why the drone fell, and the design changes it forced
+
+1. **Arm at full reach (0.20 m rod): fell on first contact.** The PX4 log shows
+   the front motors at 0.99 in free hold, because the arm and rod put
+   0.122 kg m ahead of the body. On contact the attitude controller took the
+   remaining authority out of collective thrust: thrust setpoint at 1.0, motors
+   falling, 1.8 m to the ground in about 2 s. Fix: the 0.40 m rod with the arm
+   folded close in, 0.022 kg m. Front motors drop to about 0.90.
+2. **Stock motors with the long rod: fell at 2-3 N, or under 1 N in the run
+   with the corrected press target.** The x500 model has 8.5 N per rotor. Loaded
+   (2.78 kg, 27 N) that is a thrust-to-weight of 1.26 and about 1.7 N of margin
+   per front rotor. The tip sits 0.244 m below `base_link`, so pushing makes a
+   nose-down moment that uses up that margin quickly.
+3. **13 N per rotor (thrust-to-weight 1.9): holds at 5 cm in 3 of 3 runs.** The
+   tool model uses this. It is a modelling assumption about the real aircraft,
+   so any real build needs at least this margin. The stock-motor runs are from
+   commit a45c348.
+
+Two more things seen here:
+
+- The EKF's local origin is up to about 0.2 m from the spawn point, so the demo
+  measures the wall's distance from its take-off position, and contact has to be
+  detected by force, not assumed from position.
+- After landing, some contact flights show estimated height drifting to -1 to
+  -3 m with the drone on the ground (barometer height reference, decision 3 in
+  ROADMAP.md). Cause not investigated.
+
+Limits of this model: the arm's joints are stiff position-controlled joints and
+the tool is rigid, with no compliance anywhere. A real arm and a sprung tool
+would soften the spikes, so the spikes here are an upper bound. Contact is a
+ball on a flat wall with one friction value, and there is no rotor wash near the
+wall (ground and wall effects are not simulated).
+
 ## What would come next
 
-- Compensation: feed the arm's centre-of-mass shift and reaction torque
-  forward (e.g. an arm-aware outer loop sending attitude + thrust in
-  OFFBOARD), then rerun this protocol.
-- Trajectory shaping: minimum-jerk / time-optimal arm trajectories under a
-  hover-error budget.
+- Force control: hold a set normal force (admittance on the arm and/or thrust
+  along the wall normal), then rerun this protocol.
+- Tool accuracy: the arm cancels the drone's error so the tip holds a world
+  point.
+- Feed-forward: feed the arm's centre-of-mass shift and reaction torque forward
+  (e.g. an arm-aware outer loop sending attitude + thrust in OFFBOARD).
+- Trajectory shaping: minimum-jerk arm trajectories under a hover-error budget.
 - Gripper and a pick task from hover.
