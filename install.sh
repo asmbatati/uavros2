@@ -127,6 +127,12 @@ detect_container() {
         in_container=true
     fi
     
+    # Only the dev image counts: it ships ROS and the build tools, so the
+    # host-side dependency steps are skipped. A bare Ubuntu container is a host.
+    if [ ! -d /opt/ros/jazzy ]; then
+        in_container=false
+    fi
+
     echo $in_container
 }
 

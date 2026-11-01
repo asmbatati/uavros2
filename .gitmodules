@@ -1,3 +1,3 @@
 [submodule "uavros2_docker"]
 	path = uavros2_docker
-	url = git@github.com:asmbatati/uavros2_docker.git
+	url = https://github.com/asmbatati/uavros2_docker.git
