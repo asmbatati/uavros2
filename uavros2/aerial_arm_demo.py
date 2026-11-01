@@ -226,6 +226,9 @@ class AerialArmDemo(Node):
         rx, ry, rz = _quat_rotate((q.x, q.y, q.z, q.w), (t.x, t.y, t.z))
         return (p.x + rx, p.y + ry, p.z + rz)
 
+    def _add_fields(self, row):
+        """Hook for subclasses to log more columns."""
+
     def _log(self):
         if self.pose is None or self.setpoint is None:
             return
@@ -247,6 +250,7 @@ class AerialArmDemo(Node):
         ee = self._ee_in_map()
         if ee is not None:
             row["ee_x"], row["ee_y"], row["ee_z"] = ee
+        self._add_fields(row)
         with self.lock:
             self.rows.append(row)
 
@@ -369,9 +373,9 @@ class AerialArmDemo(Node):
         return summary
 
 
-def main(args=None):
+def main(args=None, node_class=AerialArmDemo):
     rclpy.init(args=args)
-    node = AerialArmDemo()
+    node = node_class()
     executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(node)
     spin = threading.Thread(target=executor.spin, daemon=True)

@@ -32,6 +32,7 @@ def _setup(context, *_args, **_kwargs):
     ns = LaunchConfiguration("namespace").perform(context)
     sim = LaunchConfiguration("simulator").perform(context)
     use_moveit = LaunchConfiguration("use_moveit").perform(context).lower() == "true"
+    uav = LaunchConfiguration("uav").perform(context)
 
     if arm == "none":
         return [LogInfo(msg="[arm_control] arm:=none — nothing to launch.")]
@@ -56,9 +57,10 @@ def _setup(context, *_args, **_kwargs):
 
     # Expand xacro -> URDF, with sim_mode chosen per simulator.
     sim_mode = "gz" if sim in ("gazebo",) else "mock"
-    robot_description = xacro.process_file(
-        xacro_path, mappings={"sim_mode": sim_mode}
-    ).toxml()
+    mappings = {"sim_mode": sim_mode}
+    if uav.endswith("_tool"):
+        mappings["tool"] = "rod"
+    robot_description = xacro.process_file(xacro_path, mappings=mappings).toxml()
 
     rsp = Node(
         package="robot_state_publisher",
@@ -155,6 +157,7 @@ def _setup(context, *_args, **_kwargs):
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument("arm", default_value="none"),
+        DeclareLaunchArgument("uav", default_value=""),
         DeclareLaunchArgument("namespace", default_value="drone"),
         DeclareLaunchArgument("simulator", default_value="gazebo"),
         DeclareLaunchArgument("use_moveit", default_value="false"),

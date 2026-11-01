@@ -1,0 +1,22 @@
+version: 1
+kind: uav
+name: x500_with_openmanip_x_tool
+description: x500 + ROBOTIS OpenManipulator-X (0.594 kg) + 0.40 m contact tool with force/torque sensor (0.12 kg). Arm bodies inline in hand-authored SDF.
+chassis:
+  ref: x500
+sensors:
+  - { name: imu,  ref: imu_default,       mount: base_link }
+  - { name: gps,  ref: gps_default,       mount: base_link }
+  - { name: baro, ref: barometer_default, mount: base_link }
+arm:
+  ref: openmanip_x
+  mount: payload_bottom
+  pose: [0, 0, 0, 3.14159265, 0, 0]
+  namespace: drone
+px4:
+  airframe_id: 4029
+  spawn_pose_m: [0.0, 0.0, 0.1, 0, 0, 0]
+  hover_thrust: 0.74
+overlays:
+  gazebo:
+    import_existing_sdf: true

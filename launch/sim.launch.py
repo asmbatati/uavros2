@@ -83,6 +83,7 @@ def _dispatch(context, *_args, **_kwargs):
             ]),
             launch_arguments={
                 "arm": arm,
+                "uav": uav,
                 "namespace": namespace,
                 "simulator": sim,
                 "use_moveit": use_moveit,

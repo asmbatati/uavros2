@@ -88,6 +88,7 @@ UAV_AIRFRAME = {
     "x500_twin_stereo_twin_velodyne": "4024",
     "x500_with_three_dof_arm": "4025",
     "x500_with_openmanip_x": "4026",
+    "x500_with_openmanip_x_tool": "4029",
     "x500_with_panda": "4027",
     "x500_with_ur5": "4028",
 }
@@ -121,8 +122,14 @@ def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0):
             f"/world/{world}/model/{m}/link/lidar3d_link/sensor/velodyne_16/scan/points@sensor_msgs/msg/PointCloud2[ignition.msgs.PointCloudPacked"
         )
 
+    tool_ft = f"/world/{world}/model/{m}/joint/j_tool/sensor/tool_ft/forcetorque"
+    if uav.endswith("_tool"):
+        args.append(f"{tool_ft}@geometry_msgs/msg/Wrench[ignition.msgs.Wrench")
+
     # Remappings to canonical names
     args += ["--ros-args"]
+    if uav.endswith("_tool"):
+        args += ["-r", f"{tool_ft}:=/{ns}/tool/wrench"]
     args += [
         "-r", f"/world/{world}/model/{m}/link/base_link/sensor/imu_sensor/imu:=/{ns}/imu",
         "-r", f"/world/{world}/model/{m}/link/base_link/sensor/air_pressure_sensor/air_pressure:=/{ns}/air_pressure",

@@ -10,7 +10,9 @@
 #   output_dir  results directory (default ~/uavros2_results)
 #
 # Env: UAV overrides the model, WORLD the world (default warehouse),
-# NAMESPACE the ROS namespace (default drone).
+# NAMESPACE the ROS namespace (default drone), DEMO the mission node
+# (default aerial_arm_demo; wall_contact_demo with UAV=x500_with_openmanip_x_tool
+# WORLD=wall).
 #
 # Source your workspace first. On a shared machine also export your own
 # ROS_DOMAIN_ID and GZ_PARTITION so the run is isolated from other sims.
@@ -82,5 +84,5 @@ for attempt in 1 2; do
 done
 # PX4 needs a few seconds after the controller spawns for EKF2 to align.
 sleep 10
-ros2 run uavros2 aerial_arm_demo --ros-args -p arm:="$arm" -p namespace:="$ns" \
+ros2 run uavros2 "${DEMO:-aerial_arm_demo}" --ros-args -p arm:="$arm" -p namespace:="$ns" \
   -p output_dir:="$out" "$@" 2>&1 | tee "$out/${arm}_demo.log"

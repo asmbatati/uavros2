@@ -31,6 +31,16 @@ worlds:
     spawn_pose: [0.0, 0.0, 0.1, 0, 0, 0]
     note: "Indoor warehouse (formerly tugbot_depot)."
 
+  wall:
+    gazebo: wall.sdf
+    webots: false
+    mujoco: false
+    isaac: false
+    pybullet: false
+    genesis: false
+    spawn_pose: [0.0, 0.0, 0.1, 0, 0, 0]
+    note: "Ground plane and a wall (face at x = 3 m) for contact experiments."
+
   urban1:
     gazebo: urban1.sdf
     spawn_pose: [0.0, 200.0, 900.0, 0, 0, 0]
