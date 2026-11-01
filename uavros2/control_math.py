@@ -51,3 +51,56 @@ def rotor_mixer(
         return max(0.0, min(1.0, v))
 
     return (_clip(f1), _clip(f2), _clip(f3), _clip(f4))
+
+
+def position_control(
+    pos_sp,
+    yaw_sp: float,
+    pos,
+    vel,
+    rot,
+    omega,
+    mass: float,
+    inertia,
+    gravity: float = 9.81,
+    kp_pos: float = 3.0,
+    kd_pos: float = 2.5,
+    kp_att: float = 40.0,
+    kd_att: float = 10.0,
+    max_acc: float = 5.0,
+):
+    """Hold a position and yaw: geometric controller on SO(3).
+
+    Inputs are numpy arrays in the world frame except ``omega`` (body rates)
+    and ``rot`` (body-to-world rotation matrix). Returns (thrust_N, torque_Nm),
+    the torque in the body frame.
+    """
+    import numpy as np
+
+    acc = kp_pos * (np.asarray(pos_sp) - pos) - kd_pos * vel
+    norm = np.linalg.norm(acc)
+    if norm > max_acc:
+        acc = acc * max_acc / norm
+    force = mass * (acc + np.array([0.0, 0.0, gravity]))
+
+    z_des = force / np.linalg.norm(force)
+    y_des = np.cross(z_des, [np.cos(yaw_sp), np.sin(yaw_sp), 0.0])
+    y_des /= np.linalg.norm(y_des)
+    rot_des = np.column_stack((np.cross(y_des, z_des), y_des, z_des))
+
+    err = 0.5 * (rot_des.T @ rot - rot.T @ rot_des)
+    err_vec = np.array([err[2, 1], err[0, 2], err[1, 0]])
+    torque = np.asarray(inertia) * (-kp_att * err_vec - kd_att * np.asarray(omega))
+    return float(force @ rot[:, 2]), torque
+
+
+def allocation_matrix(rotor_xy, thrust_gain, yaw_gain):
+    """Map rotor commands to [thrust, mx, my, mz] (body frame, z up).
+
+    A rotor at (x, y) producing force f gives mx = y f, my = -x f.
+    """
+    import numpy as np
+
+    xy = np.asarray(rotor_xy)
+    gain = np.asarray(thrust_gain)
+    return np.vstack((gain, xy[:, 1] * gain, -xy[:, 0] * gain, np.asarray(yaw_gain)))

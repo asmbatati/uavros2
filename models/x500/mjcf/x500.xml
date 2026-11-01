@@ -86,16 +86,18 @@
     Four thrust actuators - one per rotor. ctrlrange [0,1] is the
     normalized rotor command; gear maps it to a force (Newtons). With
     gear=8, max thrust per rotor = 8 N, total = 32 N. Weight = 1.5 * 9.81
-    = 14.7 N, so 4 rotors at ~46% give hover.
+    = 14.7 N, so 4 rotors at ~46% give hover. The last gear entry is the
+    rotor drag torque (0.016 m per N of thrust): CCW rotors 0 and 1 push
+    the body clockwise, CW rotors 2 and 3 the other way.
   -->
   <actuator>
-    <general name="m0" site="rotor0" gear="0 0 8 0 0 0"
+    <general name="m0" site="rotor0" gear="0 0 8 0 0 -0.128"
              ctrlrange="0 1" dyntype="none"/>
-    <general name="m1" site="rotor1" gear="0 0 8 0 0 0"
+    <general name="m1" site="rotor1" gear="0 0 8 0 0 -0.128"
              ctrlrange="0 1" dyntype="none"/>
-    <general name="m2" site="rotor2" gear="0 0 8 0 0 0"
+    <general name="m2" site="rotor2" gear="0 0 8 0 0 0.128"
              ctrlrange="0 1" dyntype="none"/>
-    <general name="m3" site="rotor3" gear="0 0 8 0 0 0"
+    <general name="m3" site="rotor3" gear="0 0 8 0 0 0.128"
              ctrlrange="0 1" dyntype="none"/>
   </actuator>
 

@@ -5,6 +5,7 @@ verify the rotor mixer and attitude PID behave sanely with no ROS spinning.
 """
 
 import math
+import os
 import pytest
 
 # Import from control_math (no rclpy dependency) so tests are collectable
@@ -71,3 +72,27 @@ def test_mixer_roll_torque_asymmetric_left_right():
     # At least one rotor should change relative to baseline.
     assert any(b != r for b, r in zip(base, rolled)), \
         "non-zero torque should change rotor distribution"
+
+
+def test_mujoco_adapter_hovers_and_goes_to_setpoint():
+    pytest.importorskip("mujoco")
+    from types import SimpleNamespace as NS
+    from uavros2.adapters.mujoco import MujocoAdapter
+
+    adapter = MujocoAdapter()
+    adapter._resolve_asset = lambda uav, arm: os.path.join(
+        os.path.dirname(__file__), "..", "models", "x500", "mjcf", "x500.xml")
+    adapter.spawn("x500", "none", "empty")
+
+    # No setpoint: holds the spawn point instead of drifting or tipping.
+    for _ in range(600):
+        out = adapter.step(0.005, {})
+    assert abs(out["pose"][2] - 0.3) < 0.02
+
+    goal = NS(pose=NS(position=NS(x=1.0, y=-0.5, z=2.0),
+                      orientation=NS(x=0.0, y=0.0, z=0.7071, w=0.7071)))
+    for _ in range(2000):
+        out = adapter.step(0.005, {"position": goal})
+    x, y, z, qx, qy, qz, qw = out["pose"]
+    assert math.dist((x, y, z), (1.0, -0.5, 2.0)) < 0.02
+    assert abs(math.atan2(2 * qw * qz, 1 - 2 * qz * qz) - math.pi / 2) < 0.02

@@ -5,8 +5,8 @@
 | Simulator | Status | UAVs supported | Arms supported | Control path |
 |---|---|---|---|---|
 | **gazebo** | **Working end-to-end** (PX4 + MAVROS + gz_ros2_control + MoveIt) | all x500 variants + 4 composed arm models | three_dof, openmanip_x, panda, ur5 (all with MoveIt) | PX4 SITL + MAVROS / uXRCE-DDS |
-| **webots** | **Demo running** (upstream Crazyflie as x500 placeholder) | (Crazyflie demo) | — | sim_control_bridge (PX4 SITL Webots target was removed upstream) |
-| **mujoco** | **Demo running** (x500 MJCF + viewer + sim_control_bridge) | x500 | — | sim_control_bridge (rotor mixer + attitude PID; placeholder PID for now) |
+| **webots** | **Not verified** (upstream Crazyflie placeholder; no x500, and the Nov 2026 re-check did not get it running, see below) | (Crazyflie demo) | — | sim_control_bridge (PX4 SITL Webots target was removed upstream) |
+| **mujoco** | **Flies** (x500 MJCF + sim_control_bridge position controller; verified headless Nov 2026) | x500 | — | sim_control_bridge (position + attitude control in the adapter) |
 | **isaac** | Scaffolded (install pointer only) | — | — | PegasusSimulator (community) |
 | **pybullet** | Scaffolded (URDF loader + placeholder PID) | x500 (kinematic) | — | sim_control_bridge placeholder |
 | **genesis** | Stub | — | — | none |
@@ -39,7 +39,10 @@ The launch chain refactors today's `sim.launch.py` + `gz_sim.launch.py` + `mavro
 
 ## webots
 
-Demo running today by wrapping the upstream `webots_ros2_crazyflie` launch: Webots opens with a Crazyflie quadrotor in the apartment world. The Crazyflie serves as a placeholder for the x500 until a real x500 PROTO is authored. **No PX4** — PX4 dropped its Webots simulator target upstream, so `sim_control_bridge` is the control path (same pattern as the MuJoCo backend).
+Wraps the upstream `webots_ros2_crazyflie` launch: Webots should open with a Crazyflie quadrotor in the apartment world.
+
+**Re-check, 1 Nov 2026: not working here.** On the desktop Webots aborts without a display (no `DISPLAY`, no `xvfb-run`, no `libxcb-cursor0`; installing them needs sudo). In a throwaway container with `ros-jazzy-webots-ros2`, Webots R2025a and `xvfb`, with `WEBOTS_OFFSCREEN=1`, all nodes start but the world never finishes loading: its asset downloads fail with HTTP/2 errors ("Connection closed"), and the Crazyflie driver and supervisor give up. The launch has not been seen flying on this machine.
+ The Crazyflie serves as a placeholder for the x500 until a real x500 PROTO is authored. **No PX4** — PX4 dropped its Webots simulator target upstream, so `sim_control_bridge` is the control path (same pattern as the MuJoCo backend).
 
 Requires:
 - Webots 2024a or newer (`/usr/local/bin/webots` on this machine)
@@ -59,7 +62,9 @@ Roadmap:
 
 ## mujoco
 
-Demo running today: launches `python3 -m mujoco.viewer` for the GUI plus `sim_control_bridge` (with the mujoco adapter) for ROS topic integration. **No PX4** — `sim_control_bridge.py` owns rotor mixing + attitude PID and publishes MAVROS-shaped state topics so downstream code is identical to the Gazebo path.
+Launches `python3 -m mujoco.viewer` for the GUI (skipped with `headless:=1`) plus `sim_control_bridge` (with the mujoco adapter) for ROS topic integration. **No PX4**: the adapter holds a position with a small geometric controller (`control_math.position_control`), stepping physics in real time, and publishes MAVROS-shaped state topics. Send `geometry_msgs/PoseStamped` to `/<ns>/setpoint_position/pose`; it holds the spawn point until the first one.
+
+Verified 1 Nov 2026 with `headless:=1`: flew to (1, 0, 2) m and held it to under 1 mm (there is no sensor noise or wind in this model, so this says the controller works, not how a real drone holds). The launch's `adaptive_image_stitcher` needs `PYTHONNOUSERSITE=1` on this machine, but `mujoco` is pip-installed in the user site, so that one node dies here unless numpy < 2 is on the path; it does not affect flight.
 
 Requires:
 - `pip install mujoco` (≥3.0)

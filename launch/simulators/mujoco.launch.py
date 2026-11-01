@@ -14,6 +14,7 @@ Two processes are started:
    the viewer is purely for visual sanity-checking. Synchronizing
    them requires running the viewer in-process via
    mujoco.viewer.launch_passive, which is a follow-up.
+   ``headless:=1`` skips the viewer.
 """
 
 import os
@@ -42,6 +43,7 @@ def _setup(context, *_args, **_kwargs):
     uav = LaunchConfiguration("uav").perform(context)
     arm = LaunchConfiguration("arm").perform(context)
     ns = LaunchConfiguration("namespace").perform(context)
+    headless = LaunchConfiguration("headless").perform(context) == "1"
 
     pkg_share = get_package_share_directory("uavros2")
 
@@ -84,9 +86,9 @@ def _setup(context, *_args, **_kwargs):
     )
 
     return [
-        LogInfo(msg=f"[mujoco] viewer mjcf={mjcf_path}"),
+        LogInfo(msg=f"[mujoco] viewer mjcf={mjcf_path} headless={headless}"),
         LogInfo(msg=f"[mujoco] bridge uav={uav} arm={arm} ns={ns}"),
-        viewer,
+        *([] if headless else [viewer]),
         bridge,
     ]
 
@@ -97,5 +99,6 @@ def generate_launch_description():
         DeclareLaunchArgument("world", default_value="empty"),
         DeclareLaunchArgument("namespace", default_value="drone"),
         DeclareLaunchArgument("arm", default_value="none"),
+        DeclareLaunchArgument("headless", default_value="0"),
         OpaqueFunction(function=_setup),
     ])
