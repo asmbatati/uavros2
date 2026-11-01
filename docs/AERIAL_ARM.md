@@ -309,7 +309,7 @@ no separate yaw experiment was run.
 
 Two contact points 0.20 m apart give a restoring moment for yaw within about +-11
 deg, which is also what a real roller has. That moved 3 N from 3 falls in 4 to 1 in
-3 and halved the yaw spread, but 6 N still falls: the bigger the force, the more
+3 and cut the yaw spread from 23 to 14 deg, but 6 N still falls: the bigger the force, the more
 small yaw errors matter. A shorter lever, a wider head, or the arm's yaw joint
 keeping the tool square to the wall are the next things to try.
 
