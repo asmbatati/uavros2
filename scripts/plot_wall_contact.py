@@ -72,13 +72,17 @@ def summarize(label, runs):
 
 
 def plot(groups, out_dir):
-    fig, axes = plt.subplots(1, len(groups), figsize=(3.6 * len(groups), 3.2),
+    fig, axes = plt.subplots(1, len(groups), figsize=(4.2 * len(groups), 3.2),
                              sharex=True, sharey=True, squeeze=False)
     for ax, (label, runs) in zip(axes[0], groups.items()):
-        for i, run in enumerate(runs):
-            ax.plot(run["t"], run["force"], lw=1.0, color=SERIES[i % len(SERIES)],
-                    label=f"run {i + 1}")
-        ax.set_title(label, fontsize=10, color=INK)
+        # Runs are repeats, not series: one colour, thin, so the spread reads.
+        for run in runs:
+            ax.plot(run["t"], run["force"], lw=0.6, color=SERIES[0], alpha=0.45)
+        targets = {r["contact"].get("force_target_n") for r in runs} - {None, 0.0}
+        for target in targets:
+            ax.axhline(target, color=INK, lw=1.0, ls="--", label=f"target {target:g} N")
+        ax.set_ylim(0, 10)
+        ax.set_title(f"{label} ({len(runs)} runs)", fontsize=10, color=INK)
         ax.set_xlabel("time in press (s)", fontsize=9, color=INK)
         ax.grid(color=GRID, lw=0.6)
         ax.tick_params(labelsize=8, colors=INK)

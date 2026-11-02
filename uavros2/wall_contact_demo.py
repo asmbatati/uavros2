@@ -51,6 +51,7 @@ JOINT1_X = 0.012
 TOOL_BOX_M = 0.02
 ADMITTANCE_M_PER_S_PER_N = 0.03
 ADMITTANCE_MAX_M_PER_S = 0.10
+FORCE_CAP = 2.0
 
 
 def tip_in_base(q1=0.0):
@@ -60,10 +61,27 @@ def tip_in_base(q1=0.0):
     return (JOINT1_X + c * x - s * y, s * x + c * y, z)
 
 
-def contact_torque(force, q1=0.0, yaw=0.0):
-    """Torque on the body, FLU, when the wall (normal along world x) pushes the tip back."""
-    pushed = np.array([-force * math.cos(yaw), force * math.sin(yaw), 0.0])  # in the body frame
-    return np.cross(tip_in_base(q1), pushed)
+def contact_torque(force, q1=0.0, yaw=0.0, pitch=0.0, com=(0.0, 0.0, 0.0)):
+    """Torque on the body, FLU, when the wall (normal along world x) pushes the tip back.
+
+    About ``com``, the centre of mass of drone and arm in base_link: the tip hangs
+    about 0.23 m below it, not the 0.28 m below base_link. Pitching nose down to
+    push tilts the wall's force in the body frame and lengthens the lever.
+    """
+    cy, sy, cp, sp = math.cos(yaw), math.sin(yaw), math.cos(pitch), math.sin(pitch)
+    pushed = np.array([-force * cy * cp, force * sy, -force * cy * sp])  # in the body frame
+    return np.cross(np.subtract(tip_in_base(q1), com), pushed)
+
+
+def contact_force(samples, tare, target=0.0):
+    """Force from the last few sensor samples, for the controllers.
+
+    The head striking the wall or its stop reads up to 100 N for a sample or two. Taken
+    as it is, that kicks the drone's pitch through the torque feed-forward, so take the
+    median and, when holding a force, cap it at ``FORCE_CAP`` times the target.
+    """
+    force = abs(statistics.median(samples) - tare)
+    return min(force, FORCE_CAP * target) if target > 0.0 else force
 
 
 def contact_metrics(rows, tare, press_settle_s=3.0):
@@ -115,6 +133,11 @@ class WallContactDemo(AerialArmDemo):
         self.declare_parameter("force_target", 0.0)
         # Keep the tool square to the wall with the arm's yaw joint.
         self.declare_parameter("yaw_servo", False)
+        # Force controller gains and loss handling (WallForceControl's defaults).
+        self.declare_parameter("force_kp", WallForceControl.KP)
+        self.declare_parameter("force_kd", WallForceControl.KD)
+        self.declare_parameter("contact_lost_s", WallForceControl.LOST_S)
+        self.declare_parameter("creep_speed", WallForceControl.CREEP_M_S)
         ns = self.get_parameter("namespace").value.strip("/")
         self.wrench = None
         self.tare = 0.0
@@ -171,6 +194,11 @@ class WallContactDemo(AerialArmDemo):
         o = self.pose.pose.orientation
         return math.atan2(2.0 * (o.w * o.z + o.x * o.y), 1.0 - 2.0 * (o.y * o.y + o.z * o.z))
 
+    def _body_pitch(self):
+        """Nose down positive (FLU)."""
+        o = self.pose.pose.orientation
+        return math.asin(max(-1.0, min(1.0, 2.0 * (o.w * o.y - o.z * o.x))))
+
     def _command_joints(self, positions):
         msg = JointTrajectory()
         msg.joint_names = self.joints
@@ -206,6 +234,9 @@ class WallContactDemo(AerialArmDemo):
             row["true_tip_x"] = t.translation.x + rx
             row["true_tip_y"] = t.translation.y + ry
             row["true_tip_z"] = t.translation.z + rz
+        force_control = self.outer.force_control if self.outer is not None else None
+        if force_control is not None:
+            row["force_cmd"], row["contact_lost_s"] = force_control.commanded, force_control.lost_s
         w = self.wrench
         row["fx"], row["fy"], row["fz"] = (
             (w.force.x, w.force.y, w.force.z) if w is not None else (None, None, None))
@@ -293,10 +324,18 @@ class WallContactDemo(AerialArmDemo):
         if self.outer is not None:
             self.outer.freeze[0] = True
         feed_forward = self._feed_forward()
+        com = np.zeros(3)
+        if feed_forward is not None:
+            moment, _p, _l = feed_forward.model.state(dict(zip(joints, CONTACT_POSE)), {})
+            com = moment / feed_forward.total_mass
         force_control = None
         if target > 0.0 and self.outer is not None:
             force_control = WallForceControl(
                 float(self.get_parameter("body_mass").value) + self._arm_mass(), target)
+            force_control.KP = float(self.get_parameter("force_kp").value)
+            force_control.KD = float(self.get_parameter("force_kd").value)
+            force_control.LOST_S = float(self.get_parameter("contact_lost_s").value)
+            force_control.CREEP_M_S = float(self.get_parameter("creep_speed").value)
             self.outer.force_control = force_control
         force = 0.0
         t0 = time.monotonic()
@@ -306,9 +345,10 @@ class WallContactDemo(AerialArmDemo):
                 raise RuntimeError(f"drone fell {self.fell_after_s:.1f} s into the press")
             recent = self._recent_fx(0.1)
             if recent:
-                force = abs(statistics.fmean(recent) - self.tare)
+                force = contact_force(recent, self.tare, target)
             if feed_forward is not None:
-                feed_forward.external_torque = contact_torque(force, self._joint1(), self._body_yaw())
+                feed_forward.external_torque = contact_torque(
+                    force, self._joint1(), self._body_yaw(), self._body_pitch(), com)
             if force_control is not None:
                 force_control.measured = force
             elif target > 0.0:

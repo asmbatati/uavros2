@@ -244,10 +244,11 @@ error and a real link's latency will reduce this gain; neither was tested.
 
 `wall_contact_demo` (`uavros2/wall_contact_demo.py`) flies
 `x500_with_openmanip_x_tool` in the `wall` world. The tool is a 0.50 m rod
-(0.14 kg) with a force/torque sensor at its base (`/<ns>/tool/wrench`), standing in
-for a roller or brush. Its head is 0.20 m wide and touches at two points; a passive
-yaw pivot at the rod's base and a spring along the rod make it compliant. Those came
-from the failures below: the first version was one rigid ball. The drone model has
+(0.22 kg with its 0.1 kg head) with a force/torque sensor at its base
+(`/<ns>/tool/wrench`), standing in for a roller or brush. Its head is 0.20 m wide and
+touches at two points; a passive yaw pivot at the rod's base and a damped spring along
+the rod make it compliant. Those came from the failures below: the first version was
+one rigid ball. The drone model has
 13 N motors; **these are a modelling assumption, not a real part.**
 
 1. Take off, hover, and move the arm to the contact pose: rod level, tip 0.51 m
@@ -257,8 +258,9 @@ from the failures below: the first version was one rigid ball. The drone model h
 4. Press for 20 s. Under plain position control, move the setpoint `press_depth`
    past where the drone is. With `-p force_target:=<N>` under the outer loop, use
    **hybrid force control**: along the wall normal the thrust component commands
-   the force directly (PI on the measured force, velocity damping, a 5 cm/s creep
-   if contact is lost), while position control holds the other two axes.
+   the force directly (the target plus an integral on the measured force, velocity
+   damping, and a 5 cm/s creep 0.1 s after contact is lost), while position control
+   holds the other two axes.
 5. Retract, stow, fly back, land.
 
 ```bash
@@ -337,7 +339,8 @@ Three fixes, tried in this order:
 4. **The pivot on the body's yaw axis.** Folding the arm and lengthening the rod to
    0.50 m puts the pivot over the mount, so the force has no yaw lever, and the arm and
    rod balance. With a softer, longer spring at the head (80 N/m, +-8 cm: the first,
-   300 N/m, turned small position wobbles into force swings), that is the tool now.
+   300 N/m, turned small position wobbles into force swings), that was the tool until
+   B18, which found the simulated spring much softer than set (next sections).
 
 ## Position source: RTK through PX4's EKF
 
@@ -369,8 +372,6 @@ In the RTK 60 s group, the fall came at 46.6 s (its truth log is missing, so 9 r
 give the other columns). Seven of those 9 have a force median of 2.2-2.7 N and tool SD
 of 4.5 cm or less; one had a yaw excursion (SD 21 deg) and drifted 22 cm.
 
-![Force against time, 60 s press, 3 N target](figures/wall_contact/contact_force.png)
-
 - **The target (a set force for 60 s, 10 of 10 runs, tool within 2 cm) is not met,** but
   it is close at the best: 2.85 N, IQR 0.6 N, tool SD 0.1 / 0.4 cm, 100 % within 2 cm
   over 20 s; 2.72 N, 84 % within 2 cm, over 60 s. Other runs slip and resettle.
@@ -378,12 +379,83 @@ of 4.5 cm or less; one had a yaw excursion (SD 21 deg) and drifted 22 cm.
   plain GPS, 2-6 cm on RTK, with the same controller and tool.
 - **Force settles a little under target** (2.2-2.9 N for 3 N). Short loss of contact pulls
   the median down.
-- **6 N is not held**: 2 of 3 fell (9-10 s) even with the centred pivot, by pitching over.
-  The force acts 0.28 m below the centre of mass, so near 9 N its moment approaches the
-  13 N motors' pitch limit, and pushing tilts the drone further forward. Going higher
-  needs the tool line closer to the centre of mass, or more thrust margin.
-- Contact is still a rigid ball on a rigid wall with one friction value (0.5, high for a
-  roller): short force spikes (20-110 N, single samples) are partly that.
+- **6 N is not held**: 2 of 3 fell (9-10 s) even with the centred pivot. This was put down
+  to pitching over; B18 found otherwise (sideways instability of the rod, next section).
+  The force acts 0.23 m below the centre of mass of drone and arm (0.28 m below
+  `base_link`).
+- Short force spikes (20-110 N, single samples) were the head hitting its travel stop
+  (next section).
+
+## Steadier contact (B18)
+
+Per-run numbers of every group below: [b18_runs.txt](figures/wall_contact/b18_runs.txt).
+Same protocol, RTK, 3 N, 60 s.
+
+| Tool and force loop | Runs | Fell (after) | Force median (N) | Force IQR (N) | Contact lost (%) | Tool SD y / z (cm) | Within 2 cm (%) |
+|---|---|---|---|---|---|---|---|
+| Before: 20 g head, PI loop | 10 | 1 (46.6 s) | 1.29-2.73 | 0.81-2.49 | 0-31 | 0.2-22.4 / 1.7-6.0 | 3-84 |
+| Damped head, new loop | 5 | 0 | 2.52-3.09 | 0.89-3.60 | 1-13 | 1.4-4.8 / 1.1-3.5 | 9-73 |
+| **Same, plus the hover integral (defaults now)** | 10 | 2 (26.7, 44.0 s) | 2.96-3.11 | 0.66-1.23 | 0-3 | 0.1-3.8 / 1.4-3.1 | 1-92 |
+| Damped head, new loop, **6 N** | 3 | 3 (7.8-9.0 s) | - | - | - | - | - |
+
+Ranges are over the runs that held 60 s. The force now sits on its target (medians within
+0.11 N of 3 N, against 0.3-1.7 N short before) and contact is lost 0-3 % of the time
+instead of up to 31 %. The 10 of 10 target is still not met: 2 runs fell after a yaw
+excursion, and the tool's height wanders 1.4-3.1 cm (SD), mostly the body's pitch times
+the 0.5 m rod.
+
+![Force against time, 60 s press, 3 N target, before and after B18](figures/wall_contact/contact_force.png)
+
+What changed, in the order found:
+
+1. **The simulated spring was far softer than set.** Gazebo's solver does not give a
+   prismatic joint its `spring_stiffness`: a light head settles deeper, by an amount that
+   depends on its mass and damping. `scripts/bench_tool_head.py` measures it (a 2.8 kg
+   carriage on a slide, 3 N on the head, dropped 4.5 cm):
+
+   | Head (kg) | Damping set (N s/m) | Stiffness set (N/m) | Measured (N/m) | Overshoot |
+   |---|---|---|---|---|
+   | 0.02 | 6 | 80 | 35 | 94 % |
+   | 0.10 | 10 | 80 | 56 | 75 % |
+   | **0.10** | **50** | **150** | **48** | **16 %** |
+
+   The old 20 g head therefore reached its 8 cm stop at 3 N and spent much of each press on
+   it, the stop's impacts were the 20-110 N spikes, and 50 of 87 contact losses
+   came within 1 s of one. The head is now 0.1 kg with 150 N/m and 50 N s/m set (48 N/m,
+   16 % overshoot), and +-15 cm of travel (6 N at 12.5 cm).
+2. **Spikes went into the torque feed-forward.** The controllers now take the median of
+   the last 0.1 s of force, capped at twice the target.
+3. **A soft head bounced.** With a real 50 N/m the drone hit the head, was thrown off, kept
+   pushing at the target force while off the wall and came back at about 0.4 m/s, about
+   once a second. The force loop now creeps at 5 cm/s 0.1 s after a loss, and has no
+   proportional term (through the attitude loop's lag it fed the bounce) and more velocity
+   damping (3 instead of 1.8 per second); the damped head absorbs the impact.
+4. **The contact moment is taken about the combined centre of mass** (the tip is 0.23 m
+   below it; 0.28 m was below `base_link`), and with the body's pitch, which tilts the wall's force in the body
+   frame.
+5. **The position loop's integral is kept under force control.** Holding position needed
+   1-2 deg of lean (attitude and thrust biases), held by the x integral. Freezing and
+   dropping it under force control left the creep law to balance that bias, at 4 cm/s
+   away from the wall: in one batch 7 of 8 runs drifted off after the first bounce and
+   never came back.
+
+**6 N: the rod is a strut.** With the head held by friction, a sideways drift `d` leans
+the rod and its compression pushes the drone further by about `F d / L`: 12 N/m at 6 N
+with L = 0.5 m, against 4.8 N/m from the hover position gains and 2 N/m from the pivot's
+spring. At 3 N it is marginal (6 against 6.8 N/m), which fits the sideways tool wander and
+the two yaw falls. Three fixes failed:
+
+- **Cancelling the measured sideways push** (the sensor reads it): worse, roll SD 2-3 deg
+  against 1.2-1.5, and 3 of 5 runs fell at 3 N. The measured force is too noisy and late to
+  feed forward at 50 Hz. (The sensor's axes, found from flights: the push on the drone is
+  `(fx, fy, -fz)` in body axes.)
+- **Stiffer cross-wall position gains** (8 per second squared): roll oscillated, SD 10-14 deg.
+  The attitude loop is too slow for them.
+- **A stiffer pivot spring** (3 N m/rad, 12 N/m at the head): yaw SD 3.6-7 deg against
+  1.5-2.3 and 3 of 5 falls at 3 N; the spring passes yaw moment to the body.
+
+So 6 N needs restoring stiffness across the wall that does not go through the attitude
+loop and does not twist the body, or a head that does not pin the rod sideways.
 
 ## Holding the tool at a point
 
@@ -446,16 +518,16 @@ Two more things seen here:
   ROADMAP.md). Cause not investigated.
 
 Limits of this model: the machine was loaded (30-60 on 32 cores) by other
-simulations during these flights, the arm's joints are stiff position-controlled joints and
-the tool is rigid, with no compliance anywhere. A real arm and a sprung tool
-would soften the spikes, so the spikes here are likely an upper bound. Contact is
+simulations during the earliest of these flights, and the arm's joints are stiff
+position-controlled joints; the tool's only compliance is its head's spring and damper.
+A real arm would soften the spikes, so the spikes here are likely an upper bound. Contact is
 balls on a flat wall with one friction value (0.5, high for a roller), and there is
 no rotor wash near the wall (ground and wall effects are not simulated).
 
 ## What would come next
 
-- Fewer slips at 3 N: the remaining ones, then the 10 of 10 target.
-- A tool line closer to the centre of mass, for higher force.
+- The rod's sideways instability (B18): restoring stiffness that does not go through
+  the attitude loop, for 6 N and for the yaw falls left at 3 N.
 - A camera on a marker or the wall as the position source, and a fuller RTK model.
 - Trajectory shaping: minimum-jerk arm trajectories under a hover-error budget.
 - Gripper and a pick task from hover.

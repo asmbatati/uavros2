@@ -59,11 +59,9 @@ Available images (see `uavros2_docker/docker/Makefile`):
 | Make target | Base | Primary | Notes |
 |---|---|:---:|---|
 | `px4-dev-simulation-ubuntu24` | Ubuntu 24 + ROS 2 Jazzy | ✓ | This workspace's matching image |
-| `px4-dev-simulation-ubuntu22` | Ubuntu 22 + ROS 2 Humble | | Ported from gps_denied_navigation_docker |
-| `px4-dev-simulation-jammy` | Ubuntu 22 Jammy (ROS 1) | | Legacy |
-| `px4-simulation-cuda11.7.1-ubuntu22` | + CUDA 11.7 | | NVIDIA GPU compute |
-| `px4-simulation-cuda12.2.0-ubuntu22` | + CUDA 12.2 | | What gps_denied's `docker_run.sh` defaults to |
-| `px4.simulation.ubuntu22.wsl` | Ubuntu 22 + WSL2 tweaks | | Windows host via WSL |
+| `uavros2` | `px4-dev-simulation-ubuntu24` + PX4 v1.15.4 + uavros2, built | | Ready to run (`uavros2:jazzy`) |
+
+The Humble, CUDA and WSL images were dropped in November 2026 (owner's decision 6a).
 
 Build + run (Ubuntu 24 / Jazzy image — recommended for this workspace):
 
@@ -80,20 +78,6 @@ cd ~/shared_volume/ros2_ws/src/uavros2
 ```
 
 The container working directory `/home/user/shared_volume` is bind-mounted to a per-container host directory (default `~/${CONTAINER_NAME}_shared_volume`). Inside the container, `DEV_DIR=/home/user/shared_volume` is exported automatically.
-
-If you want a CUDA-capable container for vision workloads:
-
-```bash
-make px4-simulation-cuda12.2.0-ubuntu22       # builds mzahana/px4-simulation-cuda12.2.0-ubuntu22
-```
-
-WSL hosts can use the WSL-tuned image:
-
-```bash
-make px4.simulation.ubuntu22.wsl
-cd ..
-./docker_run_wsl.sh
-```
 
 ## Environment variables
 

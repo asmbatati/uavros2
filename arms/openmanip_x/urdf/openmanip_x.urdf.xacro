@@ -134,9 +134,9 @@
     <!-- Contact tool, as in models/x500_with_openmanip_x_tool/model.sdf. -->
     <link name="tool_link">
       <inertial>
-        <origin xyz="0.26 0 0"/>
-        <mass value="0.14"/>
-        <inertia ixx="2e-6" iyy="2.9e-3" izz="2.9e-3" ixy="0" ixz="0" iyz="0"/>
+        <origin xyz="0.35 0 0"/>
+        <mass value="0.22"/>
+        <inertia ixx="3.5e-4" iyy="5.6e-3" izz="5.6e-3" ixy="0" ixz="0" iyz="0"/>
       </inertial>
       <visual>
         <origin xyz="0.25 0 0" rpy="0 1.5708 0"/>

@@ -1,41 +1,33 @@
 [
   {
-    "group": "EKF, 60 s",
-    "runs": 3,
-    "fell": 0,
-    "fell_after_s": [],
-    "force_mean_n": "2.41 \u00b1 0.20",
-    "force_sd_n": "4.56 \u00b1 0.08",
-    "force_first_half_n": "2.45 \u00b1 0.26",
-    "force_second_half_n": "2.38 \u00b1 0.17",
-    "contact_lost_pct": "17.5 \u00b1 3.9",
-    "tip_y_sd_cm": "8.9 \u00b1 3.5",
-    "tip_z_sd_cm": "18.5 \u00b1 6.3"
+    "group": "Before: 20 g head, RTK",
+    "runs": 10,
+    "fell": 1,
+    "fell_after_s": [
+      46.64594795007724
+    ],
+    "force_mean_n": "2.64 \u00b1 0.30",
+    "force_sd_n": "3.15 \u00b1 1.38",
+    "force_first_half_n": "2.56 \u00b1 0.35",
+    "force_second_half_n": "2.72 \u00b1 0.32",
+    "contact_lost_pct": "10.3 \u00b1 9.6",
+    "tip_y_sd_cm": "4.9 \u00b1 6.6",
+    "tip_z_sd_cm": "3.0 \u00b1 1.5"
   },
   {
-    "group": "RTK, 60 s (first 5 of 10)",
-    "runs": 5,
-    "fell": 0,
-    "fell_after_s": [],
-    "force_mean_n": "2.54 \u00b1 0.30",
-    "force_sd_n": "3.64 \u00b1 1.29",
-    "force_first_half_n": "2.47 \u00b1 0.36",
-    "force_second_half_n": "2.60 \u00b1 0.35",
-    "contact_lost_pct": "13.6 \u00b1 10.5",
-    "tip_y_sd_cm": "7.2 \u00b1 8.5",
-    "tip_z_sd_cm": "3.6 \u00b1 1.7"
-  },
-  {
-    "group": "RTK, 60 s (last 4 of 10)",
-    "runs": 3,
-    "fell": 0,
-    "fell_after_s": [],
-    "force_mean_n": "2.70 \u00b1 0.30",
-    "force_sd_n": "3.04 \u00b1 1.23",
-    "force_first_half_n": "2.55 \u00b1 0.34",
-    "force_second_half_n": "2.85 \u00b1 0.29",
-    "contact_lost_pct": "8.2 \u00b1 7.7",
-    "tip_y_sd_cm": "2.8 \u00b1 0.4",
-    "tip_z_sd_cm": "2.6 \u00b1 0.8"
+    "group": "B18: damped head, new force loop",
+    "runs": 10,
+    "fell": 2,
+    "fell_after_s": [
+      26.672413871157914,
+      44.030196219915524
+    ],
+    "force_mean_n": "2.98 \u00b1 0.06",
+    "force_sd_n": "0.80 \u00b1 0.20",
+    "force_first_half_n": "2.99 \u00b1 0.07",
+    "force_second_half_n": "2.97 \u00b1 0.09",
+    "contact_lost_pct": "1.0 \u00b1 1.2",
+    "tip_y_sd_cm": "1.4 \u00b1 1.4",
+    "tip_z_sd_cm": "2.3 \u00b1 0.6"
   }
 ]

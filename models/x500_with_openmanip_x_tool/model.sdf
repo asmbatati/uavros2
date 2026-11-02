@@ -253,9 +253,12 @@
          0.20 m wide head. A force/torque sensor sits at its base. Two passive
          joints: a yaw pivot at the base, so the rod cannot put a yaw moment on the
          drone (a rigid rod pushed on a wall buckles, docs/AERIAL_ARM.md), and a
-         spring along the rod at the head. The head touches at two balls, only on
-         surfaces that set bit 0x02 (the wall world's wall): the arm spawns
-         unfolded and the head would hit the ground otherwise. -->
+         spring and damper along the rod at the head. Gazebo's solver gives a lower
+         stiffness than set, by the head's mass and damping: 150 N/m and 50 N s/m as set
+         measure 48 N/m, overshoot 13 % (scripts/bench_tool_head.py; a 20 g head with
+         80 N/m and 6 N s/m gave 33 N/m and sat on its stop at 3 N, docs/AERIAL_ARM.md). The head touches
+         at two balls, only on surfaces that set bit 0x02 (the wall world's wall): the
+         arm spawns unfolded and the head would hit the ground otherwise. -->
     <link name='tool_link'>
       <pose relative_to='end_effector_link'>0 0 0 0 0 0</pose>
       <inertial>
@@ -306,9 +309,9 @@
     <link name='tool_head_link'>
       <pose relative_to='tool_rod_link'>0.5 0 0 0 0 0</pose>
       <inertial>
-        <mass>0.02</mass>
+        <mass>0.1</mass>
         <inertia>
-          <ixx>7e-5</ixx><iyy>7e-6</iyy><izz>7e-5</izz>
+          <ixx>3.5e-4</ixx><iyy>3.5e-5</iyy><izz>3.5e-4</izz>
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
@@ -339,8 +342,8 @@
       <child>tool_head_link</child>
       <axis>
         <xyz>1 0 0</xyz>
-        <limit><lower>-0.08</lower><upper>0.08</upper></limit>
-        <dynamics><damping>6</damping><spring_stiffness>80</spring_stiffness><spring_reference>0</spring_reference></dynamics>
+        <limit><lower>-0.15</lower><upper>0.15</upper></limit>
+        <dynamics><damping>50</damping><spring_stiffness>150</spring_stiffness><spring_reference>0</spring_reference></dynamics>
       </axis>
     </joint>
 

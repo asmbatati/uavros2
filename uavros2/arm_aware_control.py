@@ -242,19 +242,21 @@ class WallForceControl:
     """Acceleration along a wall's normal that holds a contact force.
 
     Commands the force directly (the wall stops the drone, so force = thrust
-    component along the normal), PI on the measured force, damping on velocity.
-    A brief loss of contact changes nothing, so the drone does not back away from
-    the wall; after ``LOST_S`` it creeps forward, so that regaining contact does not
-    become an impact.
+    component along the normal): the target plus an integral on the measured
+    force, and damping on velocity. No proportional term: through the attitude
+    loop's lag it fed the bounce on the sprung head. On losing contact for
+    ``LOST_S`` it creeps forward slowly, so that regaining contact is not an impact
+    (pushing on at the target force through a loss brought the drone back at
+    0.4 m/s).
     """
 
-    KP = 0.3
+    KP = 0.0
     KI = 0.3
     I_LIMIT_N = 4.0
-    KD = 1.8
+    KD = 3.0
     CONTACT_N = 0.2
-    CREEP_M_S = 0.10
-    LOST_S = 1.0
+    CREEP_M_S = 0.05
+    LOST_S = 0.1
     RAMP_N_S = 1.0
     MAX_SPEED_M_S = 0.15
 
@@ -265,9 +267,12 @@ class WallForceControl:
         self.measured = 0.0
         self.integral = 0.0
         self.lost_s = 0.0
+        # The force asked of the drone last tick (None while creeping), for logs.
+        self.commanded = None
 
     def acceleration(self, velocity, dt):
         self.lost_s = self.lost_s + dt if self.measured < self.CONTACT_N else 0.0
+        self.commanded = None
         if self.lost_s > self.LOST_S:
             return self.KD * (self.CREEP_M_S - velocity)
         if velocity > self.MAX_SPEED_M_S:
@@ -277,6 +282,7 @@ class WallForceControl:
         self.integral = float(np.clip(self.integral + self.KI * err * dt,
                                       -self.I_LIMIT_N, self.I_LIMIT_N))
         force = self.ramped + self.KP * err + self.integral
+        self.commanded = force
         return force / self.mass - self.KD * velocity
 
 
@@ -298,7 +304,10 @@ class OuterLoop:
         self.integral = np.clip(self.integral + grow, -I_LIMIT, I_LIMIT)
         acc = KP * err - KD * vel + self.integral
         if self.force_control is not None:
-            acc[0] = self.force_control.acceleration(vel[0], dt)
+            # Keep what holding position needed (the frozen integral: attitude and
+            # thrust biases, 1-2 degrees); without it, creeping after a lost contact
+            # settles at a few cm/s away from the wall.
+            acc[0] = self.force_control.acceleration(vel[0], dt) + self.integral[0]
         bias = np.zeros(3)
         body_acc = np.zeros(3)
         if self.feed_forward is not None:

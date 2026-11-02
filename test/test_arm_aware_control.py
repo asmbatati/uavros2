@@ -196,3 +196,32 @@ def test_tool_correction_reaches_a_nearby_target():
     dq = tool_correction(model, nominal, JOINTS, "tool_tip", target)
     moved = {j: nominal[j] + d for j, d in zip(JOINTS, dq)}
     assert np.linalg.norm(model.position(moved, "tool_tip") - target) < 0.005
+
+
+def test_contact_force_ignores_a_spike():
+    pytest.importorskip("geometry_msgs")  # wall_contact_demo needs ROS
+    from uavros2.wall_contact_demo import contact_force
+    assert contact_force([-3.0, -3.1, -90.0, -2.9, -3.0], 0.0, 3.0) == pytest.approx(3.0)
+    assert contact_force([-90.0] * 5, 0.0, 3.0) == pytest.approx(6.0)     # capped when holding a force
+    assert contact_force([-90.0] * 5, 0.0) == pytest.approx(90.0)         # not when only measuring
+
+
+def test_contact_torque_about_the_centre_of_mass_and_with_pitch():
+    pytest.importorskip("geometry_msgs")  # wall_contact_demo needs ROS
+    from uavros2.wall_contact_demo import contact_torque
+    level = contact_torque(3.0)[1]
+    assert contact_torque(3.0, com=(0.0, 0.0, -0.05))[1] == pytest.approx(level - 0.15, abs=1e-3)
+    # Nose down 0.1 rad: the wall's force gains a component along the body's -z.
+    assert contact_torque(3.0, pitch=0.1)[1] > level + 0.1
+
+
+def test_force_control_keeps_the_hover_integral():
+    loop = OuterLoop(hover_thrust=0.5)
+    loop.integral[0] = 0.3                  # holding position needed a forward lean
+    loop.freeze[0] = True
+    loop.force_control = WallForceControl(total_mass=2.0, target_n=3.0)
+    loop.force_control.lost_s = 5.0         # lost contact: creeping
+    q, _thrust, _b, _a = loop.update((0.0, 0.0, 2.0), 0.0, np.array([0.0, 0.0, 2.0]),
+                                     np.array([WallForceControl.CREEP_M_S, 0.0, 0.0]), {}, {}, 0.02)
+    x, y, z, w = q
+    assert 2 * (x * z + w * y) > 0.02       # still leaning forward at the creep speed
