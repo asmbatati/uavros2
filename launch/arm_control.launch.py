@@ -6,7 +6,8 @@ Brings up:
   gz_ros2_control Gazebo plugin reads this `robot_description` to
   discover joints, hardware interfaces, and controller config.
 - joint_state_broadcaster and joint_trajectory_controller (spawned
-  via the controller_manager that lives inside gz_ros2_control).
+  via the controller_manager that lives inside gz_ros2_control), and
+  gripper_controller when the URDF has gripper fingers.
 - Optionally MoveIt's move_group when use_moveit:=true and the arm
   ships a config/moveit/ directory.
 
@@ -104,6 +105,16 @@ def _setup(context, *_args, **_kwargs):
         spawn_jsb,
         spawn_jtc,
     ]
+    if 'name="gripper_left_joint"' in robot_description:
+        actions.append(TimerAction(period=7.0, actions=[
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                namespace=ns,
+                arguments=["gripper_controller", "--param-file", controllers_yaml],
+                output="screen",
+            ),
+        ]))
 
     if use_moveit:
         moveit_dir = os.path.join(arm_share, "config", "moveit")

@@ -98,7 +98,7 @@ UAV_AIRFRAME = {
 }
 
 
-def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0):
+def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0, truth_models=()):
     """Build the ros_gz_bridge argument list for the given UAV model.
 
     The topic-string structure is Gazebo-specific
@@ -127,15 +127,26 @@ def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0):
         )
 
     tool_ft = f"/world/{world}/model/{m}/joint/j_tool/sensor/tool_ft/forcetorque"
-    tool_truth = f"/model/{m}/pose"
+    wrist_ft = f"/world/{world}/model/{m}/joint/joint4/sensor/wrist_ft/forcetorque"
+    has_wrist_ft = uav == "x500_with_openmanip_x"
+    # Gazebo's truth, for measuring only: the OMX models' own pose and link poses
+    # (their PosePublisher), and the world's truth_models (worlds/manifest.yaml).
+    truth = {f"/model/{m}/pose": f"/{ns}/truth"} if "openmanip_x" in uav else {}
+    truth.update({f"/model/{name}/pose": f"/{ns}/{name}/truth" for name in truth_models})
     if uav.endswith("_tool"):
         args.append(f"{tool_ft}@geometry_msgs/msg/Wrench[ignition.msgs.Wrench")
-        args.append(f"{tool_truth}@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V")
+    if has_wrist_ft:
+        args.append(f"{wrist_ft}@geometry_msgs/msg/Wrench[ignition.msgs.Wrench")
+    args += [f"{topic}@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V" for topic in truth]
 
     # Remappings to canonical names
     args += ["--ros-args"]
     if uav.endswith("_tool"):
-        args += ["-r", f"{tool_ft}:=/{ns}/tool/wrench", "-r", f"{tool_truth}:=/{ns}/tool/truth"]
+        args += ["-r", f"{tool_ft}:=/{ns}/tool/wrench"]
+    if has_wrist_ft:
+        args += ["-r", f"{wrist_ft}:=/{ns}/wrist/wrench"]
+    for topic, remapped in truth.items():
+        args += ["-r", f"{topic}:={remapped}"]
     args += [
         "-r", f"/world/{world}/model/{m}/link/base_link/sensor/imu_sensor/imu:=/{ns}/imu",
         "-r", f"/world/{world}/model/{m}/link/base_link/sensor/air_pressure_sensor/air_pressure:=/{ns}/air_pressure",
@@ -186,6 +197,7 @@ def _setup(context, *_args, **_kwargs):
     # worlds (urban1-5) have elevated terrain; default Z=0.1 would spawn
     # the drone underground. The manifest holds the right Z for each.
     from uavros2.world_meta import spawn_pose as _spawn_pose
+    from uavros2.world_meta import truth_models as _truth_models
     sx, sy, sz, *_rpy = _spawn_pose(world)
     xpos, ypos, zpos = f"{sx:g}", f"{sy:g}", f"{sz:g}"
 
@@ -248,7 +260,7 @@ def _setup(context, *_args, **_kwargs):
         package="ros_gz_bridge",
         name="ros_gz_bridge",
         executable="parameter_bridge",
-        arguments=_build_ros_gz_bridge_args(uav, world, ns, instance),
+        arguments=_build_ros_gz_bridge_args(uav, world, ns, instance, _truth_models(world)),
         parameters=[{"use_sim_time": True}, {"verbose": False}],
         output="log",
     )

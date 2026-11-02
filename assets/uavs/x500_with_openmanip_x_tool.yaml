@@ -1,7 +1,7 @@
 version: 1
 kind: uav
 name: x500_with_openmanip_x_tool
-description: x500 + ROBOTIS OpenManipulator-X (0.594 kg) + 0.40 m contact tool with force/torque sensor (0.12 kg), 13 N motors. Arm bodies inline in hand-authored SDF.
+description: x500 + ROBOTIS OpenManipulator-X (0.594 kg) + 0.50 m contact tool with a sprung head and force/torque sensor (0.22 kg), 13 N motors. Arm bodies inline in hand-authored SDF.
 chassis:
   ref: x500
 sensors:

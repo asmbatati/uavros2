@@ -64,12 +64,19 @@ From ROBOTIS-GIT/open_manipulator (Apache-2.0),
 | joint3 | Y | 0.024, 0, 0.128 | −1.5 … 1.4 |
 | joint4 | Y | 0.124, 0, 0 | −1.7 … 1.97 |
 | end effector | – | 0.126, 0, 0 | – |
+| gripper_left_joint | Y (prismatic) | 0.0817, 0.021, 0 from the wrist | −0.010 … 0.019 m |
+| gripper_right_joint | −Y, mimics the left | 0.0817, −0.021, 0 | same |
 
-Link masses 0.079 / 0.098 / 0.139 / 0.133 / 0.145 kg (base plate to
-wrist, gripper fingers folded into the wrist). Effort limit 4.1 N m
-(Dynamixel XM430-W350 stall torque at 12 V), velocity 4.8 rad/s. The
-gripper's two prismatic fingers are not modelled yet. The airframe's
-`MPC_THR_HOVER` is 0.72 (PX4's hover-thrust estimator refines it in flight).
+Link masses 0.079 / 0.098 / 0.139 / 0.133 / 0.143 kg (base plate to
+wrist) and 1 g per finger, all upstream. Effort limit 4.1 N m
+(Dynamixel XM430-W350 stall torque at 12 V), velocity 4.8 rad/s; the
+fingers 1 N each, as upstream. Each finger is a 4.43 cm pad ending at the
+end effector, so the pads are 0.040 + 2q apart: 2.0 cm closed, 7.8 cm open
+(the real gripper's stroke is 20-75 mm). gz_ros2_control drives the right
+finger as the URDF's mimic. With the contact tool (`x500_with_openmanip_x_tool`)
+the rod replaces the gripper and the fingers' mass is folded into the wrist.
+The airframe's `MPC_THR_HOVER` is 0.72 (PX4's hover-thrust estimator refines
+it in flight).
 
 ## Launching
 
@@ -90,7 +97,10 @@ All under the `drone` namespace:
 - `/drone/joint_states` — `sensor_msgs/JointState`
 - `/drone/joint_trajectory_controller/follow_joint_trajectory` — `control_msgs/action/FollowJointTrajectory`
 - `/drone/joint_trajectory_controller/controller_state` — reference, feedback and error
-- MoveIt: `move_group` under `/drone` when `use_moveit:=true`
+- `/drone/gripper_controller/gripper_cmd` — `control_msgs/action/ParallelGripperCommand`
+  (OpenManipulator-X: position of `gripper_left_joint`; on an object the fingers stop
+  short and the result says `stalled`)
+- MoveIt: `move_group` under `/drone` when `use_moveit:=true` (groups `arm` and `gripper`)
 
 ```bash
 ros2 action send_goal /drone/joint_trajectory_controller/follow_joint_trajectory \
@@ -98,6 +108,9 @@ ros2 action send_goal /drone/joint_trajectory_controller/follow_joint_trajectory
   "{ trajectory: { joint_names: [joint1, joint2, joint3, joint4],
                    points: [{positions: [0.0, 0.8, -0.3, 0.4],
                              time_from_start: {sec: 2}}] } }"
+ros2 action send_goal /drone/gripper_controller/gripper_cmd \
+  control_msgs/action/ParallelGripperCommand \
+  "{ command: { name: [gripper_left_joint], position: [0.019] } }"
 ```
 
 Joint names per arm:
@@ -139,7 +152,7 @@ This is how the OpenManipulator-X was upgraded:
 4. Optionally ship `config/moveit/`; `arm_control.launch.py` auto-detects it.
 5. Author `models/x500_with_<name>/model.sdf` with the arm links and the
    `gz_ros2_control` plugin block.
-6. Add `assets/uavs/x500_with_<name>.yaml` (next free airframe ID is 4429),
+6. Add `assets/uavs/x500_with_<name>.yaml` (next free airframe ID is 4430),
    `asset build`, register the UAV in `UAV_AIRFRAME` in
    `launch/simulators/gazebo.launch.py`, the arm in `SUPPORTED_ARMS`
    (`launch/sim.launch.py`) and `arms/manifest.yaml`, and the arm's poses in
@@ -148,9 +161,9 @@ This is how the OpenManipulator-X was upgraded:
 
 ## Known limitations
 
-- **No arm-aware flight control.** PX4 treats the arm as an unknown
-  disturbance; the OpenManipulator-X's reach moves the drone 15-40 cm (see
-  AERIAL_ARM.md). Feed-forward compensation is open work.
-- **No gripper yet** on the OpenManipulator-X.
+- **Arm-aware flight control is opt-in.** Under plain PX4 position control the
+  OpenManipulator-X's reach moves the drone 17-52 cm; the demos' outer loop and
+  feed-forward (`controller:=outer_ff`, `px4_ff`) cut that to 9-15 cm (see
+  AERIAL_ARM.md).
 - **Gazebo only.** Webots ships the x500 base only; MuJoCo / Isaac / PyBullet /
   Genesis arm conversions are `REGEN_PENDING` placeholders.

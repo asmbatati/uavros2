@@ -40,7 +40,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
 from tf2_ros import Buffer, TransformListener
-from trajectory_msgs.msg import JointTrajectoryPoint
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 # Joint poses per arm: (label, positions). three_dof, panda and ur5 are
 # planar pitch-chain scaffolds hanging below base_link, so a positive first
@@ -200,6 +200,8 @@ class AerialArmDemo(Node):
         self.jtc = ActionClient(
             self, FollowJointTrajectory,
             f"/{ns}/joint_trajectory_controller/follow_joint_trajectory")
+        self.joint_pub = self.create_publisher(
+            JointTrajectory, f"/{ns}/joint_trajectory_controller/joint_trajectory", 10)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
@@ -400,6 +402,25 @@ class AerialArmDemo(Node):
         fut = client.call_async(req)
         self._wait(fut.done, 10.0, client.srv_name)
         return fut.result()
+
+    def _command_joints(self, positions):
+        """Stream a joint target (``self.joints``), reached in 60 ms."""
+        msg = JointTrajectory()
+        msg.joint_names = self.joints
+        point = JointTrajectoryPoint()
+        point.positions = [float(v) for v in positions]
+        point.time_from_start.nanosec = 60_000_000
+        msg.points = [point]
+        self.joint_pub.publish(msg)
+
+    def _go(self, target, speed):
+        """Move the position setpoint in a straight line at ``speed`` m/s."""
+        start = self.setpoint
+        dist = math.dist(start, target)
+        steps = max(1, int(dist / speed / 0.05))
+        for i in range(1, steps + 1):
+            self.setpoint = tuple(a + (b - a) * i / steps for a, b in zip(start, target))
+            time.sleep(0.05)
 
     def _offboard_and_arm(self):
         for _ in range(60):  # on some starts the EKF never gets GPS; the runner retries

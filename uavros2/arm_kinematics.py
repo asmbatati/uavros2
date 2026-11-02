@@ -23,6 +23,55 @@ OMX_TOOL_CONTACT_POSE = [0.0, -1.4, -0.2, 1.6]
 OMX_TOOL_STOW_POSE = [0.0, 0.9, 1.1, 1.3]
 OMX_TOOL_TIP_IN_BASE = (0.512, 0.0, -0.279)
 
+# OpenManipulator-X gripper (gripper_left_joint; the right finger mimics it): the pads are
+# 0.040 + 2 q apart, and end_effector_link sits between their tips.
+OMX_GRIPPER_OPEN = 0.019
+OMX_GRIPPER_CLOSED = -0.010
+OMX_PAD_LENGTH = 0.0443
+# The OMX chain in its own frame (openmanip_x_link1, hung from base_link flipped):
+# joint 1 along x, joint 2 above it, the upper arm, forearm and hand to end_effector_link.
+_OMX_MOUNT_Z = -0.05
+_OMX_JOINT1_X = 0.012
+_OMX_JOINT2_Z = 0.0595
+_OMX_UPPER = complex(0.024, 0.128)
+_OMX_FOREARM = 0.124
+_OMX_HAND = 0.126
+_OMX_LIMITS = ((-3.14159, 3.14159), (-1.5, 1.5), (-1.5, 1.4), (-1.7, 1.97))
+
+
+def omx_gripper_down_ik(point):
+    """OMX joints that put end_effector_link at ``point`` (base_link), the gripper straight down.
+
+    Fingers close along the arm's y axis: base_link y with joint 1 at 0. Joint 1 also
+    turns the fingers about the vertical, so a point off the body's x axis turns them;
+    points under the body need joint 1 near its singularity (the axis of joint 1 itself),
+    where it stays within +-90 degrees and the arm reaches behind the axis instead. Elbow
+    towards the front, the branch that keeps the arm's centre of mass within 3 cm of the
+    body's axis. Raises ValueError out of reach or outside the joint limits.
+    """
+    # In openmanip_x_link1: 0.05 m below base_link, rolled by pi.
+    ax, ay, az = point[0], -point[1], -(point[2] - _OMX_MOUNT_Z)
+    j1 = math.atan2(ay, ax - _OMX_JOINT1_X)
+    if abs(j1) > math.pi / 2.0:
+        j1 -= math.copysign(math.pi, j1)
+    reach = (ax - _OMX_JOINT1_X) * math.cos(j1) + ay * math.sin(j1)
+    # Rotating a vector (x, z) of the pitch plane by a joint angle t multiplies x + iz
+    # by exp(-it). Straight down is the plane's +z, so the wrist sits a hand above the point.
+    d = complex(reach, az - _OMX_HAND - _OMX_JOINT2_Z)
+    upper = abs(_OMX_UPPER)
+    c = (abs(d) ** 2 - upper ** 2 - _OMX_FOREARM ** 2) / (2.0 * upper * _OMX_FOREARM)
+    if abs(c) > 1.0:
+        raise ValueError(f"{point} is out of the gripper's reach")
+    j3 = math.acos(c) - math.atan2(_OMX_UPPER.imag, _OMX_UPPER.real)
+    k = _OMX_UPPER + _OMX_FOREARM * complex(math.cos(j3), -math.sin(j3))
+    j2 = math.atan2(k.imag, k.real) - math.atan2(d.imag, d.real)
+    j4 = -math.pi / 2.0 - j2 - j3
+    q = [j1, j2, j3, j4]
+    for v, (lo, hi), name in zip(q, _OMX_LIMITS, ("joint1", "joint2", "joint3", "joint4")):
+        if not lo <= v <= hi:
+            raise ValueError(f"{point} needs {name} = {v:.2f}, outside [{lo}, {hi}]")
+    return q
+
 
 def _rot(axis, angle):
     axis = np.asarray(axis, dtype=float)

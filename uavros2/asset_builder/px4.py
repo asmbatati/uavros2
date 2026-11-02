@@ -125,6 +125,8 @@ def build_px4(
             short_name=short_name,
             # Arm airframes use GPS height (1) like stock x500; others keep the baro (0).
             height_ref=1 if uav.arm is not None else 0,
+            # Arm airframes take UAVROS2_RTK=1 (simulated RTK, a local PX4 patch).
+            rtk=uav.arm is not None,
             px4_type={
                 "quad_x": "Quadrotor", "quad_plus": "Quadrotor",
                 "hex_x": "Hexarotor", "hex_plus": "Hexarotor",

@@ -1,7 +1,7 @@
 version: 1
 kind: uav
 name: x500_with_openmanip_x
-description: x500 + ROBOTIS OpenManipulator-X (0.594 kg). Arm bodies inline in hand-authored SDF.
+description: x500 + ROBOTIS OpenManipulator-X (0.594 kg) with its gripper. Arm bodies inline in hand-authored SDF.
 chassis:
   ref: x500
 sensors:

@@ -81,3 +81,11 @@ def test_arm_airframes_use_gps_height():
     assert "EKF2_HGT_REF 1" in next(px4.glob("4426_*")).read_text()
     assert "EKF2_HGT_REF 1" in next(px4.glob("4429_*")).read_text()
     assert "EKF2_HGT_REF 0" in next(px4.glob("4420_*")).read_text()
+
+
+def test_arm_airframes_take_simulated_rtk():
+    """UAVROS2_RTK=1 switches the simulated GPS to RTK on every arm airframe, off by default."""
+    px4 = pathlib.Path(__file__).resolve().parent.parent / "config" / "px4"
+    for airframe in ("4425_*", "4426_*", "4429_*"):
+        assert "SIM_GPS_RTK ${UAVROS2_RTK:=0}" in next(px4.glob(airframe)).read_text()
+    assert "SIM_GPS_RTK" not in next(px4.glob("4420_*")).read_text()

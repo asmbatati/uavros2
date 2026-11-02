@@ -42,3 +42,13 @@ param set-default MPC_THR_HOVER {{ "%.2f"|format(hover_thrust) }}
 {% for key, val in extra_params|dictsort %}
 param set-default {{ key }} {{ val }}
 {% endfor %}
+{% if rtk %}
+
+# Simulated RTK for arm experiments: UAVROS2_RTK=1 in the environment (needs
+# the local patch in config/px4/patches). Off by default.
+param set-default SIM_GPS_RTK ${UAVROS2_RTK:=0}
+if [ "$UAVROS2_RTK" = "1" ]; then
+	param set-default EKF2_GPS_P_NOISE 0.02
+	param set-default EKF2_REQ_EPH 0.5
+fi
+{% endif %}

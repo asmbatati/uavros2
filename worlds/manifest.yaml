@@ -41,6 +41,18 @@ worlds:
     spawn_pose: [0.0, 0.0, 0.1, 0, 0, 0]
     note: "Ground plane and a wall (face at x = 3 m) for contact experiments."
 
+  pick:
+    gazebo: pick.sdf
+    webots: false
+    mujoco: false
+    isaac: false
+    pybullet: false
+    genesis: false
+    spawn_pose: [0.0, 0.0, 0.1, 0, 0, 0]
+    # Models whose Gazebo pose is bridged to /<ns>/<model>/truth (for measuring).
+    truth_models: [part]
+    note: "Two posts (tops at 1.0 m, at x 1.5 m, y 0 and 1 m) and a 50 g part (4 x 3 x 5 cm) on the first, for pick-and-place."
+
   urban1:
     gazebo: urban1.sdf
     spawn_pose: [0.0, 200.0, 900.0, 0, 0, 0]

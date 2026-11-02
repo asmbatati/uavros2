@@ -58,3 +58,8 @@ def dem_viz(world: str) -> Dict[str, Any]:
     world_surface_publisher for the active world.
     """
     return world_entry(world).get("dem_viz") or {}
+
+
+def truth_models(world: str) -> list:
+    """Models of ``world`` whose Gazebo pose is bridged to ``/<ns>/<model>/truth``."""
+    return list(world_entry(world).get("truth_models") or [])

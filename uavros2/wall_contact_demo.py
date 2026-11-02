@@ -34,7 +34,6 @@ from geometry_msgs.msg import Wrench
 import numpy as np
 from rclpy.qos import qos_profile_sensor_data
 from tf2_msgs.msg import TFMessage
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from .aerial_arm_demo import _quat_rotate, AerialArmDemo
 from .aerial_arm_demo import main as demo_main
@@ -149,9 +148,7 @@ class WallContactDemo(AerialArmDemo):
         self.rng = np.random.default_rng()
         self.yaw_servo_on = False
         self.joints = []
-        self.joint_pub = self.create_publisher(
-            JointTrajectory, f"/{ns}/joint_trajectory_controller/joint_trajectory", 10)
-        self.create_subscription(TFMessage, f"/{ns}/tool/truth", self._on_truth,
+        self.create_subscription(TFMessage, f"/{ns}/truth", self._on_truth,
                                  qos_profile_sensor_data)
         self.create_timer(0.02, self._yaw_servo_tick)
         self.create_subscription(Wrench, f"/{ns}/tool/wrench", self._on_wrench,
@@ -199,15 +196,6 @@ class WallContactDemo(AerialArmDemo):
         o = self.pose.pose.orientation
         return math.asin(max(-1.0, min(1.0, 2.0 * (o.w * o.y - o.z * o.x))))
 
-    def _command_joints(self, positions):
-        msg = JointTrajectory()
-        msg.joint_names = self.joints
-        point = JointTrajectoryPoint()
-        point.positions = [float(v) for v in positions]
-        point.time_from_start.nanosec = 60_000_000
-        msg.points = [point]
-        self.joint_pub.publish(msg)
-
     def _yaw_servo_tick(self):
         if self.yaw_servo_on:
             self._command_joints([yaw_servo_angle(self._body_yaw()), *CONTACT_POSE[1:]])
@@ -240,15 +228,6 @@ class WallContactDemo(AerialArmDemo):
         w = self.wrench
         row["fx"], row["fy"], row["fz"] = (
             (w.force.x, w.force.y, w.force.z) if w is not None else (None, None, None))
-
-    def _go(self, target, speed):
-        """Move the position setpoint in a straight line at ``speed`` m/s."""
-        start = self.setpoint
-        dist = math.dist(start, target)
-        steps = max(1, int(dist / speed / 0.05))
-        for i in range(1, steps + 1):
-            self.setpoint = tuple(a + (b - a) * i / steps for a, b in zip(start, target))
-            time.sleep(0.05)
 
     def _recent_fx(self, seconds):
         with self.lock:

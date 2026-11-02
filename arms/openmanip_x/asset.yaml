@@ -26,4 +26,6 @@ notes: |
   geometry instead of the STL meshes; no runtime dependency on the ROBOTIS
   packages. Spawns folded in the stow pose (ros2_control initial_value):
   straight down the arm would reach past the x500 landing gear. The two
-  gripper fingers are not modelled (their 2 g are folded into link5).
+  gripper fingers are prismatic joints, the right one mimicking the left
+  (gripper_controller); with the contact tool they are left out and their
+  2 g folded into link5.

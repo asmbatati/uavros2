@@ -8,6 +8,9 @@
         type: joint_state_broadcaster/JointStateBroadcaster
       joint_trajectory_controller:
         type: joint_trajectory_controller/JointTrajectoryController
+      # Spawned only when the URDF has the fingers (not with the contact tool).
+      gripper_controller:
+        type: parallel_gripper_action_controller/GripperActionController
 
   joint_trajectory_controller:
     ros__parameters:
@@ -20,3 +23,16 @@
       state_interfaces: [position, velocity]
       state_publish_rate: 100.0
       action_monitor_rate: 20.0
+
+  # Action <ns>/gripper_controller/gripper_cmd (control_msgs/ParallelGripperCommand),
+  # positions of gripper_left_joint: -0.010 closed, 0.019 open. Holding an object
+  # the fingers stop short of a closed goal: the result says stalled, and the
+  # position held is the object's width (pads 0.040 + 2 q apart).
+  gripper_controller:
+    ros__parameters:
+      joint: gripper_left_joint
+      state_interfaces: [position, velocity]
+      goal_tolerance: 0.002
+      allow_stalling: true
+      stall_velocity_threshold: 0.001
+      stall_timeout: 0.5

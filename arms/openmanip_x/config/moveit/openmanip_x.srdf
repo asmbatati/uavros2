@@ -16,8 +16,12 @@
     <joint name="joint4"/>
   </group>
 
-  <!-- No end_effector element: an end effector needs its own group (a
-       gripper), and the fingers are not modelled yet. -->
+  <!-- The fingers; the right one mimics the left. Not in the contact-tool
+       URDF, where MoveIt warns and ignores the group. -->
+  <group name="gripper">
+    <joint name="gripper_left_joint"/>
+  </group>
+  <end_effector name="gripper" parent_link="openmanip_x_link5" group="gripper" parent_group="arm"/>
 
   <!-- home = the stow pose the arm spawns in (fits above the landing gear) -->
   <group_state name="home" group="arm">
@@ -25,6 +29,12 @@
     <joint name="joint2" value="-1.1"/>
     <joint name="joint3" value="1.2"/>
     <joint name="joint4" value="0.9"/>
+  </group_state>
+  <group_state name="open" group="gripper">
+    <joint name="gripper_left_joint" value="0.019"/>
+  </group_state>
+  <group_state name="close" group="gripper">
+    <joint name="gripper_left_joint" value="-0.010"/>
   </group_state>
   <group_state name="reach" group="arm">
     <joint name="joint1" value="0"/>
@@ -40,5 +50,8 @@
   <disable_collisions link1="openmanip_x_link3" link2="openmanip_x_link4" reason="Adjacent"/>
   <disable_collisions link1="openmanip_x_link4" link2="openmanip_x_link5" reason="Adjacent"/>
   <disable_collisions link1="openmanip_x_link5" link2="end_effector_link" reason="Adjacent"/>
+  <disable_collisions link1="openmanip_x_link5" link2="gripper_left_link" reason="Adjacent"/>
+  <disable_collisions link1="openmanip_x_link5" link2="gripper_right_link" reason="Adjacent"/>
+  <disable_collisions link1="gripper_left_link" link2="gripper_right_link" reason="Never"/>
 
 </robot>
