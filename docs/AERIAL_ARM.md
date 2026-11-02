@@ -104,7 +104,8 @@ attitude so the end effector can be recomputed offline.
 
 Full tables: [summary.md](figures/aerial_arm/summary.md) (and
 [scaffolds/summary.md](figures/aerial_arm/scaffolds/summary.md) for the
-three_dof / Panda / UR5 scaffolds and the x500_d435 control).
+three_dof / Panda / UR5 scaffolds and the x500_d435 control, flown before its D435
+was added back in November 2026).
 
 ### What it shows
 

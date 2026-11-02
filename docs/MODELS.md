@@ -7,14 +7,14 @@ x500 quadcopter variants ship as SDF assets (Gazebo PX4 path). Each composes the
 | Model | Sensors / Payload | PX4 airframe |
 |---|---|---|
 | `x500` | none (bare quad) | 4001 (PX4 default) |
-| `x500_d435` | Intel RealSense D435 (depth) | 4420 |
+| `x500_d435` | Intel RealSense D435 facing forward (RGB-D, `/d435/*`, 20 Hz), 2D lidar, gimbal camera | 4420 |
 | `x3_uav` | x3 quadrotor variant | 4421 |
 | `x500_mono_cam_3d_lidar` | mono camera + Velodyne-16 | 4422 |
 | `x500_stereo_cam_3d_lidar` | stereo camera + Velodyne-16 | 4423 |
 | `x500_twin_stereo_twin_velodyne` | dual stereo + dual Velodyne | 4424 |
 | `x500_with_three_dof_arm` | custom 3-DOF arm scaffold | 4425 |
 | `x500_with_openmanip_x` | ROBOTIS OpenManipulator-X (0.594 kg) | 4426 |
-| `x500_with_openmanip_x_tool` | The same arm, 0.40 m contact rod with a force/torque sensor, 13 N motors | 4429 |
+| `x500_with_openmanip_x_tool` | The same arm, 0.50 m contact rod with a force/torque sensor and a damped sprung head, 13 N motors | 4429 |
 | `x500_with_panda` | 7-DOF scaffold (Panda joint names) | 4427 |
 | `x500_with_ur5` | 6-DOF scaffold (UR5 joint names) | 4428 |
 | `x500_depth`, `x500_gimbal` | variants kept for reference | — |
@@ -22,6 +22,24 @@ x500 quadcopter variants ship as SDF assets (Gazebo PX4 path). Each composes the
 The arm variants (4425–4428) are cylinder-chain scaffolds sized to fit under the x500 landing gear — see [MANIPULATORS.md](MANIPULATORS.md) for the per-arm DOF / mass / joint-name details.
 
 Non-x500 platforms (`x3_uav`, `parrot_bebop_2`) are kept as legacy references.
+
+### Cameras in headless SITL
+
+Until November 2026 `x500_d435` had no D435: its include was commented out, so
+`/d435/*` never existed. It is back, and renders headless on this machine's GPU:
+`scripts/camera_hover_check.py` hovers the drone under OFFBOARD for 60 s and counts
+frames. On an RTX 5090, warehouse world, 1280x720: Gazebo publishes colour and depth at
+20 Hz; through `ros_gz_bridge` to a ROS subscriber 15.0-16.6 Hz (the frames are 2.7-3.7
+MB); hover within 0.22 m, no failsafe, real-time factor 1.0. The `libEGL warning: pci id
+... driver (null)` lines at start-up are harmless here (Mesa is tried first, NVIDIA
+renders).
+
+```bash
+ros2 launch uavros2 sim.launch.py uav:=x500_d435 instance:=5 headless:=1 use_rviz:=false &
+ros2 run ros_gz_bridge parameter_bridge /d435/image@sensor_msgs/msg/Image[gz.msgs.Image \
+    /d435/depth_image@sensor_msgs/msg/Image[gz.msgs.Image &
+scripts/camera_hover_check.py --ns drone /d435/image /d435/depth_image
+```
 
 ## DEM terrain models
 

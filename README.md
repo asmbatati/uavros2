@@ -125,8 +125,8 @@ measurably. Protocol, numbers and figures:
 | UAV | PX4 airframe | Sensors / payload |
 |---|---|---|
 | `x500` | 4001 (stock) | none |
-| `x500_d435` | 4420 | RealSense D435 |
-| `x3_uav` | 4421 | IMU, baro, magnetometer, GPS (the iHunter interceptor airframe) |
+| `x500_d435` | 4420 | RealSense D435 facing forward (RGB-D), 2D lidar, gimbal camera (the iHunter interceptor) |
+| `x3_uav` | 4421 | IMU, baro, magnetometer, GPS (the iHunter target) |
 | `x500_mono_cam_3d_lidar` | 4422 | mono camera, 3D lidar |
 | `x500_stereo_cam_3d_lidar` | 4423 | stereo camera, 3D lidar |
 | `x500_twin_stereo_twin_velodyne` | 4424 | two stereo pairs, two Velodynes |
