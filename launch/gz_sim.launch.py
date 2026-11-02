@@ -6,6 +6,7 @@ from launch.substitutions import LaunchConfiguration
 
 from launch import LaunchDescription
 from uavros2.px4_paths import find_px4_dir
+from uavros2.sim_cleanup import world_running
 
 
 def generate_launch_description():
@@ -82,7 +83,9 @@ def generate_launch_description():
         Headless (no X display, CI, a shared machine), we start the server
         ourselves with ``--headless-rendering`` so camera / GPU-lidar sensors
         render through EGL, and PX4 attaches to it (PX4_GZ_STANDALONE=1 makes
-        gz_bridge wait for the world instead of starting its own server).
+        gz_bridge wait for the world instead of starting its own server). A
+        later vehicle in the same world and GZ_PARTITION joins the server
+        already running: start it once the first one is up.
         """
         is_headless = headless.perform(context).lower() in ("1", "true")
         world = gz_world.perform(context)
@@ -110,13 +113,16 @@ def generate_launch_description():
 
         actions = []
         headless_env = ""
-        if is_headless:
+        if is_headless and world_running(world, dict(os.environ, **sim_env)):
+            print(f"Gazebo already runs world '{world}' in this partition; joining it")
+        elif is_headless:
             actions.append(ExecuteProcess(
                 cmd=["gz", "sim", "-r", "-s", "--headless-rendering",
                      os.path.join(worlds, f"{world}.sdf")],
                 additional_env=sim_env,
                 output="screen",
             ))
+        if is_headless:
             headless_env = "HEADLESS=1 PX4_GZ_STANDALONE=1 "
 
         actions.append(ExecuteProcess(

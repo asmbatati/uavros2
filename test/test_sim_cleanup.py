@@ -6,7 +6,9 @@ never be selected.
 """
 
 import os
+import subprocess
 
+from uavros2 import sim_cleanup
 from uavros2.sim_cleanup import find_stale
 
 MY_PX4 = "/ws/mine/PX4-Autopilot"
@@ -108,3 +110,20 @@ def test_own_process_group_is_skipped(tmp_path):
     _proc(root, me, ["/usr/bin/python3", "/opt/ros/jazzy/bin/ros2", "launch", "x"],
           {"GZ_PARTITION": "uavsim", "ROS_DOMAIN_ID": "24"}, "/home/u")
     assert find_stale(MY_PX4, 4, "uavsim", "24", proc_root=str(root), self_pid=1) == []
+
+
+def test_world_running_reads_the_partitions_services(monkeypatch):
+    listing = "/world/interception/control\n/world/interception/create\n/gazebo/worlds\n"
+
+    def fake_run(cmd, **kwargs):
+        return subprocess.CompletedProcess(cmd, 0, stdout=listing, stderr="")
+    monkeypatch.setattr(sim_cleanup.subprocess, "run", fake_run)
+    assert sim_cleanup.world_running("interception")
+    assert not sim_cleanup.world_running("wall")
+
+
+def test_world_running_is_false_without_gz(monkeypatch):
+    def missing(cmd, **kwargs):
+        raise FileNotFoundError(cmd[0])
+    monkeypatch.setattr(sim_cleanup.subprocess, "run", missing)
+    assert not sim_cleanup.world_running("interception")

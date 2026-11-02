@@ -28,6 +28,7 @@ launch never sweeps itself or what it has already started.
 
 import os
 import signal
+import subprocess
 
 
 def _read_cmdline(proc_root, pid):
@@ -157,3 +158,18 @@ def kill_stale(px4_dir, instance, partition=None, domain_id=None):
         except OSError:
             pass
     return killed
+
+
+def world_running(world, env=None, timeout=10.0):
+    """True when a Gazebo server in this ``GZ_PARTITION`` already runs ``world``.
+
+    A second vehicle in the same world must join that server: a second server
+    in the partition serves the same world name, and the vehicle's PX4 can
+    attach to either (its sensors then never arrive).
+    """
+    try:
+        out = subprocess.run(["gz", "service", "-l"], capture_output=True, text=True,
+                             timeout=timeout, env=env).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return f"/world/{world}/control" in out.split()
