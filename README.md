@@ -29,6 +29,7 @@ canonical topics, whichever simulator runs.
 | Aerial-arm experiment + figures | Working ([docs/AERIAL_ARM.md](docs/AERIAL_ARM.md)) |
 | Docker images | Ubuntu 24 / Jazzy dev image and a ready-to-run image ([uavros2_docker](uavros2_docker)) |
 | Contact against a wall | Tool with force sensor, wall world, baseline experiment: plain position control gives unsteady force ([results](docs/AERIAL_ARM.md#contact-experiment)) |
+| Pick and place from hover | OpenManipulator-X gripper, `pick` world, `pick_demo`: built, but no grasp holds yet on RTK alone ([results](docs/AERIAL_ARM.md#pick-and-place-from-hover-b11)) |
 | MuJoCo | x500 flies to position setpoints (no PX4); no arm |
 | Webots, Isaac, PyBullet, Genesis | **Unsupported**: code kept, not maintained ([docs/SIMULATORS.md](docs/SIMULATORS.md)) |
 

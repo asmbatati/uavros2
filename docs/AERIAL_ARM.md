@@ -531,4 +531,65 @@ no rotor wash near the wall (ground and wall effects are not simulated).
   the attitude loop, for 6 N and for the yaw falls left at 3 N.
 - A camera on a marker or the wall as the position source, and a fuller RTK model.
 - Trajectory shaping: minimum-jerk arm trajectories under a hover-error budget.
-- Gripper and a pick task from hover.
+- A pick that holds: see the next section.
+
+# Pick and place from hover (B11)
+
+The OpenManipulator-X now has its gripper: two fingers on prismatic joints, the right
+one the mimic of the left, driven by `gripper_controller`
+(`parallel_gripper_action_controller`). ROBOTIS's frames, limits and 1 g fingers;
+4.43 cm pads 2.0 cm apart closed and 7.8 cm open. The `pick` world has two posts with
+tops 1.0 m up and a 50 g part (4 x 3 x 5 cm, 3 cm across the fingers) on the first.
+`pick_demo` should carry it to the second post. It does not yet: in 22 flights on
+simulated RTK no grasp held.
+
+    UAVROS2_RTK=1 WORLD=pick DEMO=pick_demo \
+        scripts/aerial_arm_experiment.sh openmanip_x 4 results/pick -p controller:=outer_ff
+
+How it flies:
+1. It hovers with the gripper pointing straight down under the body, where the arm
+   moves its centre of mass least (`omx_gripper_down_ik`: 0.32-0.48 m down).
+2. It ties the world frame to its estimate at take-off: the posts' places are known,
+   as on a surveyed site.
+3. It finds the post's top by touch beside the part.
+4. Over the part it lowers the open fingers until the tips stall on the post, backs up
+   2 cm and closes.
+5. If a pad lands on the part, or the fingers close on nothing, it tries again
+   (3 tries).
+
+Nothing senses the part. Gazebo's truth of the drone, its links and the part is logged
+only to measure.
+
+Why the grasp misses, measured against truth:
+
+- **The gripper's tolerance is +-2.4 cm across the fingers**, and about +-3 cm along
+  them before a pad misses the part.
+- **The estimate is off by more than that.** After the take-off tie, the EKF's position
+  is 1.0-1.2 cm SD from truth per axis, and its 2 s average swings by 4-5 cm within a
+  flight. For 4 s before one grasp the estimate put the gripper within 1 cm of the part
+  while it was 4-5 cm off. A single pose sample at take-off was up to 3 cm off (now a
+  5 s average).
+- **The hover wanders 1.3-2.2 cm SD** (truth) at 0.2-0.5 Hz, so even a well-timed
+  descent moves 2-4 cm in its 1.5 s.
+- **The height estimate reads 3-4 cm low after take-off** and drifts about 2 cm in 30 s,
+  against a +-2 cm vertical tolerance (pads on the part's top 3 cm, tips 2 cm above the
+  post). The touch-off fixes this: it measured the post -1.7 to +8.5 cm from where planned.
+- **A touch hardly loads the wrist.** The drone gives way upwards, so the tips resting
+  on the post change the wrist force by 0.2-0.3 N, as much as the arm's own motion.
+  Contact is found instead by the tips stalling while the arm still lowers them. In
+  the servoed descent this also fires when the arm lags or hits its reach, and some
+  "pad on the part" retries were such false stalls.
+- **Correcting with the arm makes the drone worse**, as for the tool (B16). With the arm
+  cancelling the estimated error fore and aft and vertically, and sideways through
+  joint 1 (`reach_x:=0.07`), the corrections pushed the drone, which the correction then
+  chased. The gripper ended up 5-13 cm off and the servo at its limits.
+
+Flight notes. This drone and arm hover at 0.85 thrust on the stock motors, so there is
+little margin. Giving the outer loop the airframe's 0.72 `MPC_THR_HOVER` left the
+integrator to make up the rest, wound up near saturation and crashed one flight. About
+1 start in 4 never received the arm's TF, so the demo computes the gripper's place from
+`/joint_states` and the URDF.
+
+What would make it hold: a relative position source for the last 10 cm (a camera on
+the part or a marker by it), or a gripper with a wider capture than the estimate's
+error, for example longer, flared fingers.

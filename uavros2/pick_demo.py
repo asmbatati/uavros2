@@ -62,7 +62,8 @@ PREGRASP_UP = 0.06     # before closing in: the tips 3 cm above the part's top
 CARRY_UP = 0.08        # flying: the tips 10 cm above the post tops, the part's bottom 8 cm
 MIN_DEPTH = 0.33       # the gripper's reach straight down (omx_gripper_down_ik), with
 MAX_DEPTH = 0.48       # 1 cm off joint 2's limit at the top
-SERVO_X = 0.05         # how far the arm may reach fore and aft to cancel the drone's error
+SERVO_X = 0.05         # how far the arm may reach fore and aft to cancel the drone's error,
+SERVO_Y = 0.035        # and sideways (turning joint 1; with reach_x > 0 only)
 SERVO_TAU = 0.15       # s, smoothing of the arm's correction
 TOUCH_DX = 0.055       # touch the post this far ahead of the part: pads on the post, off the part
 TOUCH_N = 0.4          # contact: the wrist's force this far from before (median over 0.2 s);
@@ -116,9 +117,9 @@ def pick_metrics(rows, post_top, place_xy):
     return out
 
 
-def arm_ik(x, depth):
-    """OMX joints for the finger tips ``x`` ahead of and ``depth`` below base_link, pointing down."""
-    return omx_gripper_down_ik((x, 0.0, -depth))
+def arm_ik(x, depth, y=0.0):
+    """OMX joints for the finger tips at (x, y) and ``depth`` below base_link, pointing down."""
+    return omx_gripper_down_ik((x, y, -depth))
 
 
 def _rotation(q):
@@ -150,6 +151,10 @@ class PickDemo(AerialArmDemo):
         self.declare_parameter("grasp_still_s", 0.3)
         self.declare_parameter("window_timeout_s", 30.0)
         self.declare_parameter("grasp_lower_s", 1.5)
+        # Grasp with the tips this far ahead of base_link (m). Joint 1 then also moves them
+        # sideways (turning the fingers, 27 deg for 3 cm at 0.07 m), so the arm corrects
+        # the drone's error across the fingers too and the drone needs no window for it.
+        self.declare_parameter("reach_x", 0.0)
         ns = self.get_parameter("namespace").value.strip("/")
         self.joints = []
         self.truth = None
@@ -203,7 +208,7 @@ class PickDemo(AerialArmDemo):
         if self.wrench:
             row["fx"], row["fy"], row["fz"] = self.wrench[-1]
         if self.servo_cmd is not None and self.servo is not None:
-            row["servo_x"], row["servo_depth"] = self.servo_cmd
+            row["servo_x"], row["servo_depth"], row["servo_y"] = self.servo_cmd
         t, ee = self.truth, self.truth_ee
         if t is not None:
             o = t.rotation
@@ -263,7 +268,7 @@ class PickDemo(AerialArmDemo):
                 "position": r.state.position[0] if r.state.position else None}
 
     def _arm_path(self, start, end, move_s):
-        """Move the finger tips, pointing down, from ``start`` to ``end`` = (x, depth).
+        """Move the finger tips, pointing down, from ``start`` to ``end`` = (x, depth[, y]).
 
         Smooth in time (cosine), through ``PATH_POINTS`` IK points with velocities, so
         the joint trajectory controller's splines keep the tips on the straight line.
@@ -272,7 +277,8 @@ class PickDemo(AerialArmDemo):
         qs = []
         for t in times:
             s = (1.0 - math.cos(math.pi * t / move_s)) / 2.0
-            qs.append(np.array(arm_ik(*(a + (b - a) * s for a, b in zip(start, end)))))
+            a, b = (tuple(start) + (0.0,))[:3], (tuple(end) + (0.0,))[:3]
+            qs.append(np.array(arm_ik(*(u + (v - u) * s for u, v in zip(a, b)))))
         goal = FollowJointTrajectory.Goal()
         goal.trajectory.joint_names = list(self.joints)
         dt = move_s / PATH_POINTS
@@ -296,17 +302,18 @@ class PickDemo(AerialArmDemo):
     def _servo_tick(self):
         """While ``self.servo`` is set, keep the finger tips on it with the arm.
 
-        The arm reaches along its plane (body x) and down; it cannot move the tips
-        across the fingers (body y) without turning them, so that error stays.
+        The arm reaches along its plane (body x) and down; across the fingers (body y)
+        only with ``reach_x`` > 0, by turning joint 1 and the fingers with it.
         """
         if self.servo is None or self.servo_cmd is None or self.pose is None:
             return
         target = self._in_body(self.servo)
-        x = float(np.clip(target[0], -SERVO_X, SERVO_X))
+        reach = float(self.get_parameter("reach_x").value)
+        x = float(np.clip(target[0], reach - SERVO_X, reach + SERVO_X))
         depth = float(np.clip(-target[2], MIN_DEPTH, MAX_DEPTH))
+        y = float(np.clip(target[1], -SERVO_Y, SERVO_Y)) if reach > 0.0 else 0.0
         a = min(1.0, 0.02 / SERVO_TAU)
-        cx, cd = self.servo_cmd
-        cmd = (cx + a * (x - cx), cd + a * (depth - cd))
+        cmd = tuple(c + a * (v - c) for c, v in zip(self.servo_cmd, (x, depth, y)))
         try:
             q = arm_ik(*cmd)
         except ValueError:  # out of reach: keep the last reachable command
@@ -421,7 +428,13 @@ class PickDemo(AerialArmDemo):
         return ArmModel(xacro.process_file(path, mappings=self._urdf_mappings()).toxml())
 
     def _check_height(self):
-        if self._control_position()[2] < self.hover_z_ekf - FALL_M:
+        """Raise once the drone has been ``FALL_M`` below its hover for 0.3 s (one estimate can jump)."""
+        now = time.monotonic()
+        if self._control_position()[2] >= self.hover_z_ekf - FALL_M:
+            self.low_since = None
+        elif getattr(self, "low_since", None) is None:
+            self.low_since = now
+        elif now - self.low_since > 0.3:
             raise RuntimeError(f"drone fell more than {FALL_M} m in phase {self.phase}")
 
     def _hold(self, seconds):
@@ -442,7 +455,7 @@ class PickDemo(AerialArmDemo):
         stalled on the part's top, not closed) or "no_contact" (closed at the planned
         height).
         """
-        self.servo_cmd = (0.0, GRIP_DEPTH - PREGRASP_UP)
+        self.servo_cmd = (float(self.get_parameter("reach_x").value), GRIP_DEPTH - PREGRASP_UP, 0.0)
         z_from = post_top_ekf + TIPS_ABOVE_POST + PREGRASP_UP
         z_to = post_top_ekf + GUARD_UP
         t0 = time.monotonic()
@@ -563,8 +576,10 @@ class PickDemo(AerialArmDemo):
         self.trim["part"] = self._trim_over(part_ekf, trim_s)
         self._hold(settle_s / 2.0)
         self.phase = "pregrasp"
-        codes["pregrasp"] = self._arm_path((0.0, carry), (0.0, GRIP_DEPTH - PREGRASP_UP),
-                                           lower_s / 2.0)
+        reach = float(self.get_parameter("reach_x").value)
+        pregrasp = (reach, GRIP_DEPTH - PREGRASP_UP)
+        self.setpoint = (self.setpoint[0] - reach, self.setpoint[1], self.setpoint[2])
+        codes["pregrasp"] = self._arm_path((0.0, carry), pregrasp, lower_s / 2.0)
         self._hold(2.0)
         # Up to GRASP_TRIES: wait for the drone to be over the part across the fingers,
         # lower until the tips touch the post, close; again if a pad landed on the part
@@ -572,7 +587,7 @@ class PickDemo(AerialArmDemo):
         self.attempts = []
         for _ in range(GRASP_TRIES):
             self.phase = "window"
-            window = self._wait_for_window(
+            window = None if reach > 0.0 else self._wait_for_window(
                 part_ekf[1], float(self.get_parameter("grasp_window").value),
                 float(self.get_parameter("grasp_still_s").value),
                 float(self.get_parameter("window_timeout_s").value))
@@ -589,7 +604,7 @@ class PickDemo(AerialArmDemo):
                 self.phase = "reopen"
                 self._grip(OMX_GRIPPER_OPEN)
             self.phase = "retry"
-            self._arm_path(end, (0.0, GRIP_DEPTH - PREGRASP_UP), lower_s / 2.0)
+            self._arm_path(end, pregrasp, lower_s / 2.0)
             self._hold(1.0)
         self.phase = "lift"
         codes["lift"] = self._arm_path(end, (0.0, carry), lower_s)

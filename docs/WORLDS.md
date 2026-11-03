@@ -4,6 +4,8 @@
 |---|---|:---:|:---:|:---:|:---:|:---:|:---:|
 | `empty` | Bare physics, default | ✓ | ✓ | ✓ | — | ✓ | — |
 | `warehouse` | Indoor warehouse with obstacles + AMRs (formerly `tugbot_depot`) | ✓ | — | — | — | — | — |
+| `wall` | Ground plane and a wall (face at x = 3 m) for the contact experiment | ✓ | — | — | — | — | — |
+| `pick` | Two posts (tops 1.0 m up, at x 1.5 m, y 0 and 1 m) and a 50 g part, for pick-and-place; `/<ns>/part/truth` is the part's Gazebo pose | ✓ | — | — | — | — | — |
 | `urban1` | Outdoor heightmap testbed (formerly `dem_world`, Mt. Wilder area) | ✓ | — | — | — | — | — |
 | `urban2` | Urban heightmap 2 (formerly `taif_world`) | ✓ | — | — | — | — | — |
 | `urban3` | Urban heightmap 3 (formerly `taif1_world`, larger area) | ✓ | — | — | — | — | — |
