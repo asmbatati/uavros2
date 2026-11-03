@@ -458,6 +458,15 @@ the two yaw falls. Three fixes failed:
 So 6 N needs restoring stiffness across the wall that does not go through the attitude
 loop and does not twist the body, or a head that does not pin the rod sideways.
 
+**The two falls at 3 N start with a bounce.** In both, the force swung +-1.5 N about the
+target and dipped to zero once. The loop then crept back and hit the wall at about 8 N.
+The head slipped 5-7 cm sideways, and the drone spun or rolled away within a second.
+Tolerating a longer loss (0.3 s instead of 0.1 s) and creeping slower (2 instead of
+5 cm/s) is worse. 6 of 10 runs fell, two of them before contact settled (3.7 and 4.7 s).
+With the B18 settings, 3 of 15 fell (2 of 10 in B18 and 1 of 5 in a control batch flown
+alongside). The prompt creep stays: an unloaded head drifting along the wall is the
+worse case.
+
 ## Holding the tool at a point
 
 `tool_hold_demo`: 25 s hover with the arm still, then 25 s with the arm correcting the
