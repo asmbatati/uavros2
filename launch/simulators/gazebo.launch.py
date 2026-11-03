@@ -135,8 +135,11 @@ def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0, 
     truth.update({f"/model/{name}/pose": f"/{ns}/{name}/truth" for name in truth_models})
     if uav.endswith("_tool"):
         args.append(f"{tool_ft}@geometry_msgs/msg/Wrench[ignition.msgs.Wrench")
+    wrist_cam = f"/world/{world}/model/{m}/link/openmanip_x_link5/sensor/wrist_camera"
     if has_wrist_ft:
         args.append(f"{wrist_ft}@geometry_msgs/msg/Wrench[ignition.msgs.Wrench")
+        args.append(f"{wrist_cam}/image@sensor_msgs/msg/Image[ignition.msgs.Image")
+        args.append(f"{wrist_cam}/camera_info@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo")
     args += [f"{topic}@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V" for topic in truth]
 
     # Remappings to canonical names
@@ -144,7 +147,9 @@ def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0, 
     if uav.endswith("_tool"):
         args += ["-r", f"{tool_ft}:=/{ns}/tool/wrench"]
     if has_wrist_ft:
-        args += ["-r", f"{wrist_ft}:=/{ns}/wrist/wrench"]
+        args += ["-r", f"{wrist_ft}:=/{ns}/wrist/wrench",
+                 "-r", f"{wrist_cam}/image:=/{ns}/wrist_camera/image",
+                 "-r", f"{wrist_cam}/camera_info:=/{ns}/wrist_camera/camera_info"]
     for topic, remapped in truth.items():
         args += ["-r", f"{topic}:={remapped}"]
     args += [

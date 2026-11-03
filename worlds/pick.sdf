@@ -88,6 +88,14 @@
       </link>
     </model>
 
+    <!-- An ArUco marker on the first post, 5.25 cm ahead (+x) of the part's centre: the
+         wrist camera's reference for the last centimetres. -->
+    <include>
+      <uri>model://pick_marker</uri>
+      <name>pick_marker</name>
+      <pose>1.5525 0 1.0 0 0 0</pose>
+    </include>
+
     <!-- The part: 4 cm along x, 3 cm along y (across the gripper's fingers, which open
          to 7.8 cm: +-2.4 cm to spare), 5 cm tall, 50 g. Friction 1.0 against the pads,
          0.3 against the post (Gazebo takes the lower value), so a finger closing off

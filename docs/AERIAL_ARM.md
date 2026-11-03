@@ -602,3 +602,29 @@ integrator to make up the rest, wound up near saturation and crashed one flight.
 What would make it hold: a relative position source for the last 10 cm (a camera on
 the part or a marker by it), or a gripper with a wider capture than the estimate's
 error, for example longer, flared fingers.
+
+## The marker approach (started)
+
+The owner chose a fiducial marker beside the part, read by a camera on the arm, and
+the ROBOTIS gripper unchanged. Built so far:
+- `models/pick_marker`: ArUco DICT_4X4_50 id 0, 4.4 cm, flat on the first post 5.25 cm
+  ahead of the part, visual only.
+- A wrist camera on link5 (640 x 480, 15 Hz, 86 deg), 3 cm to the marker's side of the
+  gripper axis and looking along it. It renders headless like the D435. It is bridged
+  to `/<ns>/wrist_camera/*`.
+- `uavros2/marker_locator.py`: detection and `solvePnP` on the square's corners;
+  within 2 mm sideways on synthetic images under OpenCV 4.6 and 4.11.
+- `pick_demo` logs the part's place relative to the finger tips as the camera sees it
+  (`marker_d*`) and keeps sample frames. It does not fly on it yet.
+
+First flights, against truth: the part's offset from the tips is within about 1 cm
+sideways (biases -1.4 to +1.0 cm, scatter 0.2-1.2 cm by phase) and reads about 3 cm
+short in height. The gripper's own visual ball hid the marker until it was taken out
+of the Gazebo model. Detections are sparse (a few per phase at 5 Hz), which is still to
+explain. In the same flights the arm swinging down in 6 s saturated the motors and
+dropped the drone 27 cm once; it now takes 10 s. One of these flights lifted and
+carried the part (on the estimate, second try) and set it down 2.9 cm from the second
+post's centre. It lay on its side, because the place's contact test fired on the
+swinging part's force and let go 8 cm up; the place now needs a 1.5 N push.
+
+Next: fly the trim and the grasp window on the camera's offset, with the arm still.

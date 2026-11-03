@@ -45,7 +45,7 @@ from geometry_msgs.msg import Wrench
 import numpy as np
 from rclpy.action import ActionClient
 from rclpy.qos import qos_profile_sensor_data
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import CameraInfo, Image, JointState
 from tf2_msgs.msg import TFMessage
 from trajectory_msgs.msg import JointTrajectoryPoint
 
@@ -66,6 +66,9 @@ SERVO_X = 0.05         # how far the arm may reach fore and aft to cancel the dr
 SERVO_Y = 0.035        # and sideways (turning joint 1; with reach_x > 0 only)
 SERVO_TAU = 0.15       # s, smoothing of the arm's correction
 TOUCH_DX = 0.055       # touch the post this far ahead of the part: pads on the post, off the part
+MARKER_DX = 0.0525     # the marker's centre ahead (+x, world) of the part's (worlds/pick.sdf)
+CAMERA_IN_LINK5 = np.array([0.06, 0.0, -0.03])  # the wrist camera (models/x500_with_openmanip_x)
+MARKER_EVERY_S = 0.2   # look for the marker at most this often
 TOUCH_N = 0.4          # contact: the wrist's force this far from before (median over 0.2 s);
 TOUCH_STALL_M = 0.025  # or the tips this much short of how far the arm has lowered them
 TOUCH_SPEED = 0.02     # m/s, lowering until contact
@@ -141,7 +144,9 @@ class PickDemo(AerialArmDemo):
         self.declare_parameter("post_top", 1.0)
         self.declare_parameter("spawn_xy", [0.0, 0.0])
         self.declare_parameter("fly_speed", 0.3)
-        self.declare_parameter("arm_move_s", 6.0)
+        # Swinging the arm down in 6 s saturated the stock motors (hover 0.85) and dropped
+        # the drone 27 cm once.
+        self.declare_parameter("arm_move_s", 10.0)
         self.declare_parameter("lower_s", 4.0)
         self.declare_parameter("trim_s", 3.0)
         # The last 6 cm down round the part, once the gripper has been within grasp_window
@@ -180,6 +185,13 @@ class PickDemo(AerialArmDemo):
                                  qos_profile_sensor_data)
         self.create_subscription(JointState, f"/{ns}/joint_states", self._on_joints,
                                  qos_profile_sensor_data)
+        # The wrist camera's view of the marker: the part's place relative to the tips.
+        self.camera_k = None
+        self.marker_rel = None   # (time, part minus tips in world axes, m)
+        self._marker_t = 0.0
+        self.create_subscription(CameraInfo, f"/{ns}/wrist_camera/camera_info", self._on_camera_info,
+                                 qos_profile_sensor_data)
+        self.create_subscription(Image, f"/{ns}/wrist_camera/image", self._on_image, qos_profile_sensor_data)
         self.create_subscription(Wrench, f"/{ns}/wrist/wrench", self._on_wrench,
                                  qos_profile_sensor_data)
         self.create_timer(0.02, self._servo_tick)
@@ -196,6 +208,48 @@ class PickDemo(AerialArmDemo):
         if msg.transforms:
             self.part = msg.transforms[0].transform
 
+    def _on_camera_info(self, msg):
+        self.camera_k = np.array(msg.k).reshape(3, 3)
+
+    def _on_image(self, msg):
+        now = time.monotonic()
+        if (self.camera_k is None or self.arm_model is None or self.joint_q is None or self.pose is None
+                or now - self._marker_t < MARKER_EVERY_S):
+            return
+        self._marker_t = now
+        from .marker_locator import locate, optical_to_sensor
+
+        pixels = np.frombuffer(msg.data, dtype=np.uint8).reshape(msg.height, msg.width, -1)
+        gray = np.ascontiguousarray(pixels.mean(axis=2).astype(np.uint8))
+        found = locate(gray, self.camera_k)
+        self._debug_marker(gray, found, msg)
+        if found is None:
+            return
+        q = self.joint_q
+        T5 = ArmModel._chain_transform(self.arm_model.chains["openmanip_x_link5"], q)
+        marker = T5[:3, :3] @ (CAMERA_IN_LINK5 + optical_to_sensor(found)) + T5[:3, 3]
+        o = self.pose.pose.orientation
+        R = _rotation((o.x, o.y, o.z, o.w))
+        tips = R @ self.arm_model.position(q, "end_effector_link")
+        self.marker_rel = (now, R @ marker - np.array([MARKER_DX, 0.0, 0.0]) - tips)
+
+    def _debug_marker(self, gray, found, msg):
+        """Keep two camera frames per phase and every detection, to check the camera."""
+        import cv2
+
+        d = os.path.join(self.output_dir, "wrist_camera")
+        os.makedirs(d, exist_ok=True)
+        kept = getattr(self, "_frames_kept", {})
+        self._frames_kept = kept
+        if kept.get(self.phase, 0) < 2:
+            kept[self.phase] = kept.get(self.phase, 0) + 1
+            cv2.imwrite(os.path.join(d, f"{self.phase}_{kept[self.phase]}.png"), gray)
+        with open(os.path.join(d, "detections.jsonl"), "a") as f:
+            f.write(json.dumps({"t": time.monotonic() - self.t0, "phase": self.phase,
+                                "step": msg.step, "size": [msg.width, msg.height], "encoding": msg.encoding,
+                                "found": None if found is None else [float(v) for v in found],
+                                "q": self.joint_q}) + "\n")
+
     def _on_wrench(self, msg):
         self.wrench = (self.wrench + [(msg.force.x, msg.force.y, msg.force.z)])[-50:]
 
@@ -205,6 +259,8 @@ class PickDemo(AerialArmDemo):
 
     def _add_fields(self, row):
         row["gripper_q"] = self.gripper_q
+        if self.marker_rel is not None and time.monotonic() - self.marker_rel[0] < 0.5:
+            row["marker_dx"], row["marker_dy"], row["marker_dz"] = self.marker_rel[1]
         if self.wrench:
             row["fx"], row["fy"], row["fz"] = self.wrench[-1]
         if self.servo_cmd is not None and self.servo is not None:
@@ -337,7 +393,7 @@ class PickDemo(AerialArmDemo):
             time.sleep(0.02)
         return statistics.fmean(samples) if samples else None
 
-    def _touch(self, depth_from, speed=TOUCH_SPEED):
+    def _touch(self, depth_from, speed=TOUCH_SPEED, force_n=TOUCH_N):
         """Lower the finger tips from ``depth_from`` until they touch something.
 
         The drone gives way upwards, so a light touch lifts it more than it loads the
@@ -370,7 +426,7 @@ class PickDemo(AerialArmDemo):
             by = None
             if stalled_since is not None and now - stalled_since >= 0.2:
                 by = "stall"
-            elif now - t0 > TOUCH_SETTLE_S and self._force_change(tare) > TOUCH_N:
+            elif now - t0 > TOUCH_SETTLE_S and self._force_change(tare) > force_n:
                 by = "force"
             if by is not None:
                 self._command_joints(arm_ik(0.0, max(depth_from, depth - 0.01)))
@@ -621,7 +677,9 @@ class PickDemo(AerialArmDemo):
         self.trim["place"] = self._trim_over(self._hover_over(place_xy)[:2], trim_s)
         self._hold(settle_s / 2.0)
         self.phase = "lower_place"
-        place = self._touch(carry, TOUCH_SPEED / 2.0)
+        # A part swinging in the grip moves the wrist's force by 0.5 N or so: only a firm
+        # push counts here (one at 0.4 N let go 8 cm up and the part fell over).
+        place = self._touch(carry, TOUCH_SPEED / 2.0, force_n=1.5)
         self.touches["place"] = place
         self.phase = "release"
         self.grip_result["release"] = self._grip(OMX_GRIPPER_OPEN)

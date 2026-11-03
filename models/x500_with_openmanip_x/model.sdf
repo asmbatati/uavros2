@@ -152,6 +152,20 @@
         <pose>0.04 0 0 0 0 0</pose>
         <geometry><box><size>0.08 0.05 0.03</size></box></geometry>
       </collision>
+      <!-- Wrist camera, looking along the gripper (link5 x) from 3 cm off its axis on
+           the -z side: with the gripper pointing down that is ahead of it, towards the
+           pick world's marker. No distortion; not on the real arm (a small USB camera
+           would sit here). Its frame: x the optical axis, image right = -y, down = -z. -->
+      <sensor name='wrist_camera' type='camera'>
+        <pose>0.06 0 -0.03 0 0 0</pose>
+        <camera>
+          <horizontal_fov>1.5</horizontal_fov>
+          <image><width>640</width><height>480</height></image>
+          <clip><near>0.03</near><far>5</far></clip>
+        </camera>
+        <always_on>1</always_on>
+        <update_rate>15</update_rate>
+      </sensor>
     </link>
     <joint name='joint4' type='revolute'>
       <parent>openmanip_x_link4</parent>
@@ -180,10 +194,8 @@
           <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
         </inertia>
       </inertial>
-      <visual name='end_effector_link_visual'>
-        <geometry><sphere><radius>0.01</radius></sphere></geometry>
-        <material><ambient>1 1 0 1</ambient><diffuse>1 1 0 1</diffuse></material>
-      </visual>
+      <!-- No visual here (the URDF has a yellow ball for RViz): it would sit in front of the
+           wrist camera and hide the pick world's marker. -->
     </link>
     <joint name='j_ee' type='fixed'>
       <parent>openmanip_x_link5</parent>
