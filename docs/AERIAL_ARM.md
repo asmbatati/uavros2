@@ -627,4 +627,25 @@ carried the part (on the estimate, second try) and set it down 2.9 cm from the s
 post's centre. It lay on its side, because the place's contact test fired on the
 swinging part's force and let go 8 cm up; the place now needs a 1.5 N push.
 
-Next: fly the trim and the grasp window on the camera's offset, with the arm still.
+Flying on it (flights try13-19, 3 each):
+- **The camera reads the part against the tips within 0.6-1.1 cm** (x, y and height,
+  against truth).
+- **What it took:**
+  - The detector had dropped the marker's square as a near-duplicate of its white
+    card's outline; it now retries with nearer candidates allowed.
+  - It takes the largest square within 5-40 cm; one wrong square had read 40 cm deep.
+  - The marker lies on the post, so the part's centre is 2.5 cm above it.
+- **How the demo uses it:**
+  - It trims the drone over the part, height included, on the camera. With the marker
+    in view this replaces the touch-off, which can knock the part.
+  - It waits for the camera to see the tips within 1.5 cm.
+  - It lowers the arm by the height the camera measures, in one move.
+  - It closes only if the camera sees the tips within 2.2 cm across the fingers and
+    2.5 cm along them. At the bottom the part can hide the marker; the last sighting
+    within 1 s stands in.
+- **The outer loop steps on simulated time now.** Simulator stalls of 1-2 s (wall
+  clock, with simulated time stopped) preceded every thrust saturation in one batch.
+- **No grasp has held yet.** The drone wanders about 2 cm in the second after the
+  camera's go, which leaves the closing fingers at the edge of the gripper's +-2.4 cm.
+  Attempts that miss push the part, which the camera, reading the fixed marker, does
+  not see. Drops at the stock motors' limit still end some flights.
