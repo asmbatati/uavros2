@@ -211,6 +211,7 @@ class AerialArmDemo(Node):
         self.velocity = None
         self.last_outer = None
         self.last_ff_torque = None
+        self.last_attitude = None
         self._last_tick = None
         if self.controller in ("px4_ff", "outer_torque"):
             self.arm_ff = self._make_feed_forward()
@@ -296,9 +297,17 @@ class AerialArmDemo(Node):
         if not self.outer_active or self.velocity is None:
             self._last_tick = None
             return
-        now = time.monotonic()
+        # Step on the simulation's clock (the pose's stamp), not the wall's: when the
+        # simulator stalls for a second, wall time would wind up the integrators.
+        stamp = self.pose.header.stamp
+        now = stamp.sec + stamp.nanosec * 1e-9
         dt = now - self._last_tick if self._last_tick is not None else 0.02
+        if dt <= 0.0 and self.last_attitude is not None:
+            self.last_attitude.header.stamp = self.get_clock().now().to_msg()
+            self.attitude_pub.publish(self.last_attitude)   # keep OFFBOARD fed meanwhile
+            return
         self._last_tick = now
+        dt = min(max(dt, 0.0), 0.05)
         if dt <= 0.0:
             return
         v = self.velocity.twist.linear
@@ -314,6 +323,7 @@ class AerialArmDemo(Node):
         msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w = quat
         msg.thrust = thrust
         self.attitude_pub.publish(msg)
+        self.last_attitude = msg
         self.last_outer = (thrust, bias, body_acc)
 
     def _start_outer_loop(self):

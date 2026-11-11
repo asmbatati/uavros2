@@ -44,6 +44,7 @@ from control_msgs.action import FollowJointTrajectory, ParallelGripperCommand
 from geometry_msgs.msg import Wrench
 import numpy as np
 from rclpy.action import ActionClient
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import CameraInfo, Image, JointState
 from tf2_msgs.msg import TFMessage
@@ -68,7 +69,9 @@ SERVO_TAU = 0.15       # s, smoothing of the arm's correction
 TOUCH_DX = 0.055       # touch the post this far ahead of the part: pads on the post, off the part
 MARKER_DX = 0.0525     # the marker's centre ahead (+x, world) of the part's (worlds/pick.sdf)
 CAMERA_IN_LINK5 = np.array([0.06, 0.0, -0.03])  # the wrist camera (models/x500_with_openmanip_x)
-MARKER_EVERY_S = 0.2   # look for the marker at most this often
+MARKER_EVERY_S = 0.1   # look for the marker at most this often
+MARKER_FRESH_S = 0.3   # a sighting older than this does not count
+CAMERA_ABORT_M = 0.02  # at grasp height, the camera seeing the part this far off: do not close
 TOUCH_N = 0.4          # contact: the wrist's force this far from before (median over 0.2 s);
 TOUCH_STALL_M = 0.025  # or the tips this much short of how far the arm has lowered them
 TOUCH_SPEED = 0.02     # m/s, lowering until contact
@@ -143,7 +146,9 @@ class PickDemo(AerialArmDemo):
         self.declare_parameter("place_xy", [1.5, 1.0])
         self.declare_parameter("post_top", 1.0)
         self.declare_parameter("spawn_xy", [0.0, 0.0])
-        self.declare_parameter("fly_speed", 0.3)
+        # 0.3 m/s with the arm down saturated the stock motors (hover at 0.85) and dropped
+        # the drone 40 cm in two flights.
+        self.declare_parameter("fly_speed", 0.15)
         # Swinging the arm down in 6 s saturated the stock motors (hover 0.85) and dropped
         # the drone 27 cm once.
         self.declare_parameter("arm_move_s", 10.0)
@@ -152,14 +157,19 @@ class PickDemo(AerialArmDemo):
         # The last 6 cm down round the part, once the gripper has been within grasp_window
         # (m, estimated, across the fingers) of it for grasp_still_s; after
         # window_timeout_s it goes anyway.
-        self.declare_parameter("grasp_window", 0.01)
-        self.declare_parameter("grasp_still_s", 0.3)
+        self.declare_parameter("grasp_window", 0.015)
+        self.declare_parameter("grasp_still_s", 0.2)
         self.declare_parameter("window_timeout_s", 30.0)
         self.declare_parameter("grasp_lower_s", 1.5)
         # Grasp with the tips this far ahead of base_link (m). Joint 1 then also moves them
         # sideways (turning the fingers, 27 deg for 3 cm at 0.07 m), so the arm corrects
         # the drone's error across the fingers too and the drone needs no window for it.
         self.declare_parameter("reach_x", 0.0)
+        # Trim over the part and time the grasp on the wrist camera's view of the marker
+        # (falling back on the estimate when it does not see it), and whether the arm
+        # also chases the estimated error sideways during the grasp (it pushes the drone).
+        self.declare_parameter("use_marker", True)
+        self.declare_parameter("arm_servo_xy", False)
         ns = self.get_parameter("namespace").value.strip("/")
         self.joints = []
         self.truth = None
@@ -189,9 +199,12 @@ class PickDemo(AerialArmDemo):
         self.camera_k = None
         self.marker_rel = None   # (time, part minus tips in world axes, m)
         self._marker_t = 0.0
+        # Their own group, so a slow frame never holds up the control timers.
+        camera_group = MutuallyExclusiveCallbackGroup()
         self.create_subscription(CameraInfo, f"/{ns}/wrist_camera/camera_info", self._on_camera_info,
-                                 qos_profile_sensor_data)
-        self.create_subscription(Image, f"/{ns}/wrist_camera/image", self._on_image, qos_profile_sensor_data)
+                                 qos_profile_sensor_data, callback_group=camera_group)
+        self.create_subscription(Image, f"/{ns}/wrist_camera/image", self._on_image, qos_profile_sensor_data,
+                                 callback_group=camera_group)
         self.create_subscription(Wrench, f"/{ns}/wrist/wrench", self._on_wrench,
                                  qos_profile_sensor_data)
         self.create_timer(0.02, self._servo_tick)
@@ -231,7 +244,8 @@ class PickDemo(AerialArmDemo):
         o = self.pose.pose.orientation
         R = _rotation((o.x, o.y, o.z, o.w))
         tips = R @ self.arm_model.position(q, "end_effector_link")
-        self.marker_rel = (now, R @ marker - np.array([MARKER_DX, 0.0, 0.0]) - tips)
+        # The marker lies on the post top; the part's centre is half its height above.
+        self.marker_rel = (now, R @ marker - np.array([MARKER_DX, 0.0, -PART_SIZE[2] / 2.0]) - tips)
 
     def _debug_marker(self, gray, found, msg):
         """Keep two camera frames per phase and every detection, to check the camera."""
@@ -366,8 +380,12 @@ class PickDemo(AerialArmDemo):
         target = self._in_body(self.servo)
         reach = float(self.get_parameter("reach_x").value)
         x = float(np.clip(target[0], reach - SERVO_X, reach + SERVO_X))
+        if not self.get_parameter("arm_servo_xy").value:
+            x = self.servo_cmd[0]
         depth = float(np.clip(-target[2], MIN_DEPTH, MAX_DEPTH))
         y = float(np.clip(target[1], -SERVO_Y, SERVO_Y)) if reach > 0.0 else 0.0
+        if not self.get_parameter("arm_servo_xy").value:
+            y = self.servo_cmd[2]
         a = min(1.0, 0.02 / SERVO_TAU)
         cmd = tuple(c + a * (v - c) for c, v in zip(self.servo_cmd, (x, depth, y)))
         try:
@@ -454,6 +472,52 @@ class PickDemo(AerialArmDemo):
         self.setpoint = (self.setpoint[0] + dx, self.setpoint[1] + dy, self.setpoint[2])
         return dx, dy
 
+    def _marker_offset(self):
+        """The part's centre minus the finger tips (world axes, m), as the camera last saw it."""
+        m = self.marker_rel
+        return m[1] if m is not None and time.monotonic() - m[0] < MARKER_FRESH_S else None
+
+    def _trim_on_marker(self, seconds):
+        """Shift the setpoint by the camera's mean offset of the part from the tips.
+
+        Returns (dx, dy, sightings), or None when the camera saw the marker fewer than
+        5 times.
+        """
+        seen = []
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < seconds:
+            self._check_height()
+            m = self.marker_rel
+            if m is not None and (not seen or m[0] != seen[-1][0]) and time.monotonic() - m[0] < MARKER_FRESH_S:
+                seen.append(m)
+            time.sleep(0.02)
+        if len(seen) < 5:
+            return None
+        dx = statistics.fmean(m[1][0] for m in seen)
+        dy = statistics.fmean(m[1][1] for m in seen)
+        self.setpoint = (self.setpoint[0] + dx, self.setpoint[1] + dy, self.setpoint[2])
+        return dx, dy, len(seen)
+
+    def _wait_for_marker_window(self, window, still_s, timeout):
+        """Wait until the camera has seen the tips within ``window`` of the part (x and y).
+
+        Returns (seconds waited, whether it found the window before ``timeout``).
+        """
+        t0 = time.monotonic()
+        inside_since = None
+        while time.monotonic() - t0 < timeout:
+            self._check_height()
+            off = self._marker_offset()
+            now = time.monotonic()
+            if off is not None and abs(off[0]) < window and abs(off[1]) < window:
+                inside_since = inside_since or now
+                if now - inside_since >= still_s:
+                    return now - t0, True
+            else:
+                inside_since = None
+            time.sleep(0.02)
+        return timeout, False
+
     def _wait_for_window(self, target_y, window, still_s, timeout):
         """Wait until the gripper stays within ``window`` of the target across the fingers.
 
@@ -506,8 +570,11 @@ class PickDemo(AerialArmDemo):
         At ``part`` (EKF xy), the arm holding the tips there against the drone's motion
         (``_servo_tick``): quickly to ``GUARD_UP`` above where the post should be
         (``post_top_ekf``), then at ``TOUCH_SPEED`` until the tips stall; there, back up
-        to ``TIPS_ABOVE_POST`` and close. Returns (outcome, where the arm ended as
-        (x, depth), the tips' height at contact): outcome "closed", "on_part" (the tips
+        to ``TIPS_ABOVE_POST`` and close. With the marker in view the wrist camera ends the
+        descent instead, when it sees the tips at grip height, and holds the close if it
+        sees them off the part. Returns (outcome, where the arm ended as (x, depth), the
+        post's height as found): outcome "closed_camera", "closed" (on the stall),
+        "off_part" (the camera saw the tips off the part, not closed), "on_part" (the tips
         stalled on the part's top, not closed) or "no_contact" (closed at the planned
         height).
         """
@@ -522,13 +589,20 @@ class PickDemo(AerialArmDemo):
             time.sleep(0.02)
         z = z_to
         tips = self._ee_in_map()[2]
-        stalled_since, contact = None, None
+        stalled_since, contact, camera_z = None, None, None
+        use_marker = bool(self.get_parameter("use_marker").value)
         while z > post_top_ekf - GUARD_BELOW:
             self._check_height()
             z -= TOUCH_SPEED * 0.02
             self.servo = (part[0], part[1], z)
             time.sleep(0.02)
             tips += (self._ee_in_map()[2] - tips) * 0.1   # 0.2 s
+            # The camera sees the tips come down to grip height: the part's centre is then
+            # 0.5 cm above them (its height minus theirs rises as they descend).
+            off = self._marker_offset() if use_marker else None
+            if off is not None and off[2] >= PART_SIZE[2] / 2.0 - TIPS_ABOVE_POST:
+                camera_z = self._ee_in_map()[2]
+                break
             now = time.monotonic()
             stalled_since = (stalled_since or now) if tips - z > TOUCH_STALL_M else None
             if stalled_since is not None and now - stalled_since >= 0.2:
@@ -540,6 +614,15 @@ class PickDemo(AerialArmDemo):
             end = self.servo_cmd
             self.servo = None
             return "on_part", end, contact
+        if camera_z is not None:
+            off = self._marker_offset()
+            if off is not None and max(abs(off[0]), abs(off[1])) > CAMERA_ABORT_M:
+                self.servo = (part[0], part[1], post_top_ekf + TIPS_ABOVE_POST + PREGRASP_UP)
+                time.sleep(1.0)
+                end = self.servo_cmd
+                self.servo = None
+                return "off_part", end, camera_z - TIPS_ABOVE_POST
+            contact = camera_z - TIPS_ABOVE_POST
         grip_z = (contact if contact is not None else post_top_ekf) + TIPS_ABOVE_POST
         self.servo = (part[0], part[1], grip_z)
         time.sleep(0.5)
@@ -548,7 +631,41 @@ class PickDemo(AerialArmDemo):
         self._hold(1.0)
         end = self.servo_cmd
         self.servo = None
-        return ("closed" if contact is not None else "no_contact"), end, contact
+        outcome = "closed_camera" if camera_z is not None else "closed" if contact is not None else "no_contact"
+        return outcome, end, contact
+
+    def _camera_grasp(self, lower_s):
+        """Lower the gripper by what the wrist camera says is left, check, close.
+
+        From the pregrasp pose, the camera's mean view of the part's centre against the
+        tips over 0.5 s gives how far down the tips must go to sit 0.5 cm below it (pads
+        on the part's top 3 cm). One smooth move of the arm, no servo; at the bottom the
+        camera must see the tips within ``CAMERA_ABORT_M`` of the part across and along,
+        or it lifts back without closing. Returns (outcome, where the arm ended as
+        (x, depth), None), or None when the camera does not see the marker.
+        """
+        seen = []
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < 0.5:
+            off = self._marker_offset()
+            if off is not None:
+                seen.append(off[2])
+            time.sleep(0.02)
+        if len(seen) < 3:
+            return None
+        reach = float(self.get_parameter("reach_x").value)
+        start = (reach, GRIP_DEPTH - PREGRASP_UP)
+        down = PART_SIZE[2] / 2.0 - TIPS_ABOVE_POST - statistics.fmean(seen)
+        end = (reach, float(np.clip(start[1] + down, MIN_DEPTH, MAX_DEPTH)))
+        self._arm_path(start, end, lower_s)
+        time.sleep(0.3)
+        off = self._marker_offset()
+        if off is None or max(abs(off[0]), abs(off[1])) > CAMERA_ABORT_M:
+            return "off_part", end, None
+        self.phase = "close"
+        self.grip_result.setdefault("close", []).append(self._grip(OMX_GRIPPER_CLOSED))
+        self._hold(1.0)
+        return "closed_camera", end, None
 
     def run(self):
         part_xy = [float(v) for v in self.get_parameter("part_xy").value]
@@ -637,26 +754,41 @@ class PickDemo(AerialArmDemo):
         self.setpoint = (self.setpoint[0] - reach, self.setpoint[1], self.setpoint[2])
         codes["pregrasp"] = self._arm_path((0.0, carry), pregrasp, lower_s / 2.0)
         self._hold(2.0)
+        use_marker = bool(self.get_parameter("use_marker").value)
+        if use_marker:
+            # Twice: the first trim moves the drone, the second takes what is left.
+            self.phase = "marker_trim"
+            self.trim["marker"] = [self._trim_on_marker(trim_s)]
+            self._hold(settle_s / 2.0)
+            self.trim["marker"].append(self._trim_on_marker(trim_s))
+            self._hold(settle_s / 4.0)
         # Up to GRASP_TRIES: wait for the drone to be over the part across the fingers,
         # lower until the tips touch the post, close; again if a pad landed on the part
         # or the fingers closed on nothing.
         self.attempts = []
         for _ in range(GRASP_TRIES):
             self.phase = "window"
-            window = None if reach > 0.0 else self._wait_for_window(
-                part_ekf[1], float(self.get_parameter("grasp_window").value),
-                float(self.get_parameter("grasp_still_s").value),
-                float(self.get_parameter("window_timeout_s").value))
+            window_args = (float(self.get_parameter("grasp_window").value),
+                           float(self.get_parameter("grasp_still_s").value),
+                           float(self.get_parameter("window_timeout_s").value))
+            if use_marker and self._marker_offset() is not None:
+                window = ("marker",) + self._wait_for_marker_window(*window_args)
+            else:
+                window = None if reach > 0.0 else ("estimate",) + self._wait_for_window(part_ekf[1], *window_args)
             self.phase = "lower"
-            outcome, end, contact = self._grasp(part_ekf, post_top_ekf,
-                                                float(self.get_parameter("grasp_lower_s").value))
-            holding = outcome != "on_part" and self.gripper_q is not None and self.gripper_q > HOLDING_Q
+            lower = float(self.get_parameter("grasp_lower_s").value)
+            result = self._camera_grasp(lower) if use_marker else None
+            if result is None:
+                result = self._grasp(part_ekf, post_top_ekf, lower)
+            outcome, end, contact = result
+            holding = (outcome not in ("on_part", "off_part") and self.gripper_q is not None
+                       and self.gripper_q > HOLDING_Q)
             self.attempts.append({"window": window, "outcome": outcome, "holding": holding,
                                   "contact_above_post_m": None if contact is None else contact - post_top_ekf})
             self.get_logger().info(f"grasp attempt: {self.attempts[-1]}")
             if holding:
                 break
-            if outcome != "on_part":
+            if outcome not in ("on_part", "off_part"):
                 self.phase = "reopen"
                 self._grip(OMX_GRIPPER_OPEN)
             self.phase = "retry"
