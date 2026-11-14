@@ -15,6 +15,7 @@ x500 quadcopter variants ship as SDF assets (Gazebo PX4 path). Each composes the
 | `x500_with_three_dof_arm` | custom 3-DOF arm scaffold | 4425 |
 | `x500_with_openmanip_x` | ROBOTIS OpenManipulator-X (0.594 kg) | 4426 |
 | `x500_with_openmanip_x_tool` | The same arm, 0.50 m contact rod with a force/torque sensor and a damped sprung head, 13 N motors | 4429 |
+| `x500_with_openmanip_x_13n` | `x500_with_openmanip_x` with the tool model's 13 N motors (a modelling assumption), for the pick flights | 4430 |
 | `x500_with_panda` | 7-DOF scaffold (Panda joint names) | 4427 |
 | `x500_with_ur5` | 6-DOF scaffold (UR5 joint names) | 4428 |
 | `x500_depth`, `x500_gimbal` | variants kept for reference | — |

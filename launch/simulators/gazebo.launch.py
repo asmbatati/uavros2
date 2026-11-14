@@ -93,6 +93,7 @@ UAV_AIRFRAME = {
     "x500_with_three_dof_arm": "4425",
     "x500_with_openmanip_x": "4426",
     "x500_with_openmanip_x_tool": "4429",
+    "x500_with_openmanip_x_13n": "4430",
     "x500_with_panda": "4427",
     "x500_with_ur5": "4428",
 }
@@ -128,7 +129,7 @@ def _build_ros_gz_bridge_args(uav: str, world: str, ns: str, instance: int = 0, 
 
     tool_ft = f"/world/{world}/model/{m}/joint/j_tool/sensor/tool_ft/forcetorque"
     wrist_ft = f"/world/{world}/model/{m}/joint/joint4/sensor/wrist_ft/forcetorque"
-    has_wrist_ft = uav == "x500_with_openmanip_x"
+    has_wrist_ft = uav in ("x500_with_openmanip_x", "x500_with_openmanip_x_13n")
     # Gazebo's truth, for measuring only: the OMX models' own pose and link poses
     # (their PosePublisher), and the world's truth_models (worlds/manifest.yaml).
     truth = {f"/model/{m}/pose": f"/{ns}/truth"} if "openmanip_x" in uav else {}

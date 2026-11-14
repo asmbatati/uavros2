@@ -149,3 +149,21 @@ def test_gripper_down_ik_under_the_body_keeps_the_fingers_along_y():
     for point in ((0.0, 0.0, -0.30), (0.0, 0.0, -0.50), (0.3, 0.0, -0.45)):
         with pytest.raises(ValueError):
             omx_gripper_down_ik(point)
+
+
+def test_13n_pick_model_is_the_gripper_model_with_13_n_motors():
+    """x500_with_openmanip_x_13n: the gripper model with the tool model's motors, nothing else changed."""
+    import re
+    plugin = r"<plugin filename=\"gz-sim-multicopter-motor-model-system\".*?</plugin>"
+    motors = re.compile(r"\n    <!-- The x500's motor plugins.*?-->\n(    " + plugin + r"\n)+", re.S)
+    base = (REPO / "models/x500_with_openmanip_x/model.sdf").read_text()
+    pick = (REPO / "models/x500_with_openmanip_x_13n/model.sdf").read_text()
+    tool = (REPO / "models/x500_with_openmanip_x_tool/model.sdf").read_text()
+    plugins = re.findall(plugin, pick, re.S)
+    assert plugins == re.findall(plugin, tool, re.S)
+    assert len(plugins) == 4 and all("<motorConstant>1.3e-05</motorConstant>" in p for p in plugins)
+    stripped = (motors.sub("", pick)
+                .replace("model://x500_base", "model://x500")
+                .replace("x500_with_openmanip_x_13n", "x500_with_openmanip_x")
+                .replace("quadcopter with 13 N motors +", "quadcopter +"))
+    assert stripped == base

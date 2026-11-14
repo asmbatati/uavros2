@@ -670,11 +670,34 @@ Results (pick from the first post, carry, set down on the second):
 | try23 (3) | 2 (1.5, 3.1 cm from the post's centre) | 1 | first with the linkage stand-in |
 | batch 1 (10) | 2 (1.8, 0.6 cm) | 2 | 4 knocked the part flying in; then flying in 6 cm higher |
 | batch 2 (10) | 2 (5.7, 4.9 cm) | 5 | 3 still disturbed the part before the grasp |
+| 13 N batch (10) | 2 (1.2, 1.7 cm) | 1 | 13 N motors; 7 lifted, 3 carried, 1 more set down on its top |
 
 **Every drop followed a simulator stall.** In batch 2, each run's first thrust
 saturation came within 3 s after a stall (9 of 9 runs that saturated). In those
 stalls, 0.3-1.9 s of wall time passes with simulated time stopped, and the demo's
 process stops too. Memory and CPU were not short. The stalls came while another
-user's job held the GPU and this one rendered the wrist camera; the cause is not
-pinned down. The drone hovers at 0.85 thrust on the stock motors, which leaves
-little margin to recover.
+user's job held the GPU and this one rendered the wrist camera. The drone hovers at
+0.85 thrust on the stock motors, which leaves little margin to recover.
+
+**13 N motors (the owner's choice).** `x500_with_openmanip_x_13n` (airframe 4430) is
+the gripper model with the tool model's 13 N motors, a modelling assumption as there;
+a test keeps it identical to `x500_with_openmanip_x` otherwise. It hovers at 0.66.
+
+    UAV=x500_with_openmanip_x_13n UAVROS2_RTK=1 WORLD=pick DEMO=pick_demo \
+        scripts/aerial_arm_experiment.sh openmanip_x 4 results/pick \
+        -p controller:=outer_ff -p hover_thrust:=0.66
+
+In 10 flights (`results/pick/b11_13n`) it lifted the part 7 times, carried it to
+the second post 3 times and set it upright twice, 1.2 and 1.7 cm from the centre.
+One drone fell. What limits it now:
+- **The part slips out of the closed fingers in the carry**: 5 of the 7 lifts. The
+  fingers ended at -0.009 to -0.010, past the -0.005 where the pads meet the 3 cm
+  part, so the part had left them. One of these had no stall nearby. The
+  commanded finger squeezes with 1 N.
+- **Stalls are not GPU contention.** With the GPU idle (5 % mean, 22 % peak) and the
+  machine idle, each flight still had 7-17 stalls of 0.3-2.9 s. The 3 thrust
+  saturations, and the fall, each came 1-3 s after a stall of 1.2-2.9 s. That
+  the demo also stops is an artefact: it logs on pose messages, which stop with
+  simulated time. The wrist camera's rendering holding up the physics step is
+  the next suspect, not yet tested.
+- 3 flights failed all 5 grasp tries, and one placed part landed on its top.
