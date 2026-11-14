@@ -77,6 +77,7 @@ CAMERA_ABORT_M = 0.02  # at grasp height, the camera seeing the part this far of
 CAMERA_CLOSE_Y = 0.022
 CAMERA_CLOSE_X = 0.025
 CAMERA_LAST_S = 1.0    # at the bottom the part can hide the marker: its last sighting this recent
+CAMERA_BIAS_TAU = 0.3  # s, smoothing of the camera's correction to the estimate in camera flight
 TOUCH_N = 0.4          # contact: the wrist's force this far from before (median over 0.2 s);
 TOUCH_STALL_M = 0.025  # or the tips this much short of how far the arm has lowered them
 TOUCH_SPEED = 0.02     # m/s, lowering until contact
@@ -175,6 +176,10 @@ class PickDemo(AerialArmDemo):
         # also chases the estimated error sideways during the grasp (it pushes the drone).
         self.declare_parameter("use_marker", True)
         self.declare_parameter("arm_servo_xy", False)
+        # Over the part, fly sideways on the camera: the outer loop's position is the
+        # estimate plus a bias each camera frame sets so that the tips over the part is
+        # where the setpoint is. Height stays on the estimate (the arm takes the last cm).
+        self.declare_parameter("camera_flight", True)
         ns = self.get_parameter("namespace").value.strip("/")
         self.joints = []
         self.truth = None
@@ -204,6 +209,8 @@ class PickDemo(AerialArmDemo):
         self.camera_k = None
         self.marker_rel = None   # (time, part minus tips in world axes, m)
         self._marker_t = 0.0
+        self.cam_flying = False
+        self.cam_bias = np.zeros(2)
         # Their own group, so a slow frame never holds up the control timers.
         camera_group = MutuallyExclusiveCallbackGroup()
         self.create_subscription(CameraInfo, f"/{ns}/wrist_camera/camera_info", self._on_camera_info,
@@ -251,6 +258,30 @@ class PickDemo(AerialArmDemo):
         tips = R @ self.arm_model.position(q, "end_effector_link")
         # The marker lies on the post top; the part's centre is half its height above.
         self.marker_rel = (now, R @ marker - np.array([MARKER_DX, 0.0, -PART_SIZE[2] / 2.0]) - tips)
+        if self.cam_flying:
+            # Where the base is, by the camera: the tips over the part is the setpoint.
+            seen = np.array(self.setpoint[:2]) - self.marker_rel[1][:2]
+            bias = seen - super()._control_position()[:2]
+            self.cam_bias = self.cam_bias + (bias - self.cam_bias) * min(1.0, MARKER_EVERY_S / CAMERA_BIAS_TAU)
+
+    def _control_position(self):
+        p = super()._control_position()
+        if self.cam_flying:
+            p = p.copy()
+            p[:2] += self.cam_bias
+        return p
+
+    def _camera_flight(self, on):
+        """Start or end flying sideways on the camera; the setpoint absorbs the bias at the end."""
+        if on:
+            self.cam_bias = np.zeros(2)
+            self.cam_flying = True
+            return
+        if self.cam_flying:
+            self.cam_flying = False
+            b = self.cam_bias
+            self.setpoint = (self.setpoint[0] - b[0], self.setpoint[1] - b[1], self.setpoint[2])
+            self.cam_bias = np.zeros(2)
 
     def _debug_marker(self, gray, found, msg):
         """Keep two camera frames per phase and every detection, to check the camera."""
@@ -280,6 +311,8 @@ class PickDemo(AerialArmDemo):
         row["gripper_q"] = self.gripper_q
         if self.marker_rel is not None and time.monotonic() - self.marker_rel[0] < 0.5:
             row["marker_dx"], row["marker_dy"], row["marker_dz"] = self.marker_rel[1]
+        if self.cam_flying:
+            row["cam_bx"], row["cam_by"] = self.cam_bias
         if self.wrench:
             row["fx"], row["fy"], row["fz"] = self.wrench[-1]
         if self.servo_cmd is not None and self.servo is not None:
@@ -505,6 +538,23 @@ class PickDemo(AerialArmDemo):
         self.hover_z_ekf += dz
         self.setpoint = (self.setpoint[0] + dx, self.setpoint[1] + dy, self.setpoint[2] + dz)
         return dx, dy, dz, len(seen)
+
+    def _trim_height_on_marker(self, seconds, expected_dz):
+        """Like ``_trim_on_marker`` for the height alone."""
+        seen = []
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < seconds:
+            self._check_height()
+            off = self._marker_offset()
+            if off is not None:
+                seen.append(off[2])
+            time.sleep(0.1)
+        if len(seen) < 5:
+            return None
+        dz = statistics.fmean(seen) - expected_dz
+        self.hover_z_ekf += dz
+        self.setpoint = (self.setpoint[0], self.setpoint[1], self.setpoint[2] + dz)
+        return 0.0, 0.0, dz, len(seen)
 
     def _wait_for_marker_window(self, window, still_s, timeout):
         """Wait until the camera has seen the tips within ``window`` of the part (x and y).
@@ -775,6 +825,11 @@ class PickDemo(AerialArmDemo):
             self._hold(settle_s / 2.0)
             self.trim["marker"].append(self._trim_on_marker(trim_s, expected_dz))
             self._hold(settle_s / 4.0)
+        camera_flight = use_marker and bool(self.get_parameter("camera_flight").value)
+        if camera_flight:
+            self.phase = "camera_flight"
+            self._camera_flight(True)
+            self._hold(settle_s / 2.0)
         self.phase = "pregrasp"
         reach = float(self.get_parameter("reach_x").value)
         pregrasp = (reach, GRIP_DEPTH - PREGRASP_UP)
@@ -783,8 +838,11 @@ class PickDemo(AerialArmDemo):
         self._hold(2.0)
         if use_marker:
             self.phase = "marker_trim"
-            self.trim["marker"].append(self._trim_on_marker(
-                trim_s, PART_SIZE[2] / 2.0 - TIPS_ABOVE_POST - PREGRASP_UP))
+            expected_dz = PART_SIZE[2] / 2.0 - TIPS_ABOVE_POST - PREGRASP_UP
+            if camera_flight:   # sideways the camera already holds it: the height only
+                self.trim["marker"].append(self._trim_height_on_marker(trim_s, expected_dz))
+            else:
+                self.trim["marker"].append(self._trim_on_marker(trim_s, expected_dz))
             self._hold(settle_s / 4.0)
         # Up to GRASP_TRIES: wait for the drone to be over the part across the fingers,
         # lower until the tips touch the post, close; again if a pad landed on the part
@@ -818,6 +876,7 @@ class PickDemo(AerialArmDemo):
             self.phase = "retry"
             self._arm_path(end, pregrasp, lower_s / 2.0)
             self._hold(1.0)
+        self._camera_flight(False)
         self.phase = "lift"
         codes["lift"] = self._arm_path(end, (0.0, carry), lower_s)
         self._hold(2.0)

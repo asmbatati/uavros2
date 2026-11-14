@@ -298,15 +298,23 @@ class AerialArmDemo(Node):
             self._last_tick = None
             return
         # Step on the simulation's clock (the pose's stamp), not the wall's: when the
-        # simulator stalls for a second, wall time would wind up the integrators.
+        # simulator stalls for a second, wall time would wind up the integrators. On
+        # starts where ROS never gets the simulation's clock the stamps stand still;
+        # after 0.2 s of that, step on the wall's again.
         stamp = self.pose.header.stamp
         now = stamp.sec + stamp.nanosec * 1e-9
+        wall = time.monotonic()
         dt = now - self._last_tick if self._last_tick is not None else 0.02
-        if dt <= 0.0 and self.last_attitude is not None:
+        if dt > 0.0:
+            self._stamp_moved = wall
+        elif wall - getattr(self, "_stamp_moved", wall) > 0.2:
+            dt = wall - getattr(self, "_last_wall_tick", wall - 0.02)
+        elif self.last_attitude is not None:
             self.last_attitude.header.stamp = self.get_clock().now().to_msg()
             self.attitude_pub.publish(self.last_attitude)   # keep OFFBOARD fed meanwhile
             return
         self._last_tick = now
+        self._last_wall_tick = wall
         dt = min(max(dt, 0.0), 0.05)
         if dt <= 0.0:
             return

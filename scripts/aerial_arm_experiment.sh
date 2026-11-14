@@ -65,6 +65,9 @@ sim_ready() {
   [ "$arm" = none ] || need+=('Configured and activated joint_trajectory_controller')
   for _ in $(seq 60); do
     grep -q 'px4 -i .*process has died' "$log" && return 1
+    # ROS without the simulation's clock: MAVROS's time sync breaks (about 2 starts in 3
+    # once, in a batch); its stamps then stand still.
+    grep -q 'RTT too high for timesync' "$log" && return 1
     local ok=1
     for pat in "${need[@]}"; do grep -q "$pat" "$log" || ok=0; done
     [ $ok = 1 ] && return 0
