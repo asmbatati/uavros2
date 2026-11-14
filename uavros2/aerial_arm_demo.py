@@ -20,11 +20,14 @@ Run it against a sim started with an arm, e.g.::
 """
 
 import csv
+import gc
 import json
 import math
 import os
+import sys
 import threading
 import time
+import traceback
 
 from builtin_interfaces.msg import Duration
 from control_msgs.action import FollowJointTrajectory
@@ -46,6 +49,9 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 # planar pitch-chain scaffolds hanging below base_link, so a positive first
 # joint swings the arm (and its centre of mass) to one side of the hover
 # point.
+# A stall: the 50 Hz log tick silent this long (s). See _watchdog.
+STALL_S = 0.25
+
 ARM_POSES = {
     "three_dof": [
         ("reach_a", [1.2, -0.6, 0.3]),
@@ -148,6 +154,7 @@ class AerialArmDemo(Node):
 
     def __init__(self):
         super().__init__("aerial_arm_demo")
+        self._callback_cpu = {}   # callback name -> [calls, CPU s]; see _timed
         self.declare_parameter("namespace", "drone")
         self.declare_parameter("arm", "openmanip_x")
         self.declare_parameter("hover_z", 2.0)
@@ -161,6 +168,10 @@ class AerialArmDemo(Node):
         # controller (needs the patch in config/px4/patches). outer_torque: the
         # outer loop with that torque instead of the attitude bias.
         self.declare_parameter("controller", "px4")
+        # "events": rclpy's EventsExecutor, one thread, dispatch in C++. "multi": the
+        # MultiThreadedExecutor, whose Python dispatch of ~800 messages/s held the 50 Hz
+        # control timers back for 0.3-3 s at a time (docs/AERIAL_ARM.md, demo stalls).
+        self.declare_parameter("executor", "events")
         self.declare_parameter("hover_thrust", 0.85)
         self.declare_parameter("body_mass", 2.064)
         self.declare_parameter("nm_per_normalized", 4.67)
@@ -229,6 +240,14 @@ class AerialArmDemo(Node):
 
         self.create_timer(0.05, self._stream_setpoint)   # 20 Hz, PX4 needs > 2 Hz
         self.create_timer(0.02, self._log)               # 50 Hz
+
+        # Stall diagnosis: the 50 Hz log tick stopping means this process's callbacks stopped.
+        self._tick_wall = None
+        self._stalls = []         # one entry per stall: when, how long, every thread's stack
+        self._gc_long = []        # garbage collections over 50 ms
+        self._gc_start = None
+        gc.callbacks.append(self._on_gc)
+        threading.Thread(target=self._watchdog, daemon=True).start()
 
     def _make_feed_forward(self):
         from ament_index_python import get_package_share_directory
@@ -372,7 +391,56 @@ class AerialArmDemo(Node):
     def _add_fields(self, row):
         """Hook for subclasses to log more columns."""
 
+    def _timed(self, name, callback):
+        """Count a callback's calls and its thread's CPU time (GIL waits excluded)."""
+        def run(*args):
+            t = time.thread_time()
+            try:
+                return callback(*args)
+            finally:
+                c = self._callback_cpu.setdefault(name, [0, 0.0])
+                c[0] += 1
+                c[1] += time.thread_time() - t
+        return run
+
+    def create_subscription(self, msg_type, topic, callback, *args, **kwargs):
+        return super().create_subscription(msg_type, topic, self._timed(topic, callback), *args, **kwargs)
+
+    def create_timer(self, period, callback, *args, **kwargs):
+        name = getattr(callback, "__name__", "timer")
+        return super().create_timer(period, self._timed(name, callback), *args, **kwargs)
+
+    def _on_gc(self, phase, info):
+        if phase == "start":
+            self._gc_start = time.monotonic()
+        elif self._gc_start is not None:
+            dt = time.monotonic() - self._gc_start
+            if dt > 0.05:
+                self._gc_long.append({"wall": time.time(), "generation": info["generation"],
+                                      "collected": info["collected"], "s": round(dt, 3)})
+
+    def _watchdog(self):
+        """Record every thread's stack when the log tick has stopped for over STALL_S."""
+        seen = None
+        while rclpy.ok():
+            time.sleep(0.05)
+            last = self._tick_wall
+            if last is None or time.monotonic() - last < STALL_S:
+                continue
+            if seen == last:
+                self._stalls[-1]["s"] = round(time.monotonic() - last, 3)
+                continue
+            seen = last
+            names = {t.ident: t.name for t in threading.enumerate()}
+            stacks = {names.get(i, str(i)): "".join(traceback.format_stack(f, limit=12))
+                      for i, f in sys._current_frames().items() if i != threading.get_ident()}
+            # A first look long after STALL_S means this thread was held up too (GIL or process).
+            self._stalls.append({"wall": time.time(), "phase": self.phase,
+                                 "first_seen_s": round(time.monotonic() - last, 3),
+                                 "s": round(time.monotonic() - last, 3), "stacks": stacks})
+
     def _log(self):
+        self._tick_wall = time.monotonic()
         if self.pose is None or self.setpoint is None:
             return
         p, o = self.pose.pose.position, self.pose.pose.orientation
@@ -518,6 +586,9 @@ class AerialArmDemo(Node):
 
     def write_results(self, joints, codes, error=None):
         os.makedirs(self.output_dir, exist_ok=True)
+        with open(os.path.join(self.output_dir, f"{self.arm}_stalls.json"), "w") as f:
+            json.dump({"stall_s": STALL_S, "stalls": self._stalls, "gc_over_50ms": self._gc_long,
+                       "callback_calls_cpu_s": self._callback_cpu}, f, indent=1)
         with self.lock:
             rows = list(self.rows)
         csv_path = os.path.join(self.output_dir, f"{self.arm}_flight.csv")
@@ -552,7 +623,11 @@ class AerialArmDemo(Node):
 def main(args=None, node_class=AerialArmDemo):
     rclpy.init(args=args)
     node = node_class()
-    executor = MultiThreadedExecutor(num_threads=4)
+    if node.get_parameter("executor").value == "events":
+        from rclpy.experimental import EventsExecutor
+        executor = EventsExecutor()
+    else:
+        executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(node)
     spin = threading.Thread(target=executor.spin, daemon=True)
     spin.start()

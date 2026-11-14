@@ -643,8 +643,8 @@ Flying on it (flights try13-19, 3 each):
   - It closes only if the camera sees the tips within 2.2 cm across the fingers and
     2.5 cm along them. At the bottom the part can hide the marker; the last sighting
     within 1 s stands in.
-- **The outer loop steps on simulated time now.** Simulator stalls of 1-2 s (wall
-  clock, with simulated time stopped) preceded every thrust saturation in one batch.
+- **The outer loop steps on simulated time now.** Stalls of 1-2 s, in
+  which the demo's log saw simulated time stop, preceded every thrust saturation in one batch.
 - **One-off trims were not enough.** The drone wanders about 2 cm in the second after
   the camera's go, which left the closing fingers at the edge of the gripper's
   +-2.4 cm. Attempts that miss push the part, which the camera, reading the fixed
@@ -671,11 +671,12 @@ Results (pick from the first post, carry, set down on the second):
 | batch 1 (10) | 2 (1.8, 0.6 cm) | 2 | 4 knocked the part flying in; then flying in 6 cm higher |
 | batch 2 (10) | 2 (5.7, 4.9 cm) | 5 | 3 still disturbed the part before the grasp |
 | 13 N batch (10) | 2 (1.2, 1.7 cm) | 1 | 13 N motors; 7 lifted, 3 carried, 1 more set down on its top |
+| events executor (10) | 8 (0.5-5.2 cm) | 0 | 13 N motors and the stall fix below; the other 2 missed all 5 tries |
 
-**Every drop followed a simulator stall.** In batch 2, each run's first thrust
+**Every drop followed a stall** (the demo's, not the simulator's: see
+[The stalls were the demo's executor](#the-stalls-were-the-demos-executor)). In batch 2, each run's first thrust
 saturation came within 3 s after a stall (9 of 9 runs that saturated). In those
-stalls, 0.3-1.9 s of wall time passes with simulated time stopped, and the demo's
-process stops too. Memory and CPU were not short. The stalls came while another
+stalls, 0.3-1.9 s of wall time passes with no new simulated time in the demo's log. Memory and CPU were not short. The stalls came while another
 user's job held the GPU and this one rendered the wrist camera. The drone hovers at
 0.85 thrust on the stock motors, which leaves little margin to recover.
 
@@ -696,8 +697,37 @@ One drone fell. What limits it now:
   commanded finger squeezes with 1 N.
 - **Stalls are not GPU contention.** With the GPU idle (5 % mean, 22 % peak) and the
   machine idle, each flight still had 7-17 stalls of 0.3-2.9 s. The 3 thrust
-  saturations, and the fall, each came 1-3 s after a stall of 1.2-2.9 s. That
-  the demo also stops is an artefact: it logs on pose messages, which stop with
-  simulated time. The wrist camera's rendering holding up the physics step is
-  the next suspect, not yet tested.
+  saturations, and the fall, each came 1-3 s after a stall of 1.2-2.9 s.
 - 3 flights failed all 5 grasp tries, and one placed part landed on its top.
+
+## The stalls were the demo's executor
+
+The "simulator stalls" were never the simulator. Measured on the 13 N drone:
+- Gazebo's own statistics (`/world/pick/stats` against the wall clock) showed no
+  stall in a whole pick flight while the demo's log showed 6. On the ground, with the
+  wrist camera rendering and subscribed, Gazebo ran 3 minutes at a real-time factor
+  of 1.0 with no stall. It renders on the GPU (NVIDIA EGL), not in software.
+- In a stall the simulation ran on and the demo stopped: in one 0.9 s stall the drone
+  fell 12.5 cm with no new attitude setpoint. The demo's log ticks stopped, and so
+  did a watchdog thread in it.
+- Not garbage collection (none over 50 ms), not the kernel (no reclaim, compaction
+  or swap), not a CPU quota, not logging. Mid-stall stack dumps showed threads busy in
+  ordinary code.
+- The demo ran at a median 110 % CPU, but its callbacks used only 22 % of a core.
+  The rest was rclpy's `MultiThreadedExecutor` dispatching about 800 messages/s in
+  Python (joint states and controller state at 125 Hz, the wrench, truth poses,
+  `/tf`). Behind it, the 50 Hz control timers waited 0.3-3 s at a time.
+- The flight logs from before the camera have the same gaps: the B14/B18 wall-contact
+  flights had 4-12 per flight, up to 3.4 s.
+
+The fix: the demos now spin rclpy's `EventsExecutor` (`-p executor:=events`, the
+default; `multi` is the old one), which dispatches in C++ on one thread. The demo's
+CPU fell to a median 57 %, and stalls fell to one of 0.3 s in 10 flights.
+`aerial_arm_demo` writes `<arm>_stalls.json`: every stall of the log tick over
+0.25 s with each thread's stack, garbage collections over 50 ms, and each callback's
+calls and CPU time.
+
+With that, on the 13 N motors (`results/pick/b11_13n_events`): 8 of 10 flights
+picked, carried and set the part upright, 0.5-5.2 cm from the second post's centre,
+and none fell. No held part slipped in the carry, so the slips were the stalls too.
+The other 2 flights missed on all 5 tries: the first miss moved the part.
