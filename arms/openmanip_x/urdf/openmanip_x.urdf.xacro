@@ -160,7 +160,8 @@
         <child link="gripper_${side}_link"/>
         <origin xyz="0.0817 ${sign * 0.021} 0" rpy="0 0 0"/>
         <axis xyz="0 ${sign} 0"/>
-        <limit lower="-0.010" upper="0.019" effort="1" velocity="4.8"/>
+        <!-- The mimic finger 5 N: it stands in for the linkage (see the model's SDF). -->
+        <limit lower="-0.010" upper="0.019" effort="${1 if side == 'left' else 5}" velocity="4.8"/>
         <xacro:if value="${side == 'right'}">
           <mimic joint="gripper_left_joint" multiplier="1"/>
         </xacro:if>

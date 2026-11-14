@@ -74,8 +74,9 @@ MARKER_FRESH_S = 0.3   # a sighting older than this does not count
 CAMERA_ABORT_M = 0.02  # at grasp height, the camera seeing the part this far off: do not close
 # The one-move camera grasp closes unless the camera sees the part this far off across the
 # fingers (they open 2.4 cm beyond its 3 cm) or along them (pads 2 cm wide on its 4 cm).
-CAMERA_CLOSE_Y = 0.022
-CAMERA_CLOSE_X = 0.025
+CAMERA_CLOSE_Y = 0.015  # closes at 2.0-2.4 cm (flights try21) pushed the part away
+CAMERA_CLOSE_X = 0.015
+CAMERA_CLOSE_WAIT_S = 1.5  # at the bottom, wait this long for the camera to see the tips within those
 CAMERA_LAST_S = 1.0    # at the bottom the part can hide the marker: its last sighting this recent
 CAMERA_BIAS_TAU = 0.3  # s, smoothing of the camera's correction to the estimate in camera flight
 TOUCH_N = 0.4          # contact: the wrist's force this far from before (median over 0.2 s);
@@ -86,7 +87,7 @@ TOUCH_LOW = 0.03       # touch the post this much lower than the grasp hover: mo
 GUARD_UP = 0.035       # grasping, lower quickly to this far above where the post should be,
 GUARD_BELOW = 0.05     # then slowly until the tips stall, at most this far below it
 ON_PART_M = 0.03       # tips stalling this far above the post: a pad landed on the part
-GRASP_TRIES = 3
+GRASP_TRIES = 5
 PART_SIZE = (0.04, 0.03, 0.05)  # x, y (across the fingers: 2.4 cm to spare each side), z
 LIFTED_M = 0.02        # the part counts as lifted 2 cm off its post
 ON_POST_M = 0.06       # and as placed within 6 cm of the second post's centre (top 16 cm)
@@ -698,8 +699,8 @@ class PickDemo(AerialArmDemo):
         From the pregrasp pose, the camera's mean view of the part's centre against the
         tips over 0.5 s gives how far down the tips must go to sit 0.5 cm below it (pads
         on the part's top 3 cm). One smooth move of the arm, no servo; at the bottom the
-        camera must see the tips within ``CAMERA_ABORT_M`` of the part across and along,
-        or it lifts back without closing. Returns (outcome, where the arm ended as
+        camera must see the tips within ``CAMERA_CLOSE_X`` / ``CAMERA_CLOSE_Y`` of the part
+        within ``CAMERA_CLOSE_WAIT_S``, or it lifts back without closing. Returns (outcome, where the arm ended as
         (x, depth), None), or None when the camera does not see the marker.
         """
         seen = []
@@ -717,9 +718,14 @@ class PickDemo(AerialArmDemo):
         end = (reach, float(np.clip(start[1] + down, MIN_DEPTH, MAX_DEPTH)))
         self._arm_path(start, end, lower_s)
         time.sleep(0.3)
-        off = self._marker_offset(CAMERA_LAST_S)
-        if off is None or abs(off[0]) > CAMERA_CLOSE_X or abs(off[1]) > CAMERA_CLOSE_Y:
-            return "off_part", end, None
+        t0 = time.monotonic()
+        while True:
+            off = self._marker_offset(CAMERA_LAST_S)
+            if off is not None and abs(off[0]) <= CAMERA_CLOSE_X and abs(off[1]) <= CAMERA_CLOSE_Y:
+                break
+            if time.monotonic() - t0 > CAMERA_CLOSE_WAIT_S:
+                return "off_part", end, None
+            time.sleep(0.05)
         self.phase = "close"
         self.grip_result.setdefault("close", []).append(self._grip(OMX_GRIPPER_CLOSED))
         self._hold(1.0)
