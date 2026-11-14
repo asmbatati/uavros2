@@ -61,6 +61,9 @@ GRIP_DEPTH = 0.41      # end_effector_link (the finger tips) below base_link whe
 TIPS_ABOVE_POST = 0.02  # gripping, the 4.4 cm pads hold the part's top 3 cm
 PREGRASP_UP = 0.06     # before closing in: the tips 3 cm above the part's top
 CARRY_UP = 0.08        # flying: the tips 10 cm above the post tops, the part's bottom 8 cm
+# With the camera, fly in this much higher: nothing has measured the height yet and the
+# estimate's can be 5 cm off (4 flights of 10 knocked the part flying in).
+APPROACH_UP = 0.06
 MIN_DEPTH = 0.33       # the gripper's reach straight down (omx_gripper_down_ik), with
 MAX_DEPTH = 0.48       # 1 cm off joint 2's limit at the top
 SERVO_X = 0.05         # how far the arm may reach fore and aft to cancel the drone's error,
@@ -814,6 +817,8 @@ class PickDemo(AerialArmDemo):
 
         # Pick.
         self.phase = "to_part"
+        if self.get_parameter("use_marker").value:
+            self.hover_z_ekf += APPROACH_UP   # the camera's height trim brings it down
         self._go(self._hover_over(part_xy), speed)
         self.phase = "over_part"
         self._hold(settle_s)

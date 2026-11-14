@@ -645,7 +645,36 @@ Flying on it (flights try13-19, 3 each):
     within 1 s stands in.
 - **The outer loop steps on simulated time now.** Simulator stalls of 1-2 s (wall
   clock, with simulated time stopped) preceded every thrust saturation in one batch.
-- **No grasp has held yet.** The drone wanders about 2 cm in the second after the
-  camera's go, which leaves the closing fingers at the edge of the gripper's +-2.4 cm.
-  Attempts that miss push the part, which the camera, reading the fixed marker, does
-  not see. Drops at the stock motors' limit still end some flights.
+- **One-off trims were not enough.** The drone wanders about 2 cm in the second after
+  the camera's go, which left the closing fingers at the edge of the gripper's
+  +-2.4 cm. Attempts that miss push the part, which the camera, reading the fixed
+  marker, does not see.
+
+**Flying on the camera (the owner's choice).** Over the part, the outer loop's position
+is the estimate plus a bias that each camera frame sets, smoothed over 0.3 s. The
+controller then holds the tips over the part as the camera sees it, sideways only;
+height stays on the estimate. When it ends, the setpoint absorbs the bias, so nothing
+jumps. Further changes:
+- The camera closes the gripper only within 1.5 cm on both axes, waiting up to 1.5 s
+  at the bottom.
+- The demo flies in 6 cm higher and lets the camera's height trim bring it down.
+- **The mimic finger stands in for the gripper's linkage.** The real fingers are one
+  motor and a linkage. Here the right one only follows the left's position, and at
+  equal 1 N limits a held part sat in a tug of war between them and slipped out on
+  lifting. The mimic now has 5 N, and the commanded finger sets the 1 N squeeze.
+
+Results (pick from the first post, carry, set down on the second):
+
+| Flights | Placed upright | Fell | Notes |
+|---|---|---|---|
+| try23 (3) | 2 (1.5, 3.1 cm from the post's centre) | 1 | first with the linkage stand-in |
+| batch 1 (10) | 2 (1.8, 0.6 cm) | 2 | 4 knocked the part flying in; then flying in 6 cm higher |
+| batch 2 (10) | 2 (5.7, 4.9 cm) | 5 | 3 still disturbed the part before the grasp |
+
+**Every drop followed a simulator stall.** In batch 2, each run's first thrust
+saturation came within 3 s after a stall (9 of 9 runs that saturated). In those
+stalls, 0.3-1.9 s of wall time passes with simulated time stopped, and the demo's
+process stops too. Memory and CPU were not short. The stalls came while another
+user's job held the GPU and this one rendered the wrist camera; the cause is not
+pinned down. The drone hovers at 0.85 thrust on the stock motors, which leaves
+little margin to recover.
